@@ -1,13 +1,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-<div class="justify-center flex items-center">
-    <div class="border flex flex-col md:gap-0 lg:p-20 bg-[#F5F6F8] max-w-sm  lg:max-w-[1440px]">
+<div class="flex justify-center">
+    <div class="w-full flex flex-col md:gap-0 lg:p-20 bg-[#F5F6F8] max-w-md lg:max-w-[1440px] border">
         <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden">
             <!-- Main container with flex for responsiveness -->
-            <div class="w-full h-full flex flex-col md:flex-row">
+            <div class="w-full h-full flex flex-col lg:flex-row">
                 
-                <!-- Left side - Image placeholder area (now responsive) -->
-                <div class="w-full md:w-[63%] h-[300px] md:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300">
+                <!-- Left side - Image placeholder area -->
+                <div class="w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300">
                     <!-- Responsive image placeholder -->
                     <div class="absolute inset-0 flex items-center justify-center">
                         <!-- Modern placeholder with business theme -->
@@ -17,7 +17,7 @@
                             
                             <!-- Abstract business graphic -->
                             <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div class="relative w-64 h-64 md:w-80 md:h-80">
+                                <div class="relative w-48 h-48 lg:w-80 lg:h-80">
                                     <!-- Growth chart icon -->
                                     <svg class="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <!-- Background circle -->
@@ -48,40 +48,32 @@
                             </div>
                             
                             <!-- Overlay text for image placeholder -->
-                            <div class="absolute bottom-4 left-4 md:bottom-8 md:left-8">
-                                <div class="text-xs md:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
+                            <div class="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
+                                <div class="text-xs lg:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
                                     <span class="font-semibold">Image:</span> Business professional analyzing growth metrics
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Optional: Add actual image here -->
-                    <!-- 
-                    <img src="path-to-your-hero-image.jpg" 
-                        alt="Business professional championing brand growth" 
-                        class="w-full h-full object-cover"
-                        loading="eager">
-                    -->
                 </div>
                 
-                <!-- Right side - Content area (now responsive) -->
-                <div class="w-full md:w-[37%] h-auto md:h-full bg-black p-6 md:p-8 lg:p-12 flex flex-col justify-center">
-                    <div class="max-w-full md:max-w-[380px] lg:max-w-[480px]">
+                <!-- Right side - Content area -->
+                <div class="w-full lg:w-[37%] h-auto lg:h-full bg-black p-6 lg:p-12 flex flex-col justify-center">
+                    <div class="max-w-full lg:max-w-[480px]">
                         <!-- Main headline -->
-                        <h1 class="text-white text-4xl md:text-5xl lg:text-6xl font-semibold font-['Oswald'] leading-tight md:leading-[64px] mb-4 md:mb-6">
+                        <h1 class="text-white text-3xl md:text-4xl lg:text-6xl font-semibold font-['Oswald'] leading-tight lg:leading-[64px] mb-4 lg:mb-6">
                             Every Brand Deserves A 
-                            <span class="text-red-500 block md:inline">Champion</span>
+                            <span class="text-red-500 block lg:inline">Champion</span>
                         </h1>
                         
                         <!-- Subtitle -->
-                        <p class="text-white text-xl md:text-2xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed md:leading-8 mb-8 md:mb-10">
+                        <p class="text-white text-lg md:text-xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed lg:leading-8 mb-6 lg:mb-10">
                             That's why your growth is our goal.
                         </p>
                         
                         <!-- CTA Button -->
-                        <button class="group w-full md:w-auto px-8 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300 transform hover:scale-[1.02]">
-                            <span class="text-white text-base md:text-lg font-extrabold font-['Inter']">
+                        <button class="group w-full px-6 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300">
+                            <span class="text-white text-base lg:text-lg font-extrabold font-['Inter']">
                                 Let's Talk RESULTS
                             </span>
                             <svg class="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" 
@@ -98,6 +90,8 @@
             <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl hidden lg:block"></div>
             <div class="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl hidden lg:block"></div>
         </div>
+        
+        <!-- Rest of your code remains the same -->
         
         <!-- section //-->
         
@@ -118,7 +112,7 @@
                         <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
                         <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
                         <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
                         <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
                     </div>
                     
@@ -161,7 +155,7 @@
             
             <!-- Right White Section with Stats -->
             <div class="flex-[1.4] min-w-[400px] bg-white p-8 flex items-center justify-center">
-                <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+                <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 justify-items-center">
                     <!-- First Stat -->
                     <div class="flex flex-col items-center gap-5 max-w-[300px]">
                         <div id="counter1" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0%</div>
