@@ -1,7 +1,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-<div class="flex justify-center">
-    <div class="w-full flex flex-col md:gap-0 lg:p-20 bg-[#F5F6F8] max-w-md lg:max-w-[1440px] border">
+<div class="flex justify-center bg-black">
+    <div class="w-full flex flex-col md:gap-0 lg:p-20 nobg-[#F5F6F8] max-w-md lg:max-w-[1440px] ">
         <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden">
             <!-- Main container with flex for responsiveness -->
             <div class="w-full h-full flex flex-col lg:flex-row">
@@ -94,54 +94,6 @@
         <!-- Rest of your code remains the same -->
         
         <!-- section //-->
-        
-        
-        <!-- AUTO-SCROLLER SECTION - FIXED -->
-        <div class="w-full bg-[#F5F6F8] py-8 md:py-12 overflow-hidden">
-            <div class="scroll-container relative w-full overflow-hidden">
-                <!-- Gradient overlays - updated colors to match background -->
-                <div class="absolute left-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-r from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
-                <div class="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
-                
-                <!-- Auto-scrolling container -->
-                <div class="flex animate-scroll">
-                    <!-- First set -->
-                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
-                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    </div>
-                    
-                    <!-- Second set (duplicate) -->
-                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
-                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    </div>
-                    
-                    <!-- Third set (duplicate) -->
-                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
-                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- section//-->
         <div class="w-full min-h-[351px] flex flex-col lg:flex-row">
             <!-- Left Red Section -->
             <div class="flex-1 min-w-[300px] bg-[#F4483A] p-8 flex flex-col justify-center">
@@ -182,6 +134,53 @@
                 </div>
             </div>
         </div>
+        
+        <!-- AUTO-SCROLLER SECTION - FIXED -->
+        <div class="w-full bg-white nobg-[#F5F6F8] py-8 md:py-12 overflow-hidden">
+            <div class="scroll-container relative w-full overflow-hidden">
+                <!-- Gradient overlays - updated colors to match background -->
+                <div class="absolute left-0 top-0 bottom-0 w-12 md:w-24 nobg-gradient-to-r from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
+                
+                <!-- Auto-scrolling container -->
+                <div class="flex animate-scroll">
+                    <!-- First set -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    <!-- Second set (duplicate) -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    <!-- Third set (duplicate) -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- section//-->
         <div class="w-full px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
             <div class="w-full max-w-[825px] flex flex-col justify-start items-start gap-4 md:gap-5">
                 <div class="self-stretch text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-['Oswald'] leading-7 md:leading-8">
