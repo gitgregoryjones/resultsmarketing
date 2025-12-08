@@ -1,226 +1,341 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-<div class="justify-center flex items-center  ">
-    <div class="border flex flex-col md:gap-12 lg:p-20 bg-[#F5F6F8] max-w-[1440px]">
-    <!-- section //-->
-    <div class="w-full px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
-  <div class="w-full max-w-[825px] flex flex-col justify-start items-start gap-4 md:gap-5">
-    <div class="self-stretch text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-['Oswald'] leading-7 md:leading-8">
-      Every Brand Deserves Results
-    </div>
-    <div class="self-stretch text-center text-white text-base sm:text-lg md:text-xl lg:text-2xl font-normal font-['Oswald'] leading-6 md:leading-8">
-      Clients stay for years — some even decades — because we fight for their today and their tomorrow. Through trends, transitions, and seasons of change, their growth remains our goal.
-    </div>
-  </div>
-  
-  <button class="group w-full sm:w-auto h-16 relative no-shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] hover:no-shadow-[0px_6px_6px_0px_rgba(0,0,0,0.35)] no-transition-shadow duration-300">
-    <div class="w-full sm:w-72 h-14 px-4 sm:px-7 py-2.5  bg-red-500 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-white flex justify-center items-center gap-2.5 hover:bg-red-600 transition-colors duration-300">
-      <div class="flex justify-center items-center gap-3">
-        <div class="text-white text-sm sm:text-base font-extrabold font-['Inter']">
-          Let us be your champion
-        </div>
-        <div class="relative overflow-visible">
-          <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:translate-x-1 transition-transform duration-300">
-            <path d="M23 9H1M23 9L16.7143 17M23 9L16.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <!-- Hidden arrow for horizontal growth effect -->
-          <svg width="30" height="18" viewBox="0 0 30 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <path d="M29 9H1M29 9L22.7143 17M29 9L22.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </div>
-    </div>
-  </button>
-</div>
-    <style>
-        @keyframes scroll {
-            0% {
-                transform: translateX(0);
-            }
-            100% {
-                transform: translateX(-33.33%);
-            }
-        }
-        
-        .animate-scroll {
-            display: flex;
-            animation: scroll 30s linear infinite;
-        }
-        
-        .scroll-container:hover .animate-scroll {
-            animation-play-state: paused;
-        }
-        
-        .scroll-container {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .scroll-container::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .logo-set {
-            flex-shrink: 0;
-        }
-    </style>
-    <div class="max-w-6xl mx-auto">
-        <h1 class="hidden text-3xl font-bold text-gray-800 mb-2">Our Partners</h1>
-        <p class=" hidden text-gray-600 mb-8">These trusted brands work with us to deliver exceptional value.</p>
-        
-        <div class="scroll-container relative w-full overflow-hidden py-0">
-            <!-- Gradient overlays -->
-            <div class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none"></div>
-            <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none"></div>
+<div class="justify-center flex items-center">
+    <div class="border flex flex-col md:gap-0 lg:p-20 bg-[#F5F6F8] max-w-sm  lg:max-w-[1440px]">
+        <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden">
+            <!-- Main container with flex for responsiveness -->
+            <div class="w-full h-full flex flex-col md:flex-row">
+                
+                <!-- Left side - Image placeholder area (now responsive) -->
+                <div class="w-full md:w-[63%] h-[300px] md:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300">
+                    <!-- Responsive image placeholder -->
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <!-- Modern placeholder with business theme -->
+                        <div class="relative w-full h-full overflow-hidden">
+                            <!-- Background pattern -->
+                            <div class="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-gray-100/50"></div>
+                            
+                            <!-- Abstract business graphic -->
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                <div class="relative w-64 h-64 md:w-80 md:h-80">
+                                    <!-- Growth chart icon -->
+                                    <svg class="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- Background circle -->
+                                        <circle cx="100" cy="100" r="90" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
+                                        
+                                        <!-- Growth line -->
+                                        <path d="M40 120 L60 100 L80 130 L100 90 L120 110 L140 80 L160 140" 
+                                            stroke="#ef4444" stroke-width="4" stroke-linecap="round" fill="none"/>
+                                        
+                                        <!-- Data points -->
+                                        <circle cx="40" cy="120" r="6" fill="#ef4444"/>
+                                        <circle cx="60" cy="100" r="6" fill="#ef4444"/>
+                                        <circle cx="80" cy="130" r="6" fill="#ef4444"/>
+                                        <circle cx="100" cy="90" r="6" fill="#ef4444"/>
+                                        <circle cx="120" cy="110" r="6" fill="#ef4444"/>
+                                        <circle cx="140" cy="80" r="6" fill="#ef4444"/>
+                                        <circle cx="160" cy="140" r="6" fill="#ef4444"/>
+                                        
+                                        <!-- Handshake icon overlay -->
+                                        <g transform="translate(130, 60) scale(0.15)">
+                                            <path d="M60 40V20C60 8.954 51.046 0 40 0S20 8.954 20 20v20h-4c-8.836 0-16 7.164-16 16v8c0 8.836 7.164 16 16 16h32c8.836 0 16-7.164 16-16v-8c0-8.836-7.164-16-16-16h-4z" 
+                                                fill="#1e40af"/>
+                                            <path d="M100 40V20C100 8.954 91.046 0 80 0S60 8.954 60 20v20h-4c-8.836 0-16 7.164-16 16v8c0 8.836 7.164 16 16 16h32c8.836 0 16-7.164 16-16v-8c0-8.836-7.164-16-16-16h-4z" 
+                                                fill="#1e40af" transform="translate(-36, 0)"/>
+                                        </g>
+                                    </svg>
+                                </div>
+                            </div>
+                            
+                            <!-- Overlay text for image placeholder -->
+                            <div class="absolute bottom-4 left-4 md:bottom-8 md:left-8">
+                                <div class="text-xs md:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
+                                    <span class="font-semibold">Image:</span> Business professional analyzing growth metrics
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional: Add actual image here -->
+                    <!-- 
+                    <img src="path-to-your-hero-image.jpg" 
+                        alt="Business professional championing brand growth" 
+                        class="w-full h-full object-cover"
+                        loading="eager">
+                    -->
+                </div>
+                
+                <!-- Right side - Content area (now responsive) -->
+                <div class="w-full md:w-[37%] h-auto md:h-full bg-black p-6 md:p-8 lg:p-12 flex flex-col justify-center">
+                    <div class="max-w-full md:max-w-[380px] lg:max-w-[480px]">
+                        <!-- Main headline -->
+                        <h1 class="text-white text-4xl md:text-5xl lg:text-6xl font-semibold font-['Oswald'] leading-tight md:leading-[64px] mb-4 md:mb-6">
+                            Every Brand Deserves A 
+                            <span class="text-red-500 block md:inline">Champion</span>
+                        </h1>
+                        
+                        <!-- Subtitle -->
+                        <p class="text-white text-xl md:text-2xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed md:leading-8 mb-8 md:mb-10">
+                            That's why your growth is our goal.
+                        </p>
+                        
+                        <!-- CTA Button -->
+                        <button class="group w-full md:w-auto px-8 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300 transform hover:scale-[1.02]">
+                            <span class="text-white text-base md:text-lg font-extrabold font-['Inter']">
+                                Let's Talk RESULTS
+                            </span>
+                            <svg class="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300" 
+                                viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 9.00006H1M23 9.00006L16.7143 17.0001M23 9.00006L16.7143 1.00006" 
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
             
-            <!-- Auto-scrolling container with THREE identical sets -->
-            <div class="flex animate-scroll">
-                <!-- First set -->
-                <div class="flex items-center gap-12 px-4 logo-set">
-                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                </div>
+            <!-- Decorative elements -->
+            <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl hidden lg:block"></div>
+            <div class="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl hidden lg:block"></div>
+        </div>
+        
+        <!-- section //-->
+        
+        
+        <!-- AUTO-SCROLLER SECTION - FIXED -->
+        <div class="w-full bg-[#F5F6F8] py-8 md:py-12 overflow-hidden">
+            <div class="scroll-container relative w-full overflow-hidden">
+                <!-- Gradient overlays - updated colors to match background -->
+                <div class="absolute left-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-r from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
                 
-                <!-- Second set (duplicate) -->
-                <div class="flex items-center gap-12 px-4 logo-set">
-                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                </div>
-                
-                <!-- Third set (duplicate) -->
-                <div class="flex items-center gap-12 px-4 logo-set">
-                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
-                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                <!-- Auto-scrolling container -->
+                <div class="flex animate-scroll">
+                    <!-- First set -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    <!-- Second set (duplicate) -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
+                    
+                    <!-- Third set (duplicate) -->
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                        <img src="/brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="hidden mt-8 text-sm text-gray-500 text-center">
-            <p>Hover over the logos to pause the auto-scroll. Logos will automatically resume scrolling when you move away.</p>
+        <!-- section//-->
+        <div class="w-full min-h-[351px] flex flex-col lg:flex-row">
+            <!-- Left Red Section -->
+            <div class="flex-1 min-w-[300px] bg-[#F4483A] p-8 flex flex-col justify-center">
+                <div class="text-center text-white text-4xl md:text-5xl font-bold font-manrope mb-5">
+                    We Help Brands Earn Their Place...And Keep It
+                </div>
+                <div class="text-white text-xl md:text-2xl font-semibold font-manrope leading-8">
+                    We grow brands across beauty, personal care, and specialty retail — with the same conviction, care, and commitment we've brought to multicultural and independent founders for decades
+                </div>
+            </div>
+            
+            <!-- Right White Section with Stats -->
+            <div class="flex-[1.4] min-w-[400px] bg-white p-8 flex items-center justify-center">
+                <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
+                    <!-- First Stat -->
+                    <div class="flex flex-col items-center gap-5 max-w-[300px]">
+                        <div id="counter1" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0%</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Average sell-through (as of Nov 2025)
+                        </div>
+                    </div>
+                    
+                    <!-- Second Stat -->
+                    <div class="flex flex-col items-center gap-4 max-w-[300px]">
+                        <div id="counter2" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Brands Managed in 2026
+                        </div>
+                    </div>
+                    
+                    <!-- Third Stat -->
+                    <div class="flex flex-col items-center gap-4 max-w-[300px]">
+                        <div id="counter3" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Years Guiding Brands With Integrity
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="w-full px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
+            <div class="w-full max-w-[825px] flex flex-col justify-start items-start gap-4 md:gap-5">
+                <div class="self-stretch text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-['Oswald'] leading-7 md:leading-8">
+                    Every Brand Deserves Results
+                </div>
+                <div class="self-stretch text-center text-white text-base sm:text-lg md:text-xl lg:text-2xl font-normal font-['Oswald'] leading-6 md:leading-8">
+                    Clients stay for years — some even decades — because we fight for their today and their tomorrow. Through trends, transitions, and seasons of change, their growth remains our goal.
+                </div>
+            </div>
+            
+            <button class="group w-full sm:w-auto h-16 relative no-shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] hover:no-shadow-[0px_6px_6px_0px_rgba(0,0,0,0.35)] no-transition-shadow duration-300">
+                <div class="w-full sm:w-72 h-14 px-4 sm:px-7 py-2.5  bg-red-500 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-white flex justify-center items-center gap-2.5 hover:bg-red-600 transition-colors duration-300">
+                    <div class="flex justify-center items-center gap-3">
+                        <div class="text-white text-sm sm:text-base font-extrabold font-['Inter']">
+                            Let us be your champion
+                        </div>
+                        <div class="relative overflow-visible">
+                            <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:translate-x-1 transition-transform duration-300">
+                                <path d="M23 9H1M23 9L16.7143 17M23 9L16.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <!-- Hidden arrow for horizontal growth effect -->
+                            <svg width="30" height="18" viewBox="0 0 30 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <path d="M29 9H1M29 9L22.7143 17M29 9L22.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </button>
         </div>
     </div>
-<!-- section//-->
-<div class=" w-full min-h-[351px] flex flex-col lg:flex-row">
-  <!-- Left Red Section -->
-  <div class="flex-1 min-w-[300px] bg-[#F4483A] p-8 flex flex-col justify-center">
-    <div class="text-center text-white text-4xl md:text-5xl font-bold font-manrope mb-5">
-      We Help Brands Earn Their Place...And Keep It
-    </div>
-    <div class="text-white text-xl md:text-2xl font-semibold font-manrope leading-8">
-      We grow brands across beauty, personal care, and specialty retail — with the same conviction, care, and commitment we've brought to multicultural and independent founders for decades
-    </div>
-  </div>
-  
-  <!-- Right White Section with Stats -->
-  <div class="flex-[1.4] min-w-[400px] bg-white p-8 flex items-center justify-center">
-    <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-8 justify-items-center">
-      <!-- First Stat -->
-      <div class="flex flex-col items-center gap-5 max-w-[300px]">
-        <div id="counter1" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0%</div>
-        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
-          Average sell-through (as of Nov 2025)
-        </div>
-      </div>
-      
-      <!-- Second Stat -->
-      <div class="flex flex-col items-center gap-4 max-w-[300px]">
-        <div id="counter2" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
-        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
-          Brands Managed in 2026
-        </div>
-      </div>
-      
-      <!-- Third Stat -->
-      <div class="flex flex-col items-center gap-4 max-w-[300px]">
-        <div id="counter3" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
-        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
-          Years Guiding Brands With Integrity
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
 </div>
 
-<script>
-(function() {
-  // Target values
-  const targets = [82, 100, 30];
-  const suffixes = ['%', '+', '+'];
-  const durations = [2000, 1500, 1800];
-  const counters = ['counter1', 'counter2', 'counter3'];
-  
-  function animateCounter(elementId, target, suffix, duration) {
-    const element = document.getElementById(elementId);
-    const increment = target / (duration / 16);
-    let current = 0;
-    
-    function updateCounter() {
-      current += increment;
-      if (current >= target) {
-        current = target;
-        element.textContent = target + suffix;
-        return;
-      }
-      
-      element.textContent = Math.floor(current) + suffix;
-      requestAnimationFrame(updateCounter);
+<style>
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-33.33%);
+        }
     }
     
-    updateCounter();
-  }
-  
-  function startAnimationWhenVisible() {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry, index) => {
-        if (entry.isIntersecting) {
-          animateCounter(counters[index], targets[index], suffixes[index], durations[index]);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.90 });
+    .animate-scroll {
+        display: flex;
+        animation: scroll 30s linear infinite;
+    }
     
-    counters.forEach(id => {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
-    });
-  }
-  
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startAnimationWhenVisible);
-  } else {
-    startAnimationWhenVisible();
-  }
-})();
-</script>
+    .scroll-container:hover .animate-scroll {
+        animation-play-state: paused;
+    }
+    
+    .scroll-container {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        width: 100%;
+    }
+    
+    .scroll-container::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .logo-set {
+        flex-shrink: 0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .logo-set {
+            gap: 1.5rem !important;
+        }
+        
+        .animate-scroll {
+            animation-duration: 20s !important; /* Faster on mobile */
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .scroll-container {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+</style>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Oswald:wght@500&family=Inter:wght@400&display=swap');
 
 .font-manrope {
-  font-family: 'Manrope', sans-serif;
+    font-family: 'Manrope', sans-serif;
 }
 
 .font-oswald {
-  font-family: 'Oswald', sans-serif;
+    font-family: 'Oswald', sans-serif;
 }
 
 .font-inter {
-  font-family: 'Inter', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 </style>
+
+<script>
+(function() {
+    // Target values
+    const targets = [82, 100, 30];
+    const suffixes = ['%', '+', '+'];
+    const durations = [2000, 1500, 1800];
+    const counters = ['counter1', 'counter2', 'counter3'];
+    
+    function animateCounter(elementId, target, suffix, duration) {
+        const element = document.getElementById(elementId);
+        const increment = target / (duration / 16);
+        let current = 0;
+        
+        function updateCounter() {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                element.textContent = target + suffix;
+                return;
+            }
+            
+            element.textContent = Math.floor(current) + suffix;
+            requestAnimationFrame(updateCounter);
+        }
+        
+        updateCounter();
+    }
+    
+    function startAnimationWhenVisible() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    animateCounter(counters[index], targets[index], suffixes[index], durations[index]);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.90 });
+        
+        counters.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) observer.observe(element);
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startAnimationWhenVisible);
+    } else {
+        startAnimationWhenVisible();
+    }
+})();
+</script>
