@@ -179,6 +179,405 @@
                 </div>
             </div>
         </div>
+<!-- section //-->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+        
+        .accordion-content.active {
+            max-height: 500px;
+        }
+        
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .accordion-header.active .accordion-icon {
+            transform: rotate(45deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-5">
+    <div class="container max-w-7xl mx-auto px-4 md:px-6">
+        <!-- Header Section -->
+        <div class="mb-8 md:mb-12 text-center md:text-left">
+            <h1 class="text-5xl font-bold text-red-500 mb-4 leading-tight">
+                We're the missing piece of your growth puzzle
+            </h1>
+            <p class="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-snug">
+                Your champion at every phase of the journey
+            </p>
+        </div>
+
+        <!-- Desktop Tabs (visible on medium screens and up) -->
+        <div class="hidden md:block mb-8">
+            <!-- Tab Headers -->
+            <div class="flex flex-wrap gap-4 lg:gap-5 mb-0">
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800 active-tab" data-tab="assessment">
+                    Assessment
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="growth-planning">
+                    Growth Planning
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-in">
+                    Sell-in
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-through">
+                    Sell-Through
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="analytics">
+                    Analytics
+                </button>
+            </div>
+            
+            <!-- Tab Contents -->
+            <div class="tab-content active bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="assessment-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Clear-eyed truth. Market reality. Insights that protect your next move.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Read more about our services
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="growth-planning-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Strategic roadmap for sustainable growth. We build actionable plans that drive results.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Learn more about growth planning
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-in-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Effective channel strategy and distribution. We ensure your products reach the right markets.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Discover our sell-in approach
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-through-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Driving consumer demand and purchase. We create campaigns that convert interest into sales.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Explore sell-through strategies
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="analytics-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Data-driven insights and performance tracking. We measure what matters to optimize your growth.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    See our analytics capabilities
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"/>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Mobile Accordion (visible on small screens) -->
+        <div class="md:hidden mb-8">
+            <!-- Assessment Accordion Item -->
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header active bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="assessment">
+                    <span>Assessment</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content active bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Clear-eyed truth. Market reality. Insights that protect your next move.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Read more about our services
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Growth Planning Accordion Item -->
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="growth-planning">
+                    <span>Growth Planning</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Strategic roadmap for sustainable growth. We build actionable plans that drive results.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Learn more about growth planning
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sell-in Accordion Item -->
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="sell-in">
+                    <span>Sell-in</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Effective channel strategy and distribution. We ensure your products reach the right markets.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Discover our sell-in approach
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sell-Through Accordion Item -->
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="sell-through">
+                    <span>Sell-Through</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Driving consumer demand and purchase. We create campaigns that convert interest into sales.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Explore sell-through strategies
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Analytics Accordion Item -->
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="analytics">
+                    <span>Analytics</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Data-driven insights and performance tracking. We measure what matters to optimize your growth.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            See our analytics capabilities
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"/>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Section -->
+        <div class="mt-8 md:mt-12 text-center md:text-left">
+            <p class="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-relaxed">
+                We don't just show up — we stand tall, guide the strategy, manage the execution, and stay accountable to results that last.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Desktop Tabs Functionality
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            function switchTab(activeTab) {
+                // Remove active class from all tabs
+                tabButtons.forEach(button => {
+                    button.classList.remove('active-tab');
+                    button.style.backgroundColor = '#000';
+                });
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Add active class to clicked tab
+                activeTab.classList.add('active-tab');
+                activeTab.style.backgroundColor = '#e53e3e';
+                
+                // Show corresponding content
+                const tabId = activeTab.getAttribute('data-tab');
+                const activeContent = document.getElementById(`${tabId}-content`);
+                if (activeContent) {
+                    activeContent.classList.remove('hidden');
+                }
+            }
+            
+            // Add click event to each tab button
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    switchTab(this);
+                });
+            });
+            
+            // Mobile Accordion Functionality
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    // Toggle active class on clicked header
+                    const isActive = this.classList.contains('active');
+                    
+                    // Close all accordion items first
+                    accordionHeaders.forEach(otherHeader => {
+                        otherHeader.classList.remove('active');
+                        otherHeader.style.backgroundColor = '#000';
+                        const otherContent = otherHeader.nextElementSibling;
+                        otherContent.classList.remove('active');
+                        otherContent.style.maxHeight = '0';
+                        otherContent.style.padding = '0';
+                    });
+                    
+                    // If it wasn't active, open it
+                    if (!isActive) {
+                        this.classList.add('active');
+                        this.style.backgroundColor = '#e53e3e';
+                        
+                        const content = this.nextElementSibling;
+                        content.classList.add('active');
+                        content.style.maxHeight = '500px';
+                        content.style.padding = '1.5rem';
+                    }
+                });
+            });
+            
+            // Optional: Auto-switch tabs on desktop
+            let currentTabIndex = 0;
+            const autoSwitchTabs = setInterval(() => {
+                // Only run on desktop (medium screens and up)
+                if (window.innerWidth >= 768 && tabButtons.length > 0) {
+                    currentTabIndex = (currentTabIndex + 1) % tabButtons.length;
+                    switchTab(tabButtons[currentTabIndex]);
+                }
+            }, 5000);
+            
+            // Stop auto-switching when user interacts
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    clearInterval(autoSwitchTabs);
+                });
+            });
+            
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    clearInterval(autoSwitchTabs);
+                });
+            });
+        });
+    </script>
         
         <!-- section//-->
         <div class="w-full px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
