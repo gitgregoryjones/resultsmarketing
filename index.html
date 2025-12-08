@@ -32,6 +32,87 @@
     </div>
   </button>
 </div>
+    <style>
+        @keyframes scroll {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-33.33%);
+            }
+        }
+        
+        .animate-scroll {
+            display: flex;
+            animation: scroll 30s linear infinite;
+        }
+        
+        .scroll-container:hover .animate-scroll {
+            animation-play-state: paused;
+        }
+        
+        .scroll-container {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scroll-container::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .logo-set {
+            flex-shrink: 0;
+        }
+    </style>
+    <div class="max-w-6xl mx-auto">
+        <h1 class="hidden text-3xl font-bold text-gray-800 mb-2">Our Partners</h1>
+        <p class=" hidden text-gray-600 mb-8">These trusted brands work with us to deliver exceptional value.</p>
+        
+        <div class="scroll-container relative w-full overflow-hidden py-0">
+            <!-- Gradient overlays -->
+            <div class="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none"></div>
+            <div class="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none"></div>
+            
+            <!-- Auto-scrolling container with THREE identical sets -->
+            <div class="flex animate-scroll">
+                <!-- First set -->
+                <div class="flex items-center gap-12 px-4 logo-set">
+                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                </div>
+                
+                <!-- Second set (duplicate) -->
+                <div class="flex items-center gap-12 px-4 logo-set">
+                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                </div>
+                
+                <!-- Third set (duplicate) -->
+                <div class="flex items-center gap-12 px-4 logo-set">
+                    <img src="/brands/dierbergs.png" alt="Dierbergs" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/blains.png" alt="Blain's Farm & Fleet" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/bjs.png" alt="BJ's" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/kroger.png" alt="Kroger" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/amazon.png" alt="Amazon" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/target.png" alt="Target" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                    <img src="/brands/schnucks.png" alt="Schnucks" class="h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="hidden mt-8 text-sm text-gray-500 text-center">
+            <p>Hover over the logos to pause the auto-scroll. Logos will automatically resume scrolling when you move away.</p>
+        </div>
+    </div>
 <!-- section//-->
 <div class=" w-full min-h-[351px] flex flex-col lg:flex-row">
   <!-- Left Red Section -->
