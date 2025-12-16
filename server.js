@@ -2,6 +2,7 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const url = require('node:url');
+const { parse } = require('node-html-parser');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -194,6 +195,36 @@ function stripCmsAssets(html) {
   return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
 }
 
+function applyTagsToHtml(html, tags = {}) {
+  if (!tags || !Object.keys(tags).length) return html;
+
+  try {
+    const root = parse(html);
+
+    Object.entries(tags).forEach(([selector, entry]) => {
+      const key = typeof entry === 'string' ? entry : entry && entry.key;
+      const type = entry && entry.type ? entry.type : 'text';
+      if (!key) return;
+
+      const target = root.querySelector(selector);
+      if (!target) return;
+
+      if (type === 'image') {
+        target.setAttribute('data-cms-image', key);
+      } else if (type === 'background') {
+        target.setAttribute('data-cms-bg', key);
+      } else {
+        target.setAttribute('data-cms-text', key);
+      }
+    });
+
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to apply stored tags to HTML', err);
+    return html;
+  }
+}
+
 async function copyDirIfExists(sourceDir, targetDir) {
   try {
     await fs.access(sourceDir);
@@ -235,10 +266,13 @@ async function publishSite() {
 async function renderFile(fileName = DEFAULT_FILE) {
   const safeFile = sanitizeHtmlFile(fileName);
   const htmlPath = htmlPathFor(safeFile);
-  const [html, { values }] = await Promise.all([
+  const [html, { values, tags }] = await Promise.all([
     fs.readFile(htmlPath, 'utf8'),
     readContent(safeFile),
   ]);
+
+  const hydratedHtml = applyTagsToHtml(html, tags);
+
   return Object.entries(values).reduce((acc, [key, value]) => {
     if (acc.includes(`data-cms-image="${key}"`)) {
       return replaceDataImage(acc, key, value);
@@ -247,7 +281,7 @@ async function renderFile(fileName = DEFAULT_FILE) {
       return replaceDataBackground(acc, key, value);
     }
     return replaceDataText(acc, key, value);
-  }, html);
+  }, hydratedHtml);
 }
 
 function contentTypeFor(filePath) {

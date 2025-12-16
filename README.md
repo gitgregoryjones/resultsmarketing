@@ -28,12 +28,12 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 - `GET /api/content?file=index.html` – Returns `{ content, tags }` for the requested HTML file.
 - `POST /api/content?file=index.html` – Accepts `{ key, value, path, type, image, originalOuterHTML, updatedOuterHTML, file }` where `type` is `text`, `image`, or `background`; updates `content.json` (including tag selectors and type under the file's `__tags`), saves uploaded images to `/images`, and rewrites the matching HTML file with new tags when provided.
 - `GET /api/files` – Lists available `.html` files in the repository root for quick switching in the CMS sidebar.
-- `POST /api/publish` – Renders every `.html` file with merged content (including ones present in `content.json`), strips `cms.js`/`cms.css`, copies needed local assets (e.g., `images`, `brands`), and saves static HTML into `/published` without deleting existing exports.
+- `POST /api/publish` – Renders every `.html` file with merged content (including ones present in `content.json`), re-applies stored tag selectors, strips `cms.js`/`cms.css`, copies needed local assets (e.g., `images`, `brands`), and saves static HTML into `/published` without deleting existing exports.
 
 ## Notes
 - Content persists to disk in `content.json`; no `localStorage` is used.
 - Server-side rendering keeps the hydrated text in the HTML response for SEO.
-- Auto-tagged elements are stored by rewriting the active HTML file so they survive reloads.
+- Auto-tagged elements are stored by rewriting the active HTML file so they survive reloads, and the stored selectors are also re-applied during server rendering/publishing so dynamically tagged content appears in merged output.
 - Images and backgrounds can be swapped by uploading a file (persisted to `/images`) or pasting a remote URL.
 - The sidebar can be docked to the left, right, top, or bottom via the Dock controls; top and bottom docking shrink the panel height while keeping every control scrollable.
 - Use **Publish static site** in the sidebar (or `POST /api/publish`) to write fully merged HTML files to `/published` without any CMS assets for hosting-ready output; previously published files remain intact.
