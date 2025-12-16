@@ -225,6 +225,33 @@ function applyTagsToHtml(html, tags = {}) {
   try {
     const root = parse(html);
 
+    function wrapWithLink(target, href) {
+      if (!target || !href) return;
+      const parent = target.parentNode;
+      if (!parent) return;
+
+      const wrapperRoot = parse('<a></a>');
+      const wrapper = wrapperRoot.querySelector('a');
+      wrapper.setAttribute('href', href.trim());
+      wrapper.setAttribute('data-cms-link-wrapper', 'true');
+
+      const siblings = parent.childNodes || [];
+      const index = siblings.indexOf(target);
+
+      if (index >= 0) {
+        siblings.splice(index, 1);
+      }
+
+      wrapper.appendChild(target);
+      wrapper.parentNode = parent;
+
+      if (index >= 0) {
+        siblings.splice(index, 0, wrapper);
+      } else {
+        siblings.push(wrapper);
+      }
+    }
+
     Object.entries(tags).forEach(([selector, entry]) => {
       const key = typeof entry === 'string' ? entry : entry && entry.key;
       const type = entry && entry.type ? entry.type : 'text';
@@ -249,23 +276,7 @@ function applyTagsToHtml(html, tags = {}) {
           parent.setAttribute('href', link.trim());
           return;
         }
-
-        const wrapperRoot = parse('<a></a>');
-        const wrapper = wrapperRoot.querySelector('a');
-        wrapper.setAttribute('href', link.trim());
-        wrapper.setAttribute('data-cms-link-wrapper', 'true');
-
-        if (parent) {
-          const siblings = parent.childNodes || [];
-          const index = siblings.indexOf(target);
-          wrapper.appendChild(target);
-          wrapper.parentNode = parent;
-          if (index >= 0) {
-            siblings.splice(index, 1, wrapper);
-          } else {
-            parent.appendChild(wrapper);
-          }
-        }
+        wrapWithLink(target, link);
       }
     });
 
