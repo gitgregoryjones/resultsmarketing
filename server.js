@@ -8,6 +8,8 @@ const ROOT = __dirname;
 const DEFAULT_FILE = 'index.html';
 const CONTENT_FILE = path.join(ROOT, 'content.json');
 const IMAGES_DIR = path.join(ROOT, 'images');
+const BRANDS_DIR = path.join(ROOT, 'brands');
+const PUBLISHED_DIR = path.join(ROOT, 'published');
 
 function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
   const base = path.basename(fileName);
@@ -19,6 +21,10 @@ function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
 
 function htmlPathFor(fileName = DEFAULT_FILE) {
   return path.join(ROOT, sanitizeHtmlFile(fileName));
+}
+
+async function ensureDir(dirPath) {
+  await fs.mkdir(dirPath, { recursive: true });
 }
 
 async function listHtmlFiles() {
@@ -158,6 +164,47 @@ function replaceDataBackground(html, key, value) {
 
     return `<${tag}${attrs}>`;
   });
+}
+
+function stripCmsAssets(html) {
+  const withoutCss = html.replace(/<link[^>]+href=["']cms\.css["'][^>]*>\s*/gi, '');
+  return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
+}
+
+async function copyDirIfExists(sourceDir, targetDir) {
+  try {
+    await fs.access(sourceDir);
+    await ensureDir(path.dirname(targetDir));
+    await fs.cp(sourceDir, targetDir, { recursive: true });
+  } catch (err) {
+    if (err && err.code !== 'ENOENT') {
+      console.warn(`Unable to copy ${sourceDir} to ${targetDir}`, err);
+    }
+  }
+}
+
+async function publishSite() {
+  const files = await listHtmlFiles();
+  await fs.rm(PUBLISHED_DIR, { recursive: true, force: true });
+  await ensureDir(PUBLISHED_DIR);
+
+  const publishedFiles = [];
+
+  for (const file of files) {
+    try {
+      let html = await renderFile(file);
+      html = stripCmsAssets(html);
+      await fs.writeFile(path.join(PUBLISHED_DIR, file), html);
+      publishedFiles.push(file);
+    } catch (err) {
+      console.warn(`Unable to publish ${file}`, err);
+    }
+  }
+
+  await copyDirIfExists(IMAGES_DIR, path.join(PUBLISHED_DIR, 'images'));
+  await copyDirIfExists(BRANDS_DIR, path.join(PUBLISHED_DIR, 'brands'));
+
+  return publishedFiles;
 }
 
 async function renderFile(fileName = DEFAULT_FILE) {
@@ -308,6 +355,18 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
+  }
+
+  if (pathname === '/api/publish' && req.method === 'POST') {
+    try {
+      const published = await publishSite();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ published }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to publish site' }));
+    }
+    return;
   }
 
   if (pathname === '/api/files' && req.method === 'GET') {

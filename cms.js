@@ -43,6 +43,10 @@
         <label for="cms-file">HTML file</label>
         <select id="cms-file"></select>
       </div>
+      <div class="cms-publish">
+        <button type="button" id="cms-publish">Publish static site</button>
+        <p class="cms-pill cms-pill--subtle">Merges all pages into /published without editor assets</p>
+      </div>
       <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
@@ -88,6 +92,7 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
+  const publishButton = sidebar.querySelector('#cms-publish');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
@@ -454,6 +459,29 @@
     }
   }
 
+  async function publishStaticSite() {
+    const originalLabel = publishButton.textContent;
+    publishButton.disabled = true;
+    publishButton.textContent = 'Publishing...';
+    messageEl.textContent = 'Publishing merged HTML to /published...';
+    messageEl.style.color = '#111827';
+
+    try {
+      const res = await fetch('/api/publish', { method: 'POST' });
+      if (!res.ok) throw new Error('Publish failed');
+      const data = await res.json();
+      const count = Array.isArray(data.published) ? data.published.length : 0;
+      messageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to /published.`;
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to publish static pages.';
+      messageEl.style.color = '#ef4444';
+    } finally {
+      publishButton.disabled = false;
+      publishButton.textContent = originalLabel;
+    }
+  }
+
   function handleClick(e) {
     if (!editMode) return;
     const target = e.target;
@@ -530,6 +558,7 @@
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
+  publishButton.addEventListener('click', publishStaticSite);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
