@@ -29,9 +29,32 @@ async function ensureDir(dirPath) {
 
 async function listHtmlFiles() {
   const entries = await fs.readdir(ROOT, { withFileTypes: true });
-  return entries
+  const discovered = entries
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
     .map((entry) => entry.name);
+
+  // Include any file keys present in content.json that still exist on disk so
+  // we can publish them even if they were added before the current server run.
+  try {
+    const raw = await readRawContent();
+    const fileKeys = raw && raw.__files && typeof raw.__files === 'object' ? Object.keys(raw.__files) : [];
+    for (const key of fileKeys) {
+      const safe = sanitizeHtmlFile(key);
+      const candidate = path.join(ROOT, safe);
+      try {
+        const stat = await fs.stat(candidate);
+        if (stat.isFile() && safe.toLowerCase().endsWith('.html') && !discovered.includes(safe)) {
+          discovered.push(safe);
+        }
+      } catch (err) {
+        // skip missing files
+      }
+    }
+  } catch (err) {
+    console.warn('Unable to merge file list from content.json', err);
+  }
+
+  return discovered;
 }
 
 async function readRawContent() {
@@ -185,7 +208,9 @@ async function copyDirIfExists(sourceDir, targetDir) {
 
 async function publishSite() {
   const files = await listHtmlFiles();
-  await fs.rm(PUBLISHED_DIR, { recursive: true, force: true });
+
+  // Do not remove any existing published output; simply overwrite the files we
+  // render so older exports remain available if needed.
   await ensureDir(PUBLISHED_DIR);
 
   const publishedFiles = [];
