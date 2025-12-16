@@ -288,17 +288,13 @@ function wrapDataLinks(html) {
       const tagName = (el.tagName || '').toLowerCase();
 
       if (tagName === 'a') {
-        if (!el.getAttribute('href')) {
-          el.setAttribute('href', escapeHtml(href));
-        }
+        el.setAttribute('href', escapeHtml(href));
         ensureAnchorStyles(el);
         return;
       }
 
       if (parent && parent.tagName && parent.tagName.toLowerCase() === 'a') {
-        if (!parent.getAttribute('href')) {
-          parent.setAttribute('href', escapeHtml(href));
-        }
+        parent.setAttribute('href', escapeHtml(href));
         ensureAnchorStyles(parent);
         return;
       }
