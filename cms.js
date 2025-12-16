@@ -1,8 +1,10 @@
 (function () {
   const STORAGE_KEY = 'cmsContentOverrides';
+  const TAG_STORAGE_KEY = 'cmsTaggedElements';
   let remoteContent = {};
   let overrides = {};
   let mergedContent = {};
+  let taggedElements = {};
   let editMode = false;
   let selectedElement = null;
 
@@ -60,6 +62,29 @@
 
   function persistOverrides() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+  }
+
+  function loadTaggedElements() {
+    try {
+      const stored = localStorage.getItem(TAG_STORAGE_KEY);
+      taggedElements = stored ? JSON.parse(stored) : {};
+    } catch (err) {
+      taggedElements = {};
+      console.warn('Unable to parse saved tags', err);
+    }
+  }
+
+  function persistTaggedElements() {
+    localStorage.setItem(TAG_STORAGE_KEY, JSON.stringify(taggedElements));
+  }
+
+  function applyTaggedElements() {
+    Object.entries(taggedElements).forEach(([path, key]) => {
+      const el = document.body.querySelector(path);
+      if (el) {
+        el.setAttribute('data-cms-text', key);
+      }
+    });
   }
 
   async function fetchRemoteContent() {
@@ -241,15 +266,36 @@
     selectedElement.textContent = value;
     overrides[uniqueKey] = value;
     persistOverrides();
+    const path = buildElementPath(selectedElement);
+    if (path) {
+      taggedElements[path] = uniqueKey;
+      persistTaggedElements();
+    }
     mergeContent();
     refreshList();
+  }
+
+  function buildElementPath(el) {
+    const segments = [];
+    let node = el;
+    while (node && node.nodeType === 1 && node !== document.body) {
+      const siblings = Array.from(node.parentNode.children);
+      const index = siblings.indexOf(node) + 1;
+      segments.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
+      node = node.parentNode;
+    }
+    return segments.length ? `body > ${segments.join(' > ')}` : '';
   }
 
   function hydrate() {
     fetchRemoteContent()
       .then(loadOverrides)
-      .then(mergeContent)
-      .then(applyContent)
+      .then(loadTaggedElements)
+      .then(() => {
+        applyTaggedElements();
+        mergeContent();
+        applyContent();
+      })
       .catch((err) => console.warn('Hydration error', err));
   }
 

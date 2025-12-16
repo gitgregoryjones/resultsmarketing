@@ -24,5 +24,6 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser to view
 
 ## Notes
 - Local overrides are stored under the `cmsContentOverrides` key in `localStorage`.
+- Auto-tagged elements persist between reloads via `cmsTaggedElements` (paths mapped to their keys).
 - Saving a new key will auto-adjust duplicates (e.g., `key`, `key-2`, ...).
 - The editor only supports plain text (`textContent`) for this MVP.
