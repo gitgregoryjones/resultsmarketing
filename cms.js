@@ -1,5 +1,8 @@
 (function () {
   const API_ENDPOINT = '/api/content';
+  const FILES_ENDPOINT = '/api/files';
+  const params = new URLSearchParams(window.location.search);
+  const currentFile = params.get('file') || 'index.html';
   let mergedContent = {};
   let storedTags = {};
   let editMode = false;
@@ -20,6 +23,10 @@
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
+      <div class="cms-field cms-field--file">
+        <label for="cms-file">HTML file</label>
+        <select id="cms-file"></select>
+      </div>
       <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
@@ -68,6 +75,7 @@
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
+  const fileSelect = sidebar.querySelector('#cms-file');
 
   function clearForm() {
     keyInput.value = '';
@@ -88,6 +96,39 @@
       el.classList.remove('cms-outlined');
     });
     outline.style.display = 'none';
+  }
+
+  function buildApiUrl() {
+    const query = new URLSearchParams();
+    query.set('file', currentFile);
+    return `${API_ENDPOINT}?${query.toString()}`;
+  }
+
+  async function loadFiles() {
+    try {
+      const res = await fetch(FILES_ENDPOINT);
+      if (!res.ok) throw new Error('Unable to fetch files');
+      const data = await res.json();
+      const files = Array.isArray(data.files) ? data.files : [];
+      const existing = new Set(files);
+      if (!existing.has(currentFile)) {
+        files.push(currentFile);
+      }
+      fileSelect.innerHTML = '';
+      files.forEach((file) => {
+        const option = document.createElement('option');
+        option.value = file;
+        option.textContent = file;
+        if (file === currentFile) option.selected = true;
+        fileSelect.appendChild(option);
+      });
+    } catch (err) {
+      const fallbackOption = document.createElement('option');
+      fallbackOption.value = currentFile;
+      fallbackOption.textContent = currentFile;
+      fileSelect.innerHTML = '';
+      fileSelect.appendChild(fallbackOption);
+    }
   }
 
   function positionOutline(target) {
@@ -356,7 +397,7 @@
     const updatedOuterHTML = selectedElement.outerHTML;
 
     try {
-      const res = await fetch(API_ENDPOINT, {
+      const res = await fetch(buildApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -367,6 +408,7 @@
           image: imagePayload,
           originalOuterHTML,
           updatedOuterHTML,
+          file: currentFile,
         }),
       });
       if (!res.ok) {
@@ -443,7 +485,7 @@
 
   async function hydrate() {
     try {
-      const res = await fetch(API_ENDPOINT);
+      const res = await fetch(buildApiUrl());
       if (res.ok) {
         const data = await res.json();
         mergedContent = data.content || {};
@@ -463,6 +505,16 @@
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
+  fileSelect.addEventListener('change', () => {
+    const nextFile = fileSelect.value;
+    const url = new URL(window.location.href);
+    if (nextFile === 'index.html') {
+      url.searchParams.delete('file');
+    } else {
+      url.searchParams.set('file', nextFile);
+    }
+    window.location.href = url.toString();
+  });
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
@@ -472,5 +524,8 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', hydrate);
+  document.addEventListener('DOMContentLoaded', () => {
+    loadFiles();
+    hydrate();
+  });
 })();

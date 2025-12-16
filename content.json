@@ -15,5 +15,26 @@
   "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
   "features.optimization.title": "Optimization",
   "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
-  "__tags": {}
+  "__tags": {},
+  "__files": {
+    "index.html": {
+      "brand.name": "Results Marketing",
+      "brand.tagline": "Performance-first creative",
+      "cta.primary": "Let's Talk RESULTS",
+      "hero.eyebrow": "Case-study ready in weeks",
+      "hero.headline.prefix": "Every Brand Deserves A",
+      "hero.headline.emphasis": "Champion",
+      "hero.supporting": "That's why your growth is our goal.",
+      "hero.image": "images/Products.png",
+      "brand.logo": "images/logowhite.png",
+      "cta.logo": "images/powerbi.png",
+      "features.strategy.title": "Strategy",
+      "features.strategy.copy": "Audience-first roadmaps that align every campaign to measurable outcomes.",
+      "features.production.title": "Production",
+      "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
+      "features.optimization.title": "Optimization",
+      "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+      "__tags": {}
+    }
+  }
 }

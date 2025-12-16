@@ -93,6 +93,15 @@
   resize: vertical;
 }
 
+.cms-field--file select {
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+}
+
 .cms-field input:focus,
 .cms-field textarea:focus {
   outline: none;

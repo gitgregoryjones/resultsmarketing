@@ -5,45 +5,94 @@ const url = require('node:url');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
-const INDEX_FILE = path.join(ROOT, 'index.html');
+const DEFAULT_FILE = 'index.html';
 const CONTENT_FILE = path.join(ROOT, 'content.json');
 const IMAGES_DIR = path.join(ROOT, 'images');
 
-async function readContent() {
+function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
+  const base = path.basename(fileName);
+  if (!base.toLowerCase().endsWith('.html')) {
+    return `${base}.html`;
+  }
+  return base;
+}
+
+function htmlPathFor(fileName = DEFAULT_FILE) {
+  return path.join(ROOT, sanitizeHtmlFile(fileName));
+}
+
+async function listHtmlFiles() {
+  const entries = await fs.readdir(ROOT, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
+    .map((entry) => entry.name);
+}
+
+async function readRawContent() {
   try {
     const raw = await fs.readFile(CONTENT_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    const rawTags =
-      parsed && typeof parsed.__tags === 'object' && parsed.__tags !== null
-        ? parsed.__tags
-        : {};
-    const values =
-      parsed && typeof parsed === 'object' && parsed !== null ? { ...parsed } : {};
-    delete values.__tags;
-    const tags = Object.entries(rawTags).reduce((acc, [path, entry]) => {
-      if (typeof entry === 'string') {
-        acc[path] = { key: entry, type: 'text' };
-      } else if (entry && typeof entry === 'object' && entry.key) {
-        acc[path] = { key: entry.key, type: entry.type || 'text' };
-      }
-      return acc;
-    }, {});
-    return { values, tags };
+    return JSON.parse(raw);
   } catch (err) {
     console.warn('Unable to read content.json, falling back to empty object', err);
-    return { values: {}, tags: {} };
+    return {};
   }
 }
 
-async function writeContent({ values, tags }) {
-  const payload = { ...values };
+async function readContent(fileName = DEFAULT_FILE) {
+  const parsed = await readRawContent();
+  const safeFile = sanitizeHtmlFile(fileName);
+  const hasFileMap = parsed && parsed.__files && typeof parsed.__files === 'object';
+  const fileBlock = hasFileMap ? parsed.__files[safeFile] || null : null;
+
+  const block =
+    fileBlock && typeof fileBlock === 'object'
+      ? fileBlock
+      : hasFileMap
+        ? {}
+        : parsed && typeof parsed === 'object'
+          ? parsed
+          : {};
+
+  const rawTags = block && typeof block.__tags === 'object' ? block.__tags : {};
+  const values = block && typeof block === 'object' ? { ...block } : {};
+  delete values.__tags;
+
+  const tags = Object.entries(rawTags).reduce((acc, [path, entry]) => {
+    if (typeof entry === 'string') {
+      acc[path] = { key: entry, type: 'text' };
+    } else if (entry && typeof entry === 'object' && entry.key) {
+      acc[path] = { key: entry.key, type: entry.type || 'text' };
+    }
+    return acc;
+  }, {});
+
+  return { values, tags };
+}
+
+async function writeContent({ values, tags, fileName = DEFAULT_FILE }) {
+  const safeFile = sanitizeHtmlFile(fileName);
+  const raw = await readRawContent();
+  const payload = { ...raw };
+  const fileBlock = { ...values };
+
   if (tags && Object.keys(tags).length) {
-    payload.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
+    fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
       if (!entry || !entry.key) return acc;
       acc[path] = { key: entry.key, type: entry.type || 'text' };
       return acc;
     }, {});
   }
+
+  payload.__files = payload.__files && typeof payload.__files === 'object' ? payload.__files : {};
+  payload.__files[safeFile] = fileBlock;
+
+  if (safeFile === DEFAULT_FILE) {
+    Object.keys(payload)
+      .filter((key) => key !== '__files')
+      .forEach((key) => delete payload[key]);
+    Object.assign(payload, fileBlock);
+  }
+
   await fs.writeFile(CONTENT_FILE, JSON.stringify(payload, null, 2));
 }
 
@@ -111,10 +160,12 @@ function replaceDataBackground(html, key, value) {
   });
 }
 
-async function renderIndex() {
+async function renderFile(fileName = DEFAULT_FILE) {
+  const safeFile = sanitizeHtmlFile(fileName);
+  const htmlPath = htmlPathFor(safeFile);
   const [html, { values }] = await Promise.all([
-    fs.readFile(INDEX_FILE, 'utf8'),
-    readContent(),
+    fs.readFile(htmlPath, 'utf8'),
+    readContent(safeFile),
   ]);
   return Object.entries(values).reduce((acc, [key, value]) => {
     if (acc.includes(`data-cms-image="${key}"`)) {
@@ -161,9 +212,9 @@ async function serveStatic(res, filePath) {
   }
 }
 
-async function handleApiContent(req, res) {
+async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
   if (req.method === 'GET') {
-    const { values, tags } = await readContent();
+    const { values, tags } = await readContent(fileName);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ content: values, tags }));
     return;
@@ -177,14 +228,25 @@ async function handleApiContent(req, res) {
     req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
-        const { key, value, originalOuterHTML, updatedOuterHTML, path: elementPath, type, image } = payload;
+        const {
+          key,
+          value,
+          originalOuterHTML,
+          updatedOuterHTML,
+          path: elementPath,
+          type,
+          image,
+          file,
+        } = payload;
         if (!key) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
         }
 
-        const { values, tags } = await readContent();
+        const targetFile = sanitizeHtmlFile(file || fileName);
+        const htmlPath = htmlPathFor(targetFile);
+        const { values, tags } = await readContent(targetFile);
         let storedValue = value ?? '';
         if (type === 'image' || type === 'background') {
           try {
@@ -212,17 +274,17 @@ async function handleApiContent(req, res) {
         if (elementPath) {
           tags[elementPath] = { key, type: type || 'text' };
         }
-        await writeContent({ values, tags });
+        await writeContent({ values, tags, fileName: targetFile });
 
         if (originalOuterHTML && updatedOuterHTML) {
           try {
-            let currentHtml = await fs.readFile(INDEX_FILE, 'utf8');
+            let currentHtml = await fs.readFile(htmlPath, 'utf8');
             if (currentHtml.includes(originalOuterHTML)) {
               currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
-              await fs.writeFile(INDEX_FILE, currentHtml);
+              await fs.writeFile(htmlPath, currentHtml);
             }
           } catch (err) {
-            console.warn('Unable to persist new tag in index.html', err);
+            console.warn(`Unable to persist new tag in ${targetFile}`, err);
           }
         }
 
@@ -245,22 +307,40 @@ const server = http.createServer(async (req, res) => {
   const pathname = parsedUrl.pathname || '/';
 
   if (pathname === '/api/content') {
-    return handleApiContent(req, res);
+    return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
   }
 
-  if (pathname === '/' && req.method === 'GET') {
+  if (pathname === '/api/files' && req.method === 'GET') {
     try {
-      const html = await renderIndex();
-      res.writeHead(200, { 'Content-Type': 'text/html' });
-      res.end(html);
+      const files = await listHtmlFiles();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ files }));
     } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Failed to render page');
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to list files' }));
     }
     return;
   }
 
-  return serveStatic(res, pathname === '/' ? 'index.html' : pathname.slice(1));
+  if (req.method === 'GET' && (pathname === '/' || pathname.toLowerCase().endsWith('.html'))) {
+    const targetFile =
+      pathname === '/'
+        ? sanitizeHtmlFile(parsedUrl.query.file || DEFAULT_FILE)
+        : sanitizeHtmlFile(path.basename(pathname));
+    try {
+      await fs.access(htmlPathFor(targetFile));
+      const html = await renderFile(targetFile);
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(html);
+    } catch (err) {
+      const status = err && err.code === 'ENOENT' ? 404 : 500;
+      res.writeHead(status, { 'Content-Type': 'text/plain' });
+      res.end(status === 404 ? 'Page not found' : 'Failed to render page');
+    }
+    return;
+  }
+
+  return serveStatic(res, pathname === '/' ? DEFAULT_FILE : pathname.slice(1));
 });
 
 server.listen(PORT, () => {
