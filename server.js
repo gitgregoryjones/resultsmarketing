@@ -81,6 +81,36 @@ function replaceDataImage(html, key, value) {
   });
 }
 
+function replaceDataBackground(html, key, value) {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `<([a-zA-Z0-9-]+)([^>]*?)\\sdata-cms-bg=["']${escapedKey}["']([^>]*)>`,
+    'g'
+  );
+
+  return html.replace(pattern, (_match, tag, before, after) => {
+    let attrs = `${before} data-cms-bg="${key}"${after}`;
+    const stylePattern = /style=["']([^"']*)["']/;
+    const bgStyle = `background-image:url('${escapeHtml(value)}')`;
+
+    if (stylePattern.test(attrs)) {
+      const current = attrs.match(stylePattern)[1];
+      const styleParts = current
+        .split(';')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .filter((s) => !s.toLowerCase().startsWith('background-image'));
+      styleParts.push(bgStyle);
+      const newStyle = styleParts.join('; ');
+      attrs = attrs.replace(stylePattern, `style="${newStyle}"`);
+    } else {
+      attrs = `${attrs} style="${bgStyle}"`;
+    }
+
+    return `<${tag}${attrs}>`;
+  });
+}
+
 async function renderIndex() {
   const [html, { values }] = await Promise.all([
     fs.readFile(INDEX_FILE, 'utf8'),
@@ -89,6 +119,9 @@ async function renderIndex() {
   return Object.entries(values).reduce((acc, [key, value]) => {
     if (acc.includes(`data-cms-image="${key}"`)) {
       return replaceDataImage(acc, key, value);
+    }
+    if (acc.includes(`data-cms-bg="${key}"`)) {
+      return replaceDataBackground(acc, key, value);
     }
     return replaceDataText(acc, key, value);
   }, html);
@@ -153,7 +186,7 @@ async function handleApiContent(req, res) {
 
         const { values, tags } = await readContent();
         let storedValue = value ?? '';
-        if (type === 'image') {
+        if (type === 'image' || type === 'background') {
           try {
             await fs.mkdir(IMAGES_DIR, { recursive: true });
           } catch (err) {
