@@ -337,7 +337,7 @@
                 <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="growth-planning">
                     Growth Planning
                 </button>
-                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-in">
+                <button class="hidden tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-in">
                     Sell-in
                 </button>
                 <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-through">
@@ -387,24 +387,19 @@
                 </a>
             </div>
             
-            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-in-content">
-                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
-                    Effective channel strategy and distribution. We ensure your products reach the right markets.
-                </h3>
-                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
-                    Discover our sell-in approach
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <g clip-path="url(#clip0_1_420)">
-                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                        </g>
-                        <defs>
-                            <clipPath id="clip0_1_420">
-                                <rect width="20" height="20" fill="white"/>
-                            </clipPath>
-                        </defs>
-                    </svg>
-                </a>
-            </div>
+            <!--
+            **User Features & Improvements**
+1. "Shop for Benefits" and Receipt Header Links Added: New navigation links have been added for users to shop for benefits and access receipts by year.
+
+**Bug Fixes & Data Integrity**
+2. Block Family Updates After Enrollment: Users are now prevented from modifying family information after they have successfully enrolled in a plan.
+3. Fixed ICHRA Value in Bar Display: Corrected an issue where a progress bar or summary component was not showing the correct ICHRA (Individual Coverage HRA) value.
+4. Fixed Duplicate Records: Multiple fixes were applied to resolve issues causing duplicate medical plan records and other duplicate data entries.
+5. Fixed Receipt Generation/Display: Multiple commits addressed issues with receipt functionality.
+6. Fixed Knowledge-Based Authentication (KBA) Messages: Resolved a problem where users saw mismatched or incorrect messages during the KBA process.
+7. Fixed Caching Issue: Implemented a change to solve a stale data problem by disabling caching for a specific component or data fetch.
+8. Fixed User Type Logic for Bar Display: Corrected the logic governing how a progress bar or summary component behaves for different user types (e.g., "UserType B").
+            -->
             
             <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-through-content">
                 <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">

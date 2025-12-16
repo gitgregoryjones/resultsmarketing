@@ -561,7 +561,7 @@
     if (!hasText && type === 'text') {
       messageEl.textContent = 'Select an element that contains text, an image, or a background.';
       messageEl.style.color = '#ef4444';
-      return;
+      //return;
     }
     e.preventDefault();
     e.stopPropagation();

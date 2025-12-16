@@ -1,0 +1,480 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Services - Results Marketing</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mobile-menu {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        .hamburger-line {
+            transition: all 0.3s ease;
+        }
+        .hamburger.open .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        .hamburger.open .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.open .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+        .font-oswald { font-family: 'Oswald', sans-serif; }
+        .font-inter { font-family: 'Inter', sans-serif; }
+    </style>
+    <link rel="stylesheet" href="cms.css">
+</head>
+<body class="nobg-white">
+<div class="flex justify-center bg-black">
+    <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] bg-white max-w-md lg:max-w-[1440px]">
+        <!-- Navigation (same as index.html) -->
+        <nav class="w-full py-4 px-4 bg-white md:px-8 border-b border-gray-100">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <!-- Logo -->
+                <div class="w-[147px] h-[69px] flex items-center justify-center rounded">
+                    <img src="images/logowhite.png" alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" />
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex flex-1 justify-center items-center">
+                    <div class="flex justify-start items-center gap-6 lg:gap-8">
+                        <a href="index.html" class="text-black text-base font-normal hover:text-red-500 transition-colors">Home</a>
+                        <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">About Us</a>
+                        <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">News</a>
+                        <a href="services.html" class="text-red-500 text-base font-bold hover:text-red-600 transition-colors">Our Services</a>
+                        <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">Contact Us</a>
+                    </div>
+                </div>
+                <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded">
+                    <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" data-cms-image="cta.logo" />
+                </div>
+
+                <!-- Hamburger Menu Button -->
+                <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                </button>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div class="md:hidden mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-6" id="mobileMenu">
+                <div class="flex justify-end mb-8">
+                    <button class="hamburger open w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="closeMenu">
+                        <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                        <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                        <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    </button>
+                </div>
+                
+                <div class="flex flex-col space-y-6">
+                    <a href="index.html" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">Home</a>
+                    <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">About Us</a>
+                    <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">News</a>
+                    <a href="services.html" class="text-red-500 text-lg font-bold hover:text-red-600 transition-colors py-2 border-b border-gray-100">Our Services</a>
+                    <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">Contact Us</a>
+                    
+                    <a href="#" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity">
+                        <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" />
+                    </a>
+                </div>
+            </div>
+
+            <!-- Overlay for mobile menu -->
+            <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay"></div>
+        </nav>
+
+        <!-- Hero Section -->
+        <div class="w-full relative overflow-hidden">
+            <div class="w-full flex flex-col lg:flex-row">
+                <!-- Hero Image -->
+                <div class="w-full lg:w-[63%] h-[250px] lg:h-[400px] relative border border-red-500/30 overflow-hidden"
+                  data-cms-bg="hero.image"
+                  style="background-image:url('images/Products.png'); background-size:cover; background-position:center;">
+                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                </div>
+                
+                <!-- Hero Content -->
+                <div class="w-full lg:w-[37%] h-auto lg:h-[400px] bg-black p-6 lg:p-12 flex flex-col justify-center">
+                    <div class="max-w-full lg:max-w-[480px]">
+                        <h1 class="text-white text-3xl md:text-4xl lg:text-[32px]] font-semibold font-oswald leading-tight lg:leading-[64px] mb-4 lg:mb-6">
+                            <span data-cms-text="hero.headline.prefix">Our</span>
+                            <span class="text-red-500 block lg:inline" data-cms-text="hero.headline.emphasis">Services</span>
+                        </h1>
+                        <p class="text-white text-lg md:text-xl lg:text-2xl font-normal font-oswald leading-relaxed lg:leading-8 mb-6 lg:mb-10">
+                            Comprehensive solutions for brand growth
+                        </p>
+                        <button class="group w-full px-6 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300">
+                            <span class="text-white text-sm sm:text-base font-extrabold font-inter">
+                                Let's Talk RESULTS
+                            </span>
+                            <svg class="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300"
+                                viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 9.00006H1M23 9.00006L16.7143 17.0001M23 9.00006L16.7143 1.00006"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Section - Made Responsive -->
+        <div class="w-full px-4 md:px-8 lg:px-28 py-8 md:py-12 lg:py-16">
+            <div class="flex flex-col justify-center items-start gap-6 md:gap-0">
+                <div class="text-red-500 text-xs md:text-base font-medium font-inter uppercase leading-6 tracking-widest md:mb-7">Our expertise</div>
+                <div class="text-red-500 text-2xl md:text-3xl lg:text-4xl font-medium font-oswald leading-7 md:leading-8 md:mb-7">Results Services</div>
+                
+                <!-- Service Items - Made Responsive -->
+                <!-- Service 1: Assessment -->
+                <div class="w-full py-4 md:py-6 bg-white border-t  border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6 overflow-hidden">
+                    <div style="background-size:cover" class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">1.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Assessment</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Market Analysis & Strategy</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8 space-y-2">
+                            <div>• Independent Sales representation</div>
+                            <div>• New market penetration</div>
+                            <div>• Core customer execution</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 2: Growth Planning -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6 overflow-hidden">
+                    <div style="background-size:cover" class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">2.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Growth Planning</div>
+                        </div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8 space-y-2">
+                            <div>• Goal alignment & Sales and Development Strategy</div>
+                            <div>• Distribution strategy & Overall growth plan</div>
+                            <div>• Prospecting & New customer acquisition</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 3: Sell-In -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6 overflow-hidden">
+                    <div style="background-size:cover" class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">3.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Sell-In</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Distribution & Placement</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8 space-y-2">
+                            <div>• Independent Sales representation</div>
+                            <div>• New market penetration</div>
+                            <div>• Core customer execution</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service 4: Sell-Through -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6 overflow-hidden">
+                    <div style="background-size:cover" class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">4.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Sell-Through</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Consumer Activation</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8 space-y-2">
+                            <div>• Merchandising Services</div>
+                            <div>• POS material execution</div>
+                            <div>• Promotion/Event activation</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+<div class="w-full min-h-screen   relative bg-white overflow-hidden">
+  <div class="w-full px-4 md:px-8 lg:px-10 xl:px-10 pt-8 md:pt-12 lg:pt-[8] pb-8 md:pb-12">
+    <!-- Header Section -->
+    <div class="w-full flex flex-col justify-start items-start gap-3 mb-8 md:mb-12 lg:mb-16">
+      <div class="text-red-500 text-xs md:text-sm lg:text-base font-medium font-['Inter'] uppercase leading-5 md:leading-6 tracking-widest">
+        OUR CATEGORIES
+      </div>
+      <div class="text-black text-2xl md:text-3xl lg:text-4xl font-bold font-['Merriweather'] leading-7 md:leading-9 lg:leading-[48px] max-w-4xl">
+        We Help Manage Many of The Categories You Love
+      </div>
+    </div>
+
+    <!-- Categories Grid - 3x2 with banner in second row -->
+    <div class="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+      <!-- Row 1: Three categories -->
+      <!-- Category 1: Shampoo -->
+      <div data-state="hover" class="w-full aspect-[4/3] lg:aspect-square relative overflow-hidden group cursor-pointer rounded-lg md:rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
+        <!-- Image Placeholder -->
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-300 flex items-center justify-center">
+          <div class="text-center p-6">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg class="w-8 h-8 md:w-10 md:h-10 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z"/>
+              </svg>
+            </div>
+            <div class="text-blue-800 text-sm md:text-base font-medium">
+              [Category Image: Hair care products]
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overlay and Text -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-center">
+          <div class="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Oswald'] leading-tight">
+            Shampoo
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 2: Multicultural Hair -->
+      <div data-state="hover" class="w-full aspect-[4/3] lg:aspect-square relative overflow-hidden group cursor-pointer rounded-lg md:rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
+        <!-- Image Placeholder -->
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-100 to-purple-300 flex items-center justify-center">
+          <div class="text-center p-6">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg class="w-8 h-8 md:w-10 md:h-10 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/>
+                <circle cx="12" cy="9" r="1.5"/>
+                <circle cx="16.5" cy="12" r="1.5"/>
+                <circle cx="7.5" cy="12" r="1.5"/>
+              </svg>
+            </div>
+            <div class="text-purple-800 text-sm md:text-base font-medium">
+              [Category Image: Multicultural hair products]
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overlay and Text -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-center">
+          <div class="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Oswald'] leading-tight">
+            Multicultural Hair
+          </div>
+        </div>
+      </div>
+
+      <!-- Category 3: Healthy Snacks -->
+      <div data-state="hover" class="w-full aspect-[4/3] lg:aspect-square relative overflow-hidden group cursor-pointer rounded-lg md:rounded-xl shadow-sm hover:shadow-lg transition-all duration-300">
+        <!-- Image Placeholder -->
+        <div class="absolute inset-0 bg-gradient-to-br from-green-100 to-green-300 flex items-center justify-center">
+          <div class="text-center p-6">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg class="w-8 h-8 md:w-10 md:h-10 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-8-15.03-8-15.03 0h15.03zM1.02 17h15v2h-15v-2z"/>
+              </svg>
+            </div>
+            <div class="text-green-800 text-sm md:text-base font-medium">
+              [Category Image: Healthy snacks display]
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overlay and Text -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-center">
+          <div class="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Oswald'] leading-tight">
+            Healthy Snacks
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Body Hygiene + Banner spanning 2 columns -->
+      <!-- Category 4: Body Hygiene -->
+      <div data-state="hover" class="w-full aspect-[4/3] lg:aspect-square relative overflow-hidden group cursor-pointer rounded-lg md:rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 lg:col-span-1">
+        <!-- Image Placeholder -->
+        <div class="absolute inset-0 bg-gradient-to-br from-pink-100 to-pink-300 flex items-center justify-center">
+          <div class="text-center p-6">
+            <div class="w-16 h-16 md:w-20 md:h-20 bg-white/30 rounded-full flex items-center justify-center mb-4 mx-auto">
+              <svg class="w-8 h-8 md:w-10 md:h-10 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M21 6h-3.17l-1.24-1.35A1.99 1.99 0 0015.12 4h-6.4c.17.3.28.63.28 1 0 1.1-.9 2-2 2s-2-.9-2-2c0-.37.11-.7.28-1H8.4c-.66 0-1.26.32-1.63.84L3.12 10c-.46.62-.5 1.42-.12 2.08l2.08 3.66c.22.39.63.64 1.08.64h2v6h2v-6h4v6h2v-6h2c.45 0 .86-.25 1.08-.64l2.08-3.66c.38-.66.34-1.46-.12-2.08L18.5 6.5 21 6zM6.85 8h10.29l1.04 3H5.81l1.04-3zM19.3 13.39l-1.59 2.82h-11.4L4.7 13.39l3.11-5.21h8.37l3.12 5.21z"/>
+              </svg>
+            </div>
+            <div class="text-pink-800 text-sm md:text-base font-medium">
+              [Category Image: Body hygiene products]
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overlay and Text -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent"></div>
+        <div class="absolute bottom-0 left-0 right-0 p-4 md:p-6 text-center">
+          <div class="text-white text-2xl md:text-3xl lg:text-4xl font-bold font-['Oswald'] leading-tight">
+            Body Hygiene
+          </div>
+        </div>
+      </div>
+
+      <!-- Banner - Spans 2 columns on desktop -->
+      <div class="w-full  lg:col-span-2 bg-red-500 rounded-lg md:rounded-xl shadow-sm overflow-hidden">
+        <div class=" inset-0 flex items-center justify-center p-6 md:p-8 lg:p-10 xl:p-12">
+          <div class="text-center text-white text-xl md:text-2xl lg:text-3xl xl:text-4xl font-normal font-['Oswald'] leading-7 md:leading-8 lg:leading-10 xl:leading-[3.5rem]">
+            We take a full service approach to your business. No matter the scope of the project, every assignment gives us the opportunity to exceed expectations!
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        <!-- Business Pillars Section - Made Responsive -->
+        <div class="w-full px-4 md:px-8 lg:px-28 py-8 md:py-12 lg:py-16">
+            <div class="flex flex-col justify-center items-start gap-6 md:gap-7">
+                <div class="text-red-500 text-xs md:text-base font-medium font-inter uppercase leading-6 tracking-widest">OUR culture</div>
+                <div class="text-red-500 text-2xl md:text-3xl lg:text-4xl font-medium font-oswald leading-7 md:leading-8">Results Business Pillars</div>
+                
+                <!-- Pillar 1: Consultation -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6">
+                    <div style="background-size:cover"  class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">1.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Consultation</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Strategic Guidance</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8">
+                            Experienced-based insight on category, customers, competition, competencies required to win
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pillar 2: Representation -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6">
+                    <div style="background-size:cover"  class="w-full md:w-52 h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base">Image/Icon</div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">2.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Representation</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Market Presence</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8">
+                            Experienced-based insight on category, customers, competition, competencies required to win
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pillar 3: Acceleration -->
+                <div class="w-full py-4 md:py-6 bg-white border-t border-b border-black flex flex-col md:flex-row justify-start items-start gap-4 md:gap-6">
+                    <div style="background-size:cover" class="w-full md:w-52  h-40 md:h-60 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <div class="text-gray-500 text-sm md:text-base"></div>
+                    </div>
+                    <div class="w-full md:w-[70%] lg:w-[768px] flex flex-col justify-start items-start gap-2.5">
+                        <div class="flex justify-start items-center gap-2">
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">3.</div>
+                            <div class="text-black text-xl md:text-2xl font-bold font-oswald">Acceleration</div>
+                        </div>
+                        <div class="text-black text-lg md:text-xl font-normal font-oswald leading-6 md:leading-8">Growth Momentum</div>
+                        <div class="text-neutral-500 text-base md:text-lg lg:text-xl font-semibold font-manrope leading-6 md:leading-8">
+                            Sales Goals Attainment plus Innovative pull-through via effective and proven POS merchandising programs
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA Banner -->
+                <div class="w-full h-auto md:h-52 bg-red-500 outline outline-2 outline-offset-[-2px] outline-white flex flex-col justify-center items-center gap-4 md:gap-5 p-6 md:p-8">
+                    <div class="text-white text-xl md:text-2xl lg:text-3xl font-bold font-manrope leading-8 md:leading-10 text-center">
+                        A Winning Strategy To Maximize RESULTS
+                    </div>
+                    <div class="text-white text-base md:text-lg lg:text-xl font-normal font-manrope leading-6 md:leading-8 text-center">
+                        We take a full service approach to your business. No matter the scope of the project, every assignment gives us the opportunity to exceed expectations!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final CTA Section (like index.html) -->
+        <div class="w-full hidden px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
+            <div class="w-full max-w-[825px] flex flex-col justify-start items-start gap-4 md:gap-5">
+                <div class="self-stretch text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-oswald leading-7 md:leading-8">
+                    Every Brand Deserves Results
+                </div>
+                <div class="self-stretch text-center text-white text-base sm:text-lg md:text-xl lg:text-2xl font-normal font-oswald leading-6 md:leading-8">
+                    Clients stay for years — some even decades — because we fight for their today and their tomorrow. Through trends, transitions, and seasons of change, their growth remains our goal.
+                </div>
+            </div>
+            
+            <button class="group w-full sm:w-auto h-16 relative hover:no-shadow-[0px_6px_6px_0px_rgba(0,0,0,0.35)] transition-shadow duration-300">
+                <div class="w-full sm:w-72 h-14 px-4 sm:px-7 py-2.5 bg-red-500 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-white flex justify-center items-center gap-2.5 hover:bg-red-600 transition-colors duration-300">
+                    <div class="flex justify-center items-center gap-3">
+                        <div class="text-white text-sm sm:text-base font-extrabold font-inter">
+                            Let us be your champion
+                        </div>
+                        <div class="relative overflow-visible">
+                            <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:translate-x-1 transition-transform duration-300">
+                                <path d="M23 9H1M23 9L16.7143 17M23 9L16.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const hamburger = document.getElementById('hamburger');
+        const closeMenu = document.getElementById('closeMenu');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const overlay = document.getElementById('overlay');
+        
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+        
+        hamburger.addEventListener('click', openMobileMenu);
+        closeMenu.addEventListener('click', closeMobileMenu);
+        overlay.addEventListener('click', closeMobileMenu);
+        
+        const mobileLinks = mobileMenu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', closeMobileMenu);
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMobileMenu();
+            }
+        });
+    });
+</script>
+<script src="cms.js"></script>
+</body>
+</html>
