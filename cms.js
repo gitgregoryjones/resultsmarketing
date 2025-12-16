@@ -1,10 +1,6 @@
 (function () {
-  const STORAGE_KEY = 'cmsContentOverrides';
-  const TAG_STORAGE_KEY = 'cmsTaggedElements';
-  let remoteContent = {};
-  let overrides = {};
+  const API_ENDPOINT = '/api/content';
   let mergedContent = {};
-  let taggedElements = {};
   let editMode = false;
   let selectedElement = null;
 
@@ -50,106 +46,6 @@
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
 
-  function loadOverrides() {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      overrides = stored ? JSON.parse(stored) : {};
-    } catch (err) {
-      overrides = {};
-      console.warn('Unable to parse local overrides', err);
-    }
-  }
-
-  function persistOverrides() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
-  }
-
-  function loadTaggedElements() {
-    try {
-      const stored = localStorage.getItem(TAG_STORAGE_KEY);
-      taggedElements = stored ? JSON.parse(stored) : {};
-    } catch (err) {
-      taggedElements = {};
-      console.warn('Unable to parse saved tags', err);
-    }
-  }
-
-  function persistTaggedElements() {
-    localStorage.setItem(TAG_STORAGE_KEY, JSON.stringify(taggedElements));
-  }
-
-  function applyTaggedElements() {
-    Object.entries(taggedElements).forEach(([path, key]) => {
-      const el = document.body.querySelector(path);
-      if (el) {
-        el.setAttribute('data-cms-text', key);
-      }
-    });
-  }
-
-  async function fetchRemoteContent() {
-    try {
-      const res = await fetch('./content.json');
-      if (!res.ok) throw new Error(res.statusText);
-      remoteContent = await res.json();
-    } catch (err) {
-      console.warn('Failed to fetch content.json', err);
-      remoteContent = {};
-    }
-  }
-
-  function mergeContent() {
-    mergedContent = { ...remoteContent, ...overrides };
-  }
-
-  function applyContent() {
-    document.querySelectorAll('[data-cms-text]').forEach((el) => {
-      const key = el.getAttribute('data-cms-text');
-      if (key && mergedContent[key] !== undefined) {
-        el.textContent = mergedContent[key];
-      }
-    });
-    refreshList();
-  }
-
-  function getExistingKeys() {
-    return Array.from(document.querySelectorAll('[data-cms-text]'))
-      .map((el) => el.getAttribute('data-cms-text'))
-      .filter(Boolean);
-  }
-
-  function ensureUniqueKey(base, currentKey) {
-    const existing = new Set([...getExistingKeys(), ...Object.keys(overrides)]);
-    if (currentKey) existing.delete(currentKey);
-    if (!existing.has(base)) return base;
-    let i = 2;
-    let candidate = `${base}-${i}`;
-    while (existing.has(candidate)) {
-      i += 1;
-      candidate = `${base}-${i}`;
-    }
-    return candidate;
-  }
-
-  function generateKeySuggestion(el) {
-    const tag = el.tagName.toLowerCase();
-    const hash = Math.random().toString(36).slice(2, 6);
-    return ensureUniqueKey(`auto.${tag}.${hash}`);
-  }
-
-  function toggleEdit() {
-    editMode = !editMode;
-    toggleButton.textContent = editMode ? 'Done' : 'Edit';
-    sidebar.classList.toggle('open', editMode);
-    outline.style.display = editMode ? 'block' : 'none';
-    if (!editMode) {
-      selectedElement = null;
-      clearMessage();
-      clearForm();
-      removeOutlines();
-    }
-  }
-
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
@@ -190,18 +86,42 @@
     positionOutline(target);
   }
 
-  function handleClick(e) {
-    if (!editMode) return;
-    const target = e.target;
-    if (isCmsUi(target)) return;
-    if (!target.textContent.trim()) {
-      messageEl.textContent = 'Select an element that contains text.';
-      messageEl.style.color = '#ef4444';
-      return;
+  function toggleEdit() {
+    editMode = !editMode;
+    toggleButton.textContent = editMode ? 'Done' : 'Edit';
+    sidebar.classList.toggle('open', editMode);
+    outline.style.display = editMode ? 'block' : 'none';
+    if (!editMode) {
+      selectedElement = null;
+      clearMessage();
+      clearForm();
+      removeOutlines();
     }
-    e.preventDefault();
-    e.stopPropagation();
-    selectElement(target);
+  }
+
+  function getExistingKeys() {
+    return Array.from(document.querySelectorAll('[data-cms-text]'))
+      .map((el) => el.getAttribute('data-cms-text'))
+      .filter(Boolean);
+  }
+
+  function ensureUniqueKey(base, currentKey) {
+    const existing = new Set([...getExistingKeys(), ...Object.keys(mergedContent)]);
+    if (currentKey) existing.delete(currentKey);
+    if (!existing.has(base)) return base;
+    let i = 2;
+    let candidate = `${base}-${i}`;
+    while (existing.has(candidate)) {
+      i += 1;
+      candidate = `${base}-${i}`;
+    }
+    return candidate;
+  }
+
+  function generateKeySuggestion(el) {
+    const tag = el.tagName.toLowerCase();
+    const hash = Math.random().toString(36).slice(2, 6);
+    return ensureUniqueKey(`auto.${tag}.${hash}`);
   }
 
   function selectElement(el) {
@@ -236,7 +156,19 @@
     });
   }
 
-  function saveSelection() {
+  function buildElementPath(el) {
+    const segments = [];
+    let node = el;
+    while (node && node.nodeType === 1 && node !== document.body) {
+      const siblings = Array.from(node.parentNode.children);
+      const index = siblings.indexOf(node) + 1;
+      segments.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
+      node = node.parentNode;
+    }
+    return segments.length ? `body > ${segments.join(' > ')}` : '';
+  }
+
+  async function saveSelection() {
     if (!selectedElement) {
       messageEl.textContent = 'Click a text element to edit it.';
       messageEl.style.color = '#ef4444';
@@ -252,51 +184,72 @@
 
     const currentKey = selectedElement.getAttribute('data-cms-text');
     const uniqueKey = ensureUniqueKey(key, currentKey);
+    const originalOuterHTML = selectedElement.outerHTML;
+
     if (uniqueKey !== key) {
       messageEl.textContent = `Key exists. Saved as ${uniqueKey}.`;
     } else {
       clearMessage();
     }
 
-    if (currentKey && currentKey !== uniqueKey) {
-      delete overrides[currentKey];
-    }
-
     selectedElement.setAttribute('data-cms-text', uniqueKey);
     selectedElement.textContent = value;
-    overrides[uniqueKey] = value;
-    persistOverrides();
     const path = buildElementPath(selectedElement);
-    if (path) {
-      taggedElements[path] = uniqueKey;
-      persistTaggedElements();
+    const updatedOuterHTML = selectedElement.outerHTML;
+
+    try {
+      const res = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: uniqueKey, value, path, originalOuterHTML, updatedOuterHTML }),
+      });
+      if (!res.ok) {
+        throw new Error('Save failed');
+      }
+      const data = await res.json();
+      mergedContent = data.content || mergedContent;
+      refreshList();
+    } catch (err) {
+      messageEl.textContent = 'Unable to save content to the server.';
+      messageEl.style.color = '#ef4444';
     }
-    mergeContent();
+  }
+
+  function handleClick(e) {
+    if (!editMode) return;
+    const target = e.target;
+    if (isCmsUi(target)) return;
+    if (!target.textContent.trim()) {
+      messageEl.textContent = 'Select an element that contains text.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    selectElement(target);
+  }
+
+  function applyContent() {
+    document.querySelectorAll('[data-cms-text]').forEach((el) => {
+      const key = el.getAttribute('data-cms-text');
+      if (key && mergedContent[key] !== undefined) {
+        el.textContent = mergedContent[key];
+      }
+    });
     refreshList();
   }
 
-  function buildElementPath(el) {
-    const segments = [];
-    let node = el;
-    while (node && node.nodeType === 1 && node !== document.body) {
-      const siblings = Array.from(node.parentNode.children);
-      const index = siblings.indexOf(node) + 1;
-      segments.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
-      node = node.parentNode;
+  async function hydrate() {
+    try {
+      const res = await fetch(API_ENDPOINT);
+      if (res.ok) {
+        const data = await res.json();
+        mergedContent = data.content || {};
+      }
+      applyContent();
+    } catch (err) {
+      console.warn('Hydration failed', err);
     }
-    return segments.length ? `body > ${segments.join(' > ')}` : '';
-  }
-
-  function hydrate() {
-    fetchRemoteContent()
-      .then(loadOverrides)
-      .then(loadTaggedElements)
-      .then(() => {
-        applyTaggedElements();
-        mergeContent();
-        applyContent();
-      })
-      .catch((err) => console.warn('Hydration error', err));
   }
 
   toggleButton.addEventListener('click', toggleEdit);

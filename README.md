@@ -1,29 +1,35 @@
 # Results Marketing Inline CMS Demo
 
-A tiny tag-and-hydrate CMS MVP built with plain HTML, CSS, and JavaScript. Content is hydrated from `content.json` and can be overridden locally in the browser via `localStorage`.
+A tiny tag-and-hydrate CMS MVP now backed by a Node.js server. Content is hydrated server-side from `content.json` and edits persist by writing back to that file via a simple API.
 
 ## How it works
-1. Static HTML contains elements with `data-cms-text="key"` attributes.
-2. On load, `cms.js` fetches `content.json`, merges any overrides stored in `localStorage`, and swaps text content for each tagged element.
-3. A floating **Edit** button toggles edit mode. While enabled you can click any text, assign a key, edit its value in the sidebar, and save the override locally.
+1. HTML contains elements with `data-cms-text="key"` attributes.
+2. The Node server reads `content.json` and renders the page with matching text replacements so content is visible to crawlers and users on first paint.
+3. The floating **Edit** button toggles edit mode. While enabled you can click any text, assign a key, edit its value in the sidebar, and save the changes back to `content.json` through `/api/content`.
+4. Newly tagged elements persist because the server rewrites `index.html` with the added `data-cms-text` attribute and latest text.
 
 ## Local development
-Because browsers block `fetch` on `file://`, run a simple HTTP server from the repo root:
+Run the lightweight Node server from the repo root:
 
 ```bash
-python3 -m http.server 8080
+node server.js
 ```
 
-Then open [http://localhost:8080](http://localhost:8080) in your browser to view and edit the page.
+Then open [http://localhost:3000](http://localhost:3000) in your browser to view and edit the page.
 
 ## Files
 - `index.html` – Demo page using tagged text elements.
-- `content.json` – Default content values keyed by `data-cms-text`.
-- `cms.js` – Inline CMS logic (hydration, edit mode, sidebar UI, overrides).
+- `content.json` – Content values keyed by `data-cms-text`, persisted on save.
+- `cms.js` – Inline CMS logic (hydration, edit mode, sidebar UI, server sync).
 - `cms.css` – Styling for the editor controls.
+- `server.js` – Minimal Node server that renders `index.html` with content and exposes `/api/content`.
+
+## API
+- `GET /api/content` – Returns `{ content }` from `content.json`.
+- `POST /api/content` – Accepts `{ key, value, originalOuterHTML, updatedOuterHTML }`, updates `content.json`, and rewrites `index.html` with new tags when provided.
 
 ## Notes
-- Local overrides are stored under the `cmsContentOverrides` key in `localStorage`.
-- Auto-tagged elements persist between reloads via `cmsTaggedElements` (paths mapped to their keys).
-- Saving a new key will auto-adjust duplicates (e.g., `key`, `key-2`, ...).
+- Content persists to disk in `content.json`; no `localStorage` is used.
+- Server-side rendering keeps the hydrated text in the HTML response for SEO.
+- Auto-tagged elements are stored by rewriting `index.html` so they survive reloads.
 - The editor only supports plain text (`textContent`) for this MVP.
