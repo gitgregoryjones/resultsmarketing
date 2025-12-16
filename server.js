@@ -13,6 +13,13 @@ const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 const PUBLISH_TARGET = ROOT;
 
+function sanitizeSiteName(name = '') {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .trim();
+}
+
 function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
   const base = path.basename(fileName);
   if (!base.toLowerCase().endsWith('.html')) {
@@ -71,6 +78,7 @@ async function readRawContent() {
 
 async function readContent(fileName = DEFAULT_FILE) {
   const parsed = await readRawContent();
+  const siteName = sanitizeSiteName(parsed.siteName || '');
   const safeFile = sanitizeHtmlFile(fileName);
   const hasFileMap = parsed && parsed.__files && typeof parsed.__files === 'object';
   const fileBlock = hasFileMap ? parsed.__files[safeFile] || null : null;
@@ -97,14 +105,18 @@ async function readContent(fileName = DEFAULT_FILE) {
     return acc;
   }, {});
 
-  return { values, tags };
+  return { values, tags, siteName };
 }
 
-async function writeContent({ values, tags, fileName = DEFAULT_FILE }) {
+async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE }) {
   const safeFile = sanitizeHtmlFile(fileName);
   const raw = await readRawContent();
   const payload = { ...raw };
   const fileBlock = { ...values };
+
+  if (siteName !== undefined) {
+    payload.siteName = sanitizeSiteName(siteName);
+  }
 
   if (tags && Object.keys(tags).length) {
     fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
@@ -119,7 +131,7 @@ async function writeContent({ values, tags, fileName = DEFAULT_FILE }) {
 
   if (safeFile === DEFAULT_FILE) {
     Object.keys(payload)
-      .filter((key) => key !== '__files')
+      .filter((key) => key !== '__files' && key !== 'siteName')
       .forEach((key) => delete payload[key]);
     Object.assign(payload, fileBlock);
   }
@@ -191,6 +203,15 @@ function replaceDataBackground(html, key, value) {
   });
 }
 
+function prefixAssetPath(value, siteName) {
+  if (!siteName || !value || typeof value !== 'string') return value;
+  const trimmedSite = siteName.startsWith('/') ? siteName : `/${siteName}`;
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith('data:')) return value;
+  if (value.startsWith(trimmedSite)) return value;
+  if (value.startsWith('/')) return `${trimmedSite}${value}`;
+  return `${trimmedSite}/${value}`;
+}
+
 function stripCmsAssets(html) {
   const withoutCss = html.replace(/<link[^>]+href=["']cms\.css["'][^>]*>\s*/gi, '');
   return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
@@ -258,6 +279,8 @@ async function copyAdminAssets() {
 
 async function publishSite() {
   const files = await listHtmlFiles();
+  const rawContent = await readRawContent();
+  const siteName = sanitizeSiteName(rawContent.siteName || '');
 
   // Do not remove any existing published output; simply overwrite the files we
   // render so older exports remain available if needed.
@@ -267,7 +290,7 @@ async function publishSite() {
 
   for (const file of files) {
     try {
-      let html = await renderFile(file);
+      let html = await renderFile(file, { prefixImagesWithSiteName: Boolean(siteName), siteName });
       html = stripCmsAssets(html);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
@@ -280,20 +303,49 @@ async function publishSite() {
   await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
   await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
 
+  if (siteName) {
+    const siteRoot = path.join(PUBLISH_TARGET, siteName);
+    await ensureDir(siteRoot);
+    await copyDirIfExists(IMAGES_DIR, path.join(siteRoot, 'images'));
+    await copyDirIfExists(BRANDS_DIR, path.join(siteRoot, 'brands'));
+  }
+
   return publishedFiles;
 }
 
-async function renderFile(fileName = DEFAULT_FILE) {
+async function renderFile(fileName = DEFAULT_FILE, options = {}) {
   const safeFile = sanitizeHtmlFile(fileName);
   const htmlPath = htmlPathFor(safeFile);
-  const [html, { values, tags }] = await Promise.all([
+  const [html, { values, tags, siteName }] = await Promise.all([
     fs.readFile(htmlPath, 'utf8'),
     readContent(safeFile),
   ]);
 
   const hydratedHtml = applyTagsToHtml(html, tags);
 
-  return Object.entries(values).reduce((acc, [key, value]) => {
+  const typeByKey = Object.values(tags || {}).reduce((acc, entry) => {
+    const key = typeof entry === 'string' ? entry : entry && entry.key;
+    const type = entry && entry.type ? entry.type : 'text';
+    if (key) acc[key] = type;
+    return acc;
+  }, {});
+
+  const prefixedValues = Object.entries(values).reduce((acc, [key, value]) => {
+    let inferredType = typeByKey[key];
+    if (!inferredType && options.prefixImagesWithSiteName) {
+      if (hydratedHtml.includes(`data-cms-image="${key}"`)) inferredType = 'image';
+      if (hydratedHtml.includes(`data-cms-bg="${key}"`)) inferredType = 'background';
+    }
+
+    if (options.prefixImagesWithSiteName && (inferredType === 'image' || inferredType === 'background')) {
+      acc[key] = prefixAssetPath(value, options.siteName || siteName);
+    } else {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
+  return Object.entries(prefixedValues).reduce((acc, [key, value]) => {
     if (acc.includes(`data-cms-image="${key}"`)) {
       return replaceDataImage(acc, key, value);
     }
@@ -347,9 +399,9 @@ async function serveStatic(res, filePath) {
 
 async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
   if (req.method === 'GET') {
-    const { values, tags } = await readContent(fileName);
+    const { values, tags, siteName } = await readContent(fileName);
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ content: values, tags }));
+    res.end(JSON.stringify({ content: values, tags, siteName }));
     return;
   }
 
@@ -370,8 +422,10 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           type,
           image,
           file,
+          siteName,
         } = payload;
-        if (!key) {
+        const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
+        if (!key && sanitizedSiteName === undefined) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
@@ -379,7 +433,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
         const targetFile = sanitizeHtmlFile(file || fileName);
         const htmlPath = htmlPathFor(targetFile);
-        const { values, tags } = await readContent(targetFile);
+        const { values, tags, siteName: existingSiteName } = await readContent(targetFile);
         let storedValue = value ?? '';
         if (type === 'image' || type === 'background') {
           try {
@@ -403,26 +457,38 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           }
         }
 
-        values[key] = storedValue;
-        if (elementPath) {
-          tags[elementPath] = { key, type: type || 'text' };
-        }
-        await writeContent({ values, tags, fileName: targetFile });
+        if (key) {
+          values[key] = storedValue;
+          if (elementPath) {
+            tags[elementPath] = { key, type: type || 'text' };
+          }
 
-        if (originalOuterHTML && updatedOuterHTML) {
-          try {
-            let currentHtml = await fs.readFile(htmlPath, 'utf8');
-            if (currentHtml.includes(originalOuterHTML)) {
-              currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
-              await fs.writeFile(htmlPath, currentHtml);
+          if (originalOuterHTML && updatedOuterHTML) {
+            try {
+              let currentHtml = await fs.readFile(htmlPath, 'utf8');
+              if (currentHtml.includes(originalOuterHTML)) {
+                currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
+                await fs.writeFile(htmlPath, currentHtml);
+              }
+            } catch (err) {
+              console.warn(`Unable to persist new tag in ${targetFile}`, err);
             }
-          } catch (err) {
-            console.warn(`Unable to persist new tag in ${targetFile}`, err);
           }
         }
 
+        const finalSiteName =
+          sanitizedSiteName !== undefined ? sanitizedSiteName : existingSiteName || sanitizeSiteName(siteName);
+
+        if (siteName !== undefined && !finalSiteName) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Site name cannot be empty' }));
+          return;
+        }
+
+        await writeContent({ values, tags, fileName: targetFile, siteName: finalSiteName });
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ content: values, tags }));
+        res.end(JSON.stringify({ content: values, tags, siteName: finalSiteName }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));

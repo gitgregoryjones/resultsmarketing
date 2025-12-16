@@ -189,6 +189,33 @@
   background: white;
 }
 
+.cms-site-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+#cms-sitename {
+  width: 100%;
+}
+
+#cms-save-sitename {
+  border: 1px solid var(--cms-border);
+  background: #111827;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+#cms-save-sitename:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
 .cms-field input:focus,
 .cms-field textarea:focus {
   outline: none;

@@ -43,6 +43,14 @@
         <label for="cms-file">HTML file</label>
         <select id="cms-file"></select>
       </div>
+      <div class="cms-field cms-field--site">
+        <label for="cms-sitename">Site name (used when publishing)</label>
+        <div class="cms-site-input">
+          <input id="cms-sitename" type="text" placeholder="enter-site-name" />
+          <button type="button" id="cms-save-sitename">Save</button>
+        </div>
+        <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
+      </div>
       <div class="cms-publish">
         <button type="button" id="cms-publish">Publish static site</button>
         <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
@@ -93,6 +101,8 @@
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
   const publishButton = sidebar.querySelector('#cms-publish');
+  const siteNameInput = sidebar.querySelector('#cms-sitename');
+  const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
@@ -100,6 +110,7 @@
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
+  let siteName = '';
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -109,6 +120,10 @@
 
   applySidebarPosition();
 
+  function sanitizeSiteName(value) {
+    return (value || '').toLowerCase().replace(/\s+/g, '').trim();
+  }
+
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
@@ -116,6 +131,14 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+  }
+
+  function updateSiteName(value) {
+    siteName = sanitizeSiteName(value);
+    siteNameInput.value = siteName;
+    if (!siteName) {
+      siteNameInput.placeholder = 'required for publishing';
+    }
   }
 
   function clearMessage() {
@@ -134,6 +157,31 @@
     const query = new URLSearchParams();
     query.set('file', currentFile);
     return `${API_ENDPOINT}?${query.toString()}`;
+  }
+
+  async function persistSiteName() {
+    const desiredName = sanitizeSiteName(siteNameInput.value);
+    if (!desiredName) {
+      messageEl.textContent = 'Enter a site name (lowercase, no spaces) before saving.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+
+    try {
+      const res = await fetch(buildApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteName: desiredName, file: currentFile }),
+      });
+      if (!res.ok) throw new Error('Site name save failed');
+      const data = await res.json();
+      updateSiteName(data.siteName || desiredName);
+      messageEl.textContent = 'Site name saved for publishing.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to save site name. Please try again.';
+      messageEl.style.color = '#ef4444';
+    }
   }
 
   async function loadFiles() {
@@ -450,6 +498,7 @@
       const data = await res.json();
       mergedContent = data.content || mergedContent;
       storedTags = data.tags || storedTags;
+      updateSiteName(data.siteName || siteName);
       applyStoredTags(storedTags);
       applyContent();
       refreshList();
@@ -460,6 +509,13 @@
   }
 
   async function publishStaticSite() {
+    if (!siteName) {
+      messageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
+      messageEl.style.color = '#ef4444';
+      siteNameInput.focus();
+      return;
+    }
+
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
@@ -546,6 +602,7 @@
         const data = await res.json();
         mergedContent = data.content || {};
         storedTags = data.tags || {};
+        updateSiteName(data.siteName || siteName);
         applyStoredTags(storedTags);
       }
       applyContent();
@@ -559,6 +616,7 @@
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
