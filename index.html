@@ -1,0 +1,846 @@
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Navigation</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .mobile-menu {
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+        .hamburger-line {
+            transition: all 0.3s ease;
+        }
+        .hamburger.open .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+        .hamburger.open .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.open .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+    </style>
+    </head>
+<body class="nobg-white">
+<div class="flex justify-center bg-black">
+    <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] max-w-md lg:max-w-[1440px] ">
+        
+    <nav class="w-full py-4 px-4 bg-white md:px-8 border-b border-gray-100">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            
+            <div class="w-[147px] h-[69px] flex items-center justify-center rounded">
+                <img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="images/logowhite.png" >
+            </div>
+
+            
+            <div class="hidden md:flex flex-1 justify-center items-center">
+                <div class="flex justify-start items-center gap-6 lg:gap-8">
+                    <a href="#" class="text-red-500 text-base font-bold hover:text-red-600 transition-colors">Home</a>
+                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">About Us</a>
+                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">News</a>
+                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">Our Services</a>
+                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">Contact Us</a>
+                </div>
+            </div>
+             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded">
+                <img alt="Power BI" class="max-h-full max-w-full object-contain" data-cms-image="cta.logo" src="images/powerbi.png" >
+            </div>
+
+            
+            <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
+                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+            </button>
+        </div>
+
+        
+        <div class="md:hidden mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-6" id="mobileMenu">
+            
+            <div class="flex justify-end mb-8">
+                <button class="hamburger open w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="closeMenu">
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                </button>
+            </div>
+            
+            
+            <div class="flex flex-col space-y-6">
+                <a href="#" class="text-red-500 text-lg font-bold hover:text-red-600 transition-colors py-2 border-b border-gray-100">Home</a>
+                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">About Us</a>
+                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">News</a>
+                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">Our Services</a>
+                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">Contact Us</a>
+                
+                
+                <a href="#" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity">
+                    <span class="text-gray-700">CTA Image/Link</span>
+                </a>
+            </div>
+        </div>
+
+        
+        <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay"></div>
+    </nav>
+
+        <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden">
+            
+            <!DOCTYPE html>
+
+
+
+    
+    
+    <main class="hidden max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Responsive Navigation Demo</h1>
+        <p class="text-gray-600 mb-4">This navigation includes:</p>
+        <ul class="list-disc pl-5 text-gray-600 space-y-2">
+            <li>Logo (147x69) on the left</li>
+            <li>Centered navigation menu on desktop</li>
+            <li>CTA Image/Link (115x49) on the right</li>
+            <li>Hamburger menu on mobile</li>
+            <li>Mobile menu with slide-in animation</li>
+            <li>Preserved logo in nav area on all devices</li>
+        </ul>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.getElementById('hamburger');
+            const closeMenu = document.getElementById('closeMenu');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('overlay');
+            
+            function openMobileMenu() {
+                mobileMenu.classList.add('open');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            }
+            
+            function closeMobileMenu() {
+                mobileMenu.classList.remove('open');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = 'auto'; // Re-enable scrolling
+            }
+            
+            hamburger.addEventListener('click', openMobileMenu);
+            closeMenu.addEventListener('click', closeMobileMenu);
+            overlay.addEventListener('click', closeMobileMenu);
+            
+            // Close menu when clicking on a link (optional)
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', closeMobileMenu);
+            });
+            
+            // Close menu on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeMobileMenu();
+                }
+            });
+        });
+    </script>
+
+            
+            
+            <div class="w-full h-full flex flex-col lg:flex-row">
+                
+                
+                <div class="w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300 overflow-hidden" data-cms-bg="hero.image" style="background-image:url('/images/Atlanta-Google-Maps-1765865748044.png')"images/Products.png'); background-size:cover; background-position:center;">
+                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                    <div class="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
+                        <div class="text-xs lg:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
+                            <span class="font-semibold">Image:</span> Business professional analyzing growth metrics
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div class="w-full lg:w-[37%] h-auto lg:h-full bg-black p-6 lg:p-12 flex flex-col justify-center">
+                    <div class="max-w-full lg:max-w-[480px]">
+                        
+                        <h1 class="text-white text-3xl md:text-4xl lg:text-6xl font-semibold font-['Oswald'] leading-tight lg:leading-[64px] mb-4 lg:mb-6">
+                            <span data-cms-text="hero.headline.prefix">Every Brand Deserves A</span>
+                            <span class="text-red-500 block lg:inline" data-cms-text="hero.headline.emphasis">Champion</span>
+                        </h1>
+
+                        
+                        <p class="text-white text-lg md:text-xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed lg:leading-8 mb-6 lg:mb-10" data-cms-text="hero.supporting">That&#39;s why your growth is our goal.</p>
+
+                        
+                        <button class="group w-full px-6 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300">
+                            <span class="text-white text-sm sm:text-base font-extrabold font-['Inter']" data-cms-text="cta.primary">Let&#39;s Talk RESULTS</span>
+                            <svg class="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300"
+                                viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M23 9.00006H1M23 9.00006L16.7143 17.0001M23 9.00006L16.7143 1.00006"
+                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl hidden lg:block"></div>
+            <div class="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/5 rounded-full translate-y-24 -translate-x-24 blur-3xl hidden lg:block"></div>
+        </div>
+        
+        
+        
+        
+        <div class="w-full min-h-[351px] flex flex-col-reverse lg:flex-row">
+            
+            <div class="flex-1 min-w-[300px] bg-[#F4483A] p-8 flex flex-col justify-center">
+                <div class="text-center text-white text-4xl md:text-3xl font-bold font-manrope mb-5">
+                    We Help Brands Earn Their Place...And Keep It
+                </div>
+                <div class="text-white text-xl md:text-2xl font-semibold font-manrope leading-8">
+                    We grow brands across beauty, personal care, and specialty retail — with the same conviction, care, and commitment we've brought to multicultural and independent founders for decades
+                </div>
+            </div>
+            
+            
+            <div class="flex-[1.4] min-w-[400px] bg-white p-8 flex items-center justify-center">
+                <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-8 justify-items-center">
+                    
+                    <div class="flex flex-col items-center gap-5 max-w-[300px]">
+                        <div id="counter1" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0%</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Average sell-through (as of Nov 2025)
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="flex flex-col items-center gap-4 max-w-[300px]">
+                        <div id="counter2" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Brands Managed in 2026
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="flex flex-col items-center gap-4 max-w-[300px]">
+                        <div id="counter3" class="text-[#F4483A] text-7xl md:text-8xl font-medium font-oswald text-center">0</div>
+                        <div class="text-[#F4483A] text-xl md:text-2xl font-normal font-inter text-center">
+                            Years Guiding Brands With Integrity
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <div class="w-full bg-white nobg-[#F5F6F8] py-8 md:py-12 overflow-hidden">
+            <div class="scroll-container relative w-full overflow-hidden">
+                
+                <div class="absolute left-0 top-0 bottom-0 w-12 md:w-24 nobg-gradient-to-r from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
+                <div class="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#F5F6F8] to-transparent z-10 pointer-events-none"></div>
+                
+                
+                <div class="flex animate-scroll">
+                    
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                    </div>
+                    
+                    
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                    </div>
+                    
+                    
+                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set">
+                        <img src="brands/dierbergs.png" alt="Dierbergs" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/blains.png" alt="Blain's Farm & Fleet" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/bjs.png" alt="BJ's" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/kroger.png" alt="Kroger" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/amazon.png" alt="Amazon" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/target.png" alt="Target" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                        <img src="brands/schnucks.png" alt="Schnucks" class="h-8 md:h-10 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" >
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+        
+        .accordion-content.active {
+            max-height: 500px;
+        }
+        
+        .accordion-icon {
+            transition: transform 0.3s ease;
+        }
+        
+        .accordion-header.active .accordion-icon {
+            transform: rotate(45deg);
+        }
+    </style>
+
+
+    <div class="container bg-white md:p-12 max-w-7xl mx-auto px-4 ">
+        
+        <div class="mb-8 md:mb-12 text-center md:text-left">
+            <h1 class="text-5xl font-bold text-red-500 mb-4 leading-tight">
+                We're the missing piece of your growth puzzle
+            </h1>
+            <p class="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-snug">
+                Your champion at every phase of the journey
+            </p>
+        </div>
+
+        
+        <div class="hidden md:block mb-8 ">
+            
+            <div class="flex flex-wrap gap-4 lg:gap-5 mb-0">
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800 active-tab" data-tab="assessment">
+                    Assessment
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="growth-planning">
+                    Growth Planning
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-in">
+                    Sell-in
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="sell-through">
+                    Sell-Through
+                </button>
+                <button class="tab-btn w-48 h-11 bg-black text-white font-semibold text-base rounded-tl-[20px] rounded-tr-[20px] flex items-center justify-center transition-all duration-300 hover:bg-gray-800" data-tab="analytics">
+                    Analytics
+                </button>
+            </div>
+            
+            
+            <div class="tab-content active bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="assessment-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Clear-eyed truth. Market reality. Insights that protect your next move.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Read more about our services
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="growth-planning-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Strategic roadmap for sustainable growth. We build actionable plans that drive results.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Learn more about growth planning
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-in-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Effective channel strategy and distribution. We ensure your products reach the right markets.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Discover our sell-in approach
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="sell-through-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Driving consumer demand and purchase. We create campaigns that convert interest into sales.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    Explore sell-through strategies
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="tab-content hidden bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg" id="analytics-content">
+                <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
+                    Data-driven insights and performance tracking. We measure what matters to optimize your growth.
+                </h3>
+                <a href="#" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200">
+                    See our analytics capabilities
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <g clip-path="url(#clip0_1_420)">
+                            <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </g>
+                        <defs>
+                            <clipPath id="clip0_1_420">
+                                <rect width="20" height="20" fill="white"></rect>
+                            </clipPath>
+                        </defs>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        
+        <div class="md:hidden mb-8">
+            
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header active bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="assessment">
+                    <span>Assessment</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content active bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Clear-eyed truth. Market reality. Insights that protect your next move.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Read more about our services
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"></rect>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="growth-planning">
+                    <span>Growth Planning</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Strategic roadmap for sustainable growth. We build actionable plans that drive results.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Learn more about growth planning
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"></rect>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="sell-in">
+                    <span>Sell-in</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Effective channel strategy and distribution. We ensure your products reach the right markets.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Discover our sell-in approach
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"></rect>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="sell-through">
+                    <span>Sell-Through</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Driving consumer demand and purchase. We create campaigns that convert interest into sales.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            Explore sell-through strategies
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"></rect>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="accordion-item mb-4 rounded-2xl overflow-hidden shadow-md">
+                <div class="accordion-header bg-black text-white p-5 font-semibold text-lg flex justify-between items-center cursor-pointer transition-all duration-300 hover:bg-gray-800" data-accordion="analytics">
+                    <span>Analytics</span>
+                    <span class="accordion-icon text-2xl">+</span>
+                </div>
+                <div class="accordion-content bg-red-500 text-white">
+                    <div class="p-6">
+                        <h4 class="text-xl font-medium mb-4 leading-relaxed">
+                            Data-driven insights and performance tracking. We measure what matters to optimize your growth.
+                        </h4>
+                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                            See our analytics capabilities
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <g clip-path="url(#clip0_1_420)">
+                                    <path d="M9.99996 13.3334L13.3333 10.0001M13.3333 10.0001L9.99996 6.66675M13.3333 10.0001L6.66663 10.0001M18.3333 10.0001C18.3333 14.6025 14.6023 18.3334 9.99996 18.3334C5.39759 18.3334 1.66663 14.6025 1.66663 10.0001C1.66663 5.39771 5.39759 1.66675 9.99996 1.66675C14.6023 1.66675 18.3333 5.39771 18.3333 10.0001Z" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+                                </g>
+                                <defs>
+                                    <clipPath id="clip0_1_420">
+                                        <rect width="20" height="20" fill="white"></rect>
+                                    </clipPath>
+                                </defs>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="mt-8 md:mt-12 text-center md:text-left">
+            <p class="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-relaxed">
+                We don't just show up — we stand tall, guide the strategy, manage the execution, and stay accountable to results that last.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Desktop Tabs Functionality
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            function switchTab(activeTab) {
+                // Remove active class from all tabs
+                tabButtons.forEach(button => {
+                    button.classList.remove('active-tab');
+                    button.style.backgroundColor = '#000';
+                });
+                
+                // Hide all tab contents
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Add active class to clicked tab
+                activeTab.classList.add('active-tab');
+                activeTab.style.backgroundColor = '#e53e3e';
+                
+                // Show corresponding content
+                const tabId = activeTab.getAttribute('data-tab');
+                const activeContent = document.getElementById(`${tabId}-content`);
+                if (activeContent) {
+                    activeContent.classList.remove('hidden');
+                }
+            }
+            
+            // Add click event to each tab button
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    switchTab(this);
+                });
+            });
+            
+            // Mobile Accordion Functionality
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    // Toggle active class on clicked header
+                    const isActive = this.classList.contains('active');
+                    
+                    // Close all accordion items first
+                    accordionHeaders.forEach(otherHeader => {
+                        otherHeader.classList.remove('active');
+                        otherHeader.style.backgroundColor = '#000';
+                        const otherContent = otherHeader.nextElementSibling;
+                        otherContent.classList.remove('active');
+                        otherContent.style.maxHeight = '0';
+                        otherContent.style.padding = '0';
+                    });
+                    
+                    // If it wasn't active, open it
+                    if (!isActive) {
+                        this.classList.add('active');
+                        this.style.backgroundColor = '#e53e3e';
+                        
+                        const content = this.nextElementSibling;
+                        content.classList.add('active');
+                        content.style.maxHeight = '500px';
+                        content.style.padding = '1.5rem';
+                    }
+                });
+            });
+            
+            // Optional: Auto-switch tabs on desktop
+            let currentTabIndex = 0;
+            const autoSwitchTabs = setInterval(() => {
+                // Only run on desktop (medium screens and up)
+                if (window.innerWidth >= 768 && tabButtons.length > 0) {
+                    currentTabIndex = (currentTabIndex + 1) % tabButtons.length;
+                    switchTab(tabButtons[currentTabIndex]);
+                }
+            }, 5000);
+            
+            // Stop auto-switching when user interacts
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    clearInterval(autoSwitchTabs);
+                });
+            });
+            
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    clearInterval(autoSwitchTabs);
+                });
+            });
+        });
+    </script>
+        
+        
+        <div class="w-full px-4 sm:px-8 md:px-16 lg:px-32 xl:px-64 py-10 md:py-16 lg:py-20 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black flex flex-col justify-start items-center gap-8 md:gap-10">
+            <div class="w-full max-w-[825px] flex flex-col justify-start items-start gap-4 md:gap-5">
+                <div class="self-stretch text-center text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-normal font-['Oswald'] leading-7 md:leading-8">
+                    Every Brand Deserves Results
+                </div>
+                <div class="self-stretch text-center text-white text-base sm:text-lg md:text-xl lg:text-2xl font-normal font-['Oswald'] leading-6 md:leading-8">
+                    Clients stay for years — some even decades — because we fight for their today and their tomorrow. Through trends, transitions, and seasons of change, their growth remains our goal.
+                </div>
+            </div>
+            
+            <button class="group w-full sm:w-auto h-16 relative no-shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] hover:no-shadow-[0px_6px_6px_0px_rgba(0,0,0,0.35)] no-transition-shadow duration-300">
+                <div class="w-full sm:w-72 h-14 px-4 sm:px-7 py-2.5  bg-red-500 rounded-[10px] outline outline-1 outline-offset-[-1px] outline-white flex justify-center items-center gap-2.5 hover:bg-red-600 transition-colors duration-300">
+                    <div class="flex justify-center items-center gap-3">
+                        <div class="text-white text-sm sm:text-base font-extrabold font-['Inter']">
+                            Let us be your champion
+                        </div>
+                        <div class="relative overflow-visible">
+                            <svg width="24" height="18" viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:translate-x-1 transition-transform duration-300">
+                                <path d="M23 9H1M23 9L16.7143 17M23 9L16.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                            
+                            <svg width="30" height="18" viewBox="0 0 30 18" fill="none" xmlns="http://www.w3.org/2000/svg" class="absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <path d="M29 9H1M29 9L22.7143 17M29 9L22.7143 1" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-33.33%);
+        }
+    }
+    
+    .animate-scroll {
+        display: flex;
+        animation: scroll 30s linear infinite;
+    }
+    
+    .scroll-container:hover .animate-scroll {
+        animation-play-state: paused;
+    }
+    
+    .scroll-container {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        width: 100%;
+    }
+    
+    .scroll-container::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .logo-set {
+        flex-shrink: 0;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 640px) {
+        .logo-set {
+            gap: 1.5rem !important;
+        }
+        
+        .animate-scroll {
+            animation-duration: 20s !important; /* Faster on mobile */
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .scroll-container {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    }
+</style>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&family=Oswald:wght@200..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+</style>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Oswald:wght@200..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+</style>
+<style>
+
+
+.font-manrope {
+    font-family: 'Manrope', sans-serif;
+}
+
+.font-oswald {
+    font-family: 'Oswald', sans-serif;
+}
+
+.font-inter {
+    font-family: 'Inter', sans-serif;
+}
+</style>
+
+<script>
+(function() {
+    // Target values
+    const targets = [82, 100, 30];
+    const suffixes = ['%', '+', '+'];
+    const durations = [2000, 1500, 1800];
+    const counters = ['counter1', 'counter2', 'counter3'];
+    
+    function animateCounter(elementId, target, suffix, duration) {
+        const element = document.getElementById(elementId);
+        const increment = target / (duration / 16);
+        let current = 0;
+        
+        function updateCounter() {
+            current += increment;
+            if (current >= target) {
+                current = target;
+                element.textContent = target + suffix;
+                return;
+            }
+            
+            element.textContent = Math.floor(current) + suffix;
+            requestAnimationFrame(updateCounter);
+        }
+        
+        updateCounter();
+    }
+    
+    function startAnimationWhenVisible() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, index) => {
+                if (entry.isIntersecting) {
+                    animateCounter(counters[index], targets[index], suffixes[index], durations[index]);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.90 });
+        
+        counters.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) observer.observe(element);
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', startAnimationWhenVisible);
+    } else {
+        startAnimationWhenVisible();
+    }
+})();
+</script>
+</body>
+</html>
