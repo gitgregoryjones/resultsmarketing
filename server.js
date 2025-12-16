@@ -228,6 +228,7 @@ function applyTagsToHtml(html, tags = {}) {
     Object.entries(tags).forEach(([selector, entry]) => {
       const key = typeof entry === 'string' ? entry : entry && entry.key;
       const type = entry && entry.type ? entry.type : 'text';
+      const link = entry && entry.link ? String(entry.link) : '';
       if (!key) return;
 
       const target = root.querySelector(selector);
@@ -239,6 +240,32 @@ function applyTagsToHtml(html, tags = {}) {
         target.setAttribute('data-cms-bg', key);
       } else {
         target.setAttribute('data-cms-text', key);
+      }
+
+      if (link) {
+        const parent = target.parentNode;
+        const isAnchorParent = parent && parent.tagName && parent.tagName.toLowerCase() === 'a';
+        if (isAnchorParent) {
+          parent.setAttribute('href', link.trim());
+          return;
+        }
+
+        const wrapperRoot = parse('<a></a>');
+        const wrapper = wrapperRoot.querySelector('a');
+        wrapper.setAttribute('href', link.trim());
+        wrapper.setAttribute('data-cms-link-wrapper', 'true');
+
+        if (parent) {
+          const siblings = parent.childNodes || [];
+          const index = siblings.indexOf(target);
+          wrapper.appendChild(target);
+          wrapper.parentNode = parent;
+          if (index >= 0) {
+            siblings.splice(index, 1, wrapper);
+          } else {
+            parent.appendChild(wrapper);
+          }
+        }
       }
     });
 
