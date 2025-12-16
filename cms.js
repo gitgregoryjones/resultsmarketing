@@ -283,6 +283,7 @@
   }
 
   function selectElement(el) {
+    document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
