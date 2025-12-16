@@ -70,6 +70,10 @@
         <label for="cms-key">Field key</label>
         <input id="cms-key" type="text" placeholder="auto.tag.hash" />
       </div>
+      <div class="cms-field">
+        <label for="cms-link">Link (optional)</label>
+        <input id="cms-link" type="text" placeholder="https://example.com or #section" />
+      </div>
       <div class="cms-field cms-field--text">
         <label for="cms-value">Content</label>
         <textarea id="cms-value" placeholder="Type content here..."></textarea>
@@ -95,6 +99,7 @@
 
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
+  const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
@@ -127,6 +132,7 @@
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
+    linkInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
@@ -372,6 +378,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
+    linkInput.value = el.getAttribute('data-link') || '';
     keyInput.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
@@ -426,6 +433,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
+    const link = linkInput.value.trim();
     if (!key) {
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
@@ -449,6 +457,11 @@
     }
 
     selectedElement.setAttribute(attributeName, uniqueKey);
+    if (link) {
+      selectedElement.setAttribute('data-link', link);
+    } else {
+      selectedElement.removeAttribute('data-link');
+    }
     let bodyValue = value;
     let imagePayload = null;
 
@@ -487,6 +500,7 @@
           path,
           type: selectedType,
           image: imagePayload,
+          link,
           originalOuterHTML,
           updatedOuterHTML,
           file: currentFile,
@@ -554,6 +568,18 @@
     selectElement(target);
   }
 
+  function handleLinkNavigation(e) {
+    if (editMode) return;
+    if (isCmsUi(e.target)) return;
+    const target = e.target.closest ? e.target.closest('[data-link]') : null;
+    if (!target) return;
+    const href = target.getAttribute('data-link');
+    if (!href) return;
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = href;
+  }
+
   function applyContent() {
     document.querySelectorAll('[data-cms-text]').forEach((el) => {
       const key = el.getAttribute('data-cms-text');
@@ -591,6 +617,11 @@
         } else {
           el.setAttribute('data-cms-text', key);
         }
+        if (entry && entry.link) {
+          el.setAttribute('data-link', entry.link);
+        } else {
+          el.removeAttribute('data-link');
+        }
       }
     });
   }
@@ -614,6 +645,7 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
+  document.addEventListener('click', handleLinkNavigation);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
   siteNameSaveButton.addEventListener('click', persistSiteName);

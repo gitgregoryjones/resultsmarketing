@@ -100,7 +100,7 @@ async function readContent(fileName = DEFAULT_FILE) {
     if (typeof entry === 'string') {
       acc[path] = { key: entry, type: 'text' };
     } else if (entry && typeof entry === 'object' && entry.key) {
-      acc[path] = { key: entry.key, type: entry.type || 'text' };
+      acc[path] = { key: entry.key, type: entry.type || 'text', ...(entry.link ? { link: entry.link } : {}) };
     }
     return acc;
   }, {});
@@ -122,6 +122,9 @@ async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE })
     fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
       if (!entry || !entry.key) return acc;
       acc[path] = { key: entry.key, type: entry.type || 'text' };
+      if (entry.link) {
+        acc[path].link = entry.link;
+      }
       return acc;
     }, {});
   }
@@ -238,11 +241,82 @@ function applyTagsToHtml(html, tags = {}) {
       } else {
         target.setAttribute('data-cms-text', key);
       }
+      if (entry && entry.link) {
+        target.setAttribute('data-link', entry.link);
+      }
     });
 
     return root.toString();
   } catch (err) {
     console.warn('Unable to apply stored tags to HTML', err);
+    return html;
+  }
+}
+
+function ensureAnchorStyles(element) {
+  const styleAttr = element.getAttribute('style') || '';
+  const declarations = styleAttr
+    .split(';')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .reduce((acc, declaration) => {
+      const [prop, ...rest] = declaration.split(':');
+      if (prop && rest.length) {
+        acc[prop.trim().toLowerCase()] = rest.join(':').trim();
+      }
+      return acc;
+    }, {});
+
+  if (!declarations.color) declarations.color = 'inherit';
+  if (!declarations['text-decoration']) declarations['text-decoration'] = 'none';
+
+  const merged = Object.entries(declarations)
+    .map(([prop, value]) => `${prop}: ${value}`)
+    .join('; ');
+
+  element.setAttribute('style', merged);
+}
+
+function wrapDataLinks(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('[data-link]').forEach((el) => {
+      const href = (el.getAttribute('data-link') || '').trim();
+      if (!href) return;
+
+      const parent = el.parentNode;
+      const tagName = (el.tagName || '').toLowerCase();
+
+      if (tagName === 'a') {
+        if (!el.getAttribute('href')) {
+          el.setAttribute('href', escapeHtml(href));
+        }
+        ensureAnchorStyles(el);
+        return;
+      }
+
+      if (parent && parent.tagName && parent.tagName.toLowerCase() === 'a') {
+        if (!parent.getAttribute('href')) {
+          parent.setAttribute('href', escapeHtml(href));
+        }
+        ensureAnchorStyles(parent);
+        return;
+      }
+
+      const anchor = parse(`<a href="${escapeHtml(href)}"></a>`).firstChild;
+      ensureAnchorStyles(anchor);
+      if (typeof el.replaceWith === 'function') {
+        el.replaceWith(anchor);
+      } else if (parent && typeof parent.insertBefore === 'function' && typeof parent.removeChild === 'function') {
+        parent.insertBefore(anchor, el);
+        parent.removeChild(el);
+      }
+      anchor.appendChild(el);
+    });
+
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to wrap data-link elements', err);
     return html;
   }
 }
@@ -291,6 +365,7 @@ async function publishSite() {
   for (const file of files) {
     try {
       let html = await renderFile(file, { prefixImagesWithSiteName: Boolean(siteName), siteName });
+      html = wrapDataLinks(html);
       html = stripCmsAssets(html);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
@@ -421,10 +496,12 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           path: elementPath,
           type,
           image,
+          link,
           file,
           siteName,
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
+        const linkValue = typeof link === 'string' ? link.trim() : '';
         if (!key && sanitizedSiteName === undefined) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
@@ -460,7 +537,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         if (key) {
           values[key] = storedValue;
           if (elementPath) {
-            tags[elementPath] = { key, type: type || 'text' };
+            tags[elementPath] = { key, type: type || 'text', ...(linkValue ? { link: linkValue } : {}) };
           }
 
           if (originalOuterHTML && updatedOuterHTML) {
