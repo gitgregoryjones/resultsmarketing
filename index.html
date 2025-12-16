@@ -39,9 +39,8 @@
     <nav class="w-full py-4 px-4 bg-white md:px-8 border-b border-gray-100">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <!-- Logo (147x69) -->
-            <div class="w-[147px] h-[69px] flex items-center justify-center rounded" style="background-image:url('images/logowhite.png')">
-                <!-- Replace with your actual logo -->
-                
+            <div class="w-[147px] h-[69px] flex items-center justify-center rounded">
+                <img src="images/logowhite.png" alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" />
             </div>
 
             <!-- Desktop Menu (hidden on mobile) -->
@@ -54,9 +53,8 @@
                     <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">Contact Us</a>
                 </div>
             </div>
-             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-image:url('images/powerbi.png')">
-                <!-- Replace with your actual logo -->
-                
+             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded">
+                <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" data-cms-image="cta.logo" />
             </div>
 
             <!-- Hamburger Menu Button (mobile only) -->
@@ -161,52 +159,12 @@
             <div class="w-full h-full flex flex-col lg:flex-row">
                 
                 <!-- Left side - Image placeholder area -->
-                <div class="w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300">
-                    <!-- Responsive image placeholder -->
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <!-- Modern placeholder with business theme -->
-                        <div class="relative w-full h-full overflow-hidden">
-                            <!-- Background pattern -->
-                            <div class="absolute inset-0 " style="background-image:url('images/Products.png')"></div>
-                            
-                            <!-- Abstract business graphic -->
-                            <div class="hidden style="background-image:url('images/Products.png')" absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                                <div class="relative w-48 h-48 lg:w-80 lg:h-80">
-                                    <!-- Growth chart icon -->
-                                    <svg class="w-full h-full" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <!-- Background circle -->
-                                        <circle cx="100" cy="100" r="90" fill="#f8fafc" stroke="#e2e8f0" stroke-width="2"/>
-                                        
-                                        <!-- Growth line -->
-                                        <path d="M40 120 L60 100 L80 130 L100 90 L120 110 L140 80 L160 140" 
-                                            stroke="#ef4444" stroke-width="4" stroke-linecap="round" fill="none"/>
-                                        
-                                        <!-- Data points -->
-                                        <circle cx="40" cy="120" r="6" fill="#ef4444"/>
-                                        <circle cx="60" cy="100" r="6" fill="#ef4444"/>
-                                        <circle cx="80" cy="130" r="6" fill="#ef4444"/>
-                                        <circle cx="100" cy="90" r="6" fill="#ef4444"/>
-                                        <circle cx="120" cy="110" r="6" fill="#ef4444"/>
-                                        <circle cx="140" cy="80" r="6" fill="#ef4444"/>
-                                        <circle cx="160" cy="140" r="6" fill="#ef4444"/>
-                                        
-                                        <!-- Handshake icon overlay -->
-                                        <g transform="translate(130, 60) scale(0.15)">
-                                            <path d="M60 40V20C60 8.954 51.046 0 40 0S20 8.954 20 20v20h-4c-8.836 0-16 7.164-16 16v8c0 8.836 7.164 16 16 16h32c8.836 0 16-7.164 16-16v-8c0-8.836-7.164-16-16-16h-4z" 
-                                                fill="#1e40af"/>
-                                            <path d="M100 40V20C100 8.954 91.046 0 80 0S60 8.954 60 20v20h-4c-8.836 0-16 7.164-16 16v8c0 8.836 7.164 16 16 16h32c8.836 0 16-7.164 16-16v-8c0-8.836-7.164-16-16-16h-4z" 
-                                                fill="#1e40af" transform="translate(-36, 0)"/>
-                                        </g>
-                                    </svg>
-                                </div>
-                            </div>
-                            
-                            <!-- Overlay text for image placeholder -->
-                            <div class="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
-                                <div class="text-xs lg:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
-                                    <span class="font-semibold">Image:</span> Business professional analyzing growth metrics
-                                </div>
-                            </div>
+                <div class="w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300 overflow-hidden">
+                    <img src="images/Products.png" alt="Hero illustration" class="absolute inset-0 w-full h-full object-cover" data-cms-image="hero.image" />
+                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
+                    <div class="absolute bottom-4 left-4 lg:bottom-8 lg:left-8">
+                        <div class="text-xs lg:text-sm text-gray-600 bg-white/80 backdrop-blur-sm px-3 py-2 rounded-lg">
+                            <span class="font-semibold">Image:</span> Business professional analyzing growth metrics
                         </div>
                     </div>
                 </div>

@@ -7,18 +7,27 @@ const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const INDEX_FILE = path.join(ROOT, 'index.html');
 const CONTENT_FILE = path.join(ROOT, 'content.json');
+const IMAGES_DIR = path.join(ROOT, 'images');
 
 async function readContent() {
   try {
     const raw = await fs.readFile(CONTENT_FILE, 'utf8');
     const parsed = JSON.parse(raw);
-    const tags =
+    const rawTags =
       parsed && typeof parsed.__tags === 'object' && parsed.__tags !== null
         ? parsed.__tags
         : {};
     const values =
       parsed && typeof parsed === 'object' && parsed !== null ? { ...parsed } : {};
     delete values.__tags;
+    const tags = Object.entries(rawTags).reduce((acc, [path, entry]) => {
+      if (typeof entry === 'string') {
+        acc[path] = { key: entry, type: 'text' };
+      } else if (entry && typeof entry === 'object' && entry.key) {
+        acc[path] = { key: entry.key, type: entry.type || 'text' };
+      }
+      return acc;
+    }, {});
     return { values, tags };
   } catch (err) {
     console.warn('Unable to read content.json, falling back to empty object', err);
@@ -29,7 +38,11 @@ async function readContent() {
 async function writeContent({ values, tags }) {
   const payload = { ...values };
   if (tags && Object.keys(tags).length) {
-    payload.__tags = tags;
+    payload.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
+      if (!entry || !entry.key) return acc;
+      acc[path] = { key: entry.key, type: entry.type || 'text' };
+      return acc;
+    }, {});
   }
   await fs.writeFile(CONTENT_FILE, JSON.stringify(payload, null, 2));
 }
@@ -54,12 +67,31 @@ function replaceDataText(html, key, value) {
   });
 }
 
+function replaceDataImage(html, key, value) {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(
+    `<img([^>]*?)\\sdata-cms-image=["']${escapedKey}["']([^>]*?)\\/?>`,
+    'g'
+  );
+
+  return html.replace(pattern, (_match, before, after) => {
+    let cleanedBefore = before.replace(/\s?src=["'][^"']*["']/, '');
+    let cleanedAfter = after.replace(/\s?src=["'][^"']*["']/, '');
+    return `<img${cleanedBefore} data-cms-image="${key}" src="${escapeHtml(value)}"${cleanedAfter}>`;
+  });
+}
+
 async function renderIndex() {
   const [html, { values }] = await Promise.all([
     fs.readFile(INDEX_FILE, 'utf8'),
     readContent(),
   ]);
-  return Object.entries(values).reduce((acc, [key, value]) => replaceDataText(acc, key, value), html);
+  return Object.entries(values).reduce((acc, [key, value]) => {
+    if (acc.includes(`data-cms-image="${key}"`)) {
+      return replaceDataImage(acc, key, value);
+    }
+    return replaceDataText(acc, key, value);
+  }, html);
 }
 
 function contentTypeFor(filePath) {
@@ -112,7 +144,7 @@ async function handleApiContent(req, res) {
     req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
-        const { key, value, originalOuterHTML, updatedOuterHTML, path } = payload;
+        const { key, value, originalOuterHTML, updatedOuterHTML, path: elementPath, type, image } = payload;
         if (!key) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
@@ -120,9 +152,32 @@ async function handleApiContent(req, res) {
         }
 
         const { values, tags } = await readContent();
-        values[key] = value ?? '';
-        if (path) {
-          tags[path] = key;
+        let storedValue = value ?? '';
+        if (type === 'image') {
+          try {
+            await fs.mkdir(IMAGES_DIR, { recursive: true });
+          } catch (err) {
+            console.warn('Unable to ensure images directory', err);
+          }
+
+          if (image && image.sourceType === 'upload' && image.data && image.name) {
+            const extension = path.extname(image.name) || '.png';
+            const safeBase = path.basename(image.name, extension).replace(/[^a-z0-9_-]/gi, '_');
+            const filename = `${safeBase || 'uploaded'}-${Date.now()}${extension}`;
+            const targetPath = path.join(IMAGES_DIR, filename);
+            const base64 = image.data.includes(',') ? image.data.split(',')[1] : image.data;
+            await fs.writeFile(targetPath, Buffer.from(base64, 'base64'));
+            storedValue = `/images/${filename}`;
+          }
+
+          if (image && image.sourceType === 'url' && image.url) {
+            storedValue = image.url;
+          }
+        }
+
+        values[key] = storedValue;
+        if (elementPath) {
+          tags[elementPath] = { key, type: type || 'text' };
         }
         await writeContent({ values, tags });
 

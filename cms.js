@@ -4,6 +4,7 @@
   let storedTags = {};
   let editMode = false;
   let selectedElement = null;
+  let selectedType = 'text';
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -19,16 +20,32 @@
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
-      <p class="cms-pill">Click any text while editing</p>
+      <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
+      <div class="cms-field">
+        <label>Content type</label>
+        <div class="cms-type">
+          <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
+          <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
+        </div>
+      </div>
       <div class="cms-field">
         <label for="cms-key">Field key</label>
         <input id="cms-key" type="text" placeholder="auto.tag.hash" />
       </div>
-      <div class="cms-field">
+      <div class="cms-field cms-field--text">
         <label for="cms-value">Content</label>
         <textarea id="cms-value" placeholder="Type content here..."></textarea>
+      </div>
+      <div class="cms-field cms-field--image">
+        <label for="cms-image-url">Image URL</label>
+        <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+        <div class="cms-upload">
+          <label class="cms-upload__label" for="cms-image-file">Upload image</label>
+          <input id="cms-image-file" type="file" accept="image/*" />
+        </div>
+        <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
       <button id="cms-save">Save</button>
       <div id="cms-message"></div>
@@ -42,6 +59,10 @@
 
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
+  const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
+  const imageUrlInput = sidebar.querySelector('#cms-image-url');
+  const imageFileInput = sidebar.querySelector('#cms-image-file');
+  const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
@@ -50,6 +71,10 @@
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
+    imageUrlInput.value = '';
+    imageFileInput.value = '';
+    imagePreview.textContent = 'No image selected';
+    imagePreview.style.backgroundImage = 'none';
   }
 
   function clearMessage() {
@@ -80,7 +105,7 @@
   function handleHover(e) {
     if (!editMode) return;
     const target = e.target;
-    if (isCmsUi(target) || !target.textContent.trim()) {
+    if (isCmsUi(target)) {
       outline.style.display = 'none';
       return;
     }
@@ -101,8 +126,8 @@
   }
 
   function getExistingKeys() {
-    return Array.from(document.querySelectorAll('[data-cms-text]'))
-      .map((el) => el.getAttribute('data-cms-text'))
+    return Array.from(document.querySelectorAll('[data-cms-text],[data-cms-image]'))
+      .map((el) => el.getAttribute(el.hasAttribute('data-cms-image') ? 'data-cms-image' : 'data-cms-text'))
       .filter(Boolean);
   }
 
@@ -121,20 +146,99 @@
 
   function generateKeySuggestion(el) {
     const tag = el.tagName.toLowerCase();
-    const hash = Math.random().toString(36).slice(2, 6);
-    return ensureUniqueKey(`auto.${tag}.${hash}`);
+    const text = (el.textContent || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const base = text ? `${tag}.${text}` : `auto.${tag}`;
+    return ensureUniqueKey(base);
+  }
+
+  function setTypeSelection(type) {
+    typeInputs.forEach((input) => {
+      input.checked = input.value === type;
+    });
+    sidebar.classList.toggle('cms-image-mode', type === 'image');
+    selectedType = type;
+  }
+
+  function determineElementType(el) {
+    if (el.tagName === 'IMG' || el.hasAttribute('data-cms-image')) {
+      return 'image';
+    }
+    const bg = window.getComputedStyle(el).backgroundImage;
+    if (bg && bg !== 'none' && el.hasAttribute('data-cms-image')) {
+      return 'image';
+    }
+    return 'text';
+  }
+
+  function updateImagePreview(src) {
+    if (!src) {
+      imagePreview.textContent = 'No image selected';
+      imagePreview.style.backgroundImage = 'none';
+      return;
+    }
+    imagePreview.textContent = '';
+    imagePreview.style.backgroundImage = `url('${src}')`;
+  }
+
+  function getImageValue(el, key) {
+    if (key && mergedContent[key]) return mergedContent[key];
+    if (el.tagName === 'IMG') return el.getAttribute('src');
+    const bg = window.getComputedStyle(el).backgroundImage;
+    if (bg && bg !== 'none') {
+      const match = bg.match(/url\(["']?(.*?)["']?\)/);
+      return match ? match[1] : '';
+    }
+    return '';
+  }
+
+  async function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function buildImagePayload() {
+    const file = imageFileInput.files[0];
+    const urlValue = imageUrlInput.value.trim();
+    if (file) {
+      const data = await readFileAsDataUrl(file);
+      updateImagePreview(data);
+      return { sourceType: 'upload', data, name: file.name };
+    }
+    if (urlValue) {
+      updateImagePreview(urlValue);
+      return { sourceType: 'url', url: urlValue };
+    }
+    return null;
+  }
+
+  function applyImageToElement(el, src) {
+    if (el.tagName === 'IMG') {
+      el.setAttribute('src', src);
+      return;
+    }
+    el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
   function selectElement(el) {
-    removeOutlines();
     selectedElement = el;
+    selectedType = determineElementType(el);
+    setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
-    positionOutline(el);
-
-    const key = el.getAttribute('data-cms-text') || generateKeySuggestion(el);
-    const value = el.textContent.trim();
-    keyInput.value = key;
-    valueInput.value = mergedContent[key] ?? value;
+    const attributeName = selectedType === 'image' ? 'data-cms-image' : 'data-cms-text';
+    const key = el.getAttribute(attributeName);
+    const value = selectedType === 'image' ? getImageValue(el, key) : el.textContent.trim();
+    keyInput.value = key || generateKeySuggestion(el);
+    if (selectedType === 'image') {
+      const displayValue = mergedContent[key] ?? value;
+      imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
+      updateImagePreview(displayValue);
+    } else {
+      valueInput.value = mergedContent[key] ?? value;
+    }
   }
 
   function refreshList() {
@@ -148,7 +252,7 @@
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
       editBtn.addEventListener('click', () => {
-        const el = document.querySelector(`[data-cms-text="${CSS.escape(key)}"]`);
+        const el = document.querySelector(`[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"]`);
         if (el) selectElement(el);
       });
       item.appendChild(label);
@@ -176,14 +280,15 @@
       return;
     }
     const key = keyInput.value.trim();
-    const value = valueInput.value;
+    const value = selectedType === 'image' ? imageUrlInput.value.trim() : valueInput.value;
     if (!key) {
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
       return;
     }
 
-    const currentKey = selectedElement.getAttribute('data-cms-text');
+    const attributeName = selectedType === 'image' ? 'data-cms-image' : 'data-cms-text';
+    const currentKey = selectedElement.getAttribute(attributeName);
     const uniqueKey = ensureUniqueKey(key, currentKey);
     const originalOuterHTML = selectedElement.outerHTML;
 
@@ -193,8 +298,28 @@
       clearMessage();
     }
 
-    selectedElement.setAttribute('data-cms-text', uniqueKey);
-    selectedElement.textContent = value;
+    selectedElement.setAttribute(attributeName, uniqueKey);
+    let bodyValue = value;
+    let imagePayload = null;
+
+    if (selectedType === 'image') {
+      try {
+        imagePayload = await buildImagePayload();
+      } catch (err) {
+        messageEl.textContent = 'Unable to read image file.';
+        messageEl.style.color = '#ef4444';
+        return;
+      }
+      if (!imagePayload && !value) {
+        messageEl.textContent = 'Provide an image URL or upload a file.';
+        messageEl.style.color = '#ef4444';
+        return;
+      }
+      applyImageToElement(selectedElement, value || (imagePayload && imagePayload.data));
+    } else {
+      selectedElement.textContent = value;
+    }
+
     const path = buildElementPath(selectedElement);
     const updatedOuterHTML = selectedElement.outerHTML;
 
@@ -202,7 +327,15 @@
       const res = await fetch(API_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: uniqueKey, value, path, originalOuterHTML, updatedOuterHTML }),
+        body: JSON.stringify({
+          key: uniqueKey,
+          value: bodyValue,
+          path,
+          type: selectedType,
+          image: imagePayload,
+          originalOuterHTML,
+          updatedOuterHTML,
+        }),
       });
       if (!res.ok) {
         throw new Error('Save failed');
@@ -211,6 +344,7 @@
       mergedContent = data.content || mergedContent;
       storedTags = data.tags || storedTags;
       applyStoredTags(storedTags);
+      applyContent();
       refreshList();
     } catch (err) {
       messageEl.textContent = 'Unable to save content to the server.';
@@ -222,8 +356,10 @@
     if (!editMode) return;
     const target = e.target;
     if (isCmsUi(target)) return;
-    if (!target.textContent.trim()) {
-      messageEl.textContent = 'Select an element that contains text.';
+    const hasText = target.textContent && target.textContent.trim();
+    const type = determineElementType(target);
+    if (!hasText && type !== 'image') {
+      messageEl.textContent = 'Select an element that contains text or an image.';
       messageEl.style.color = '#ef4444';
       return;
     }
@@ -239,14 +375,27 @@
         el.textContent = mergedContent[key];
       }
     });
+
+    document.querySelectorAll('[data-cms-image]').forEach((el) => {
+      const key = el.getAttribute('data-cms-image');
+      if (key && mergedContent[key] !== undefined) {
+        applyImageToElement(el, mergedContent[key]);
+      }
+    });
     refreshList();
   }
 
   function applyStoredTags(tags = {}) {
-    Object.entries(tags).forEach(([path, key]) => {
+    Object.entries(tags).forEach(([path, entry]) => {
+      const key = typeof entry === 'string' ? entry : entry.key;
+      const type = typeof entry === 'object' && entry.type ? entry.type : 'text';
       const el = document.querySelector(path);
       if (el && key) {
-        el.setAttribute('data-cms-text', key);
+        if (type === 'image') {
+          el.setAttribute('data-cms-image', key);
+        } else {
+          el.setAttribute('data-cms-text', key);
+        }
       }
     });
   }
@@ -270,6 +419,17 @@
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
+  typeInputs.forEach((input) => {
+    input.addEventListener('change', (e) => setTypeSelection(e.target.value));
+  });
+  imageFileInput.addEventListener('change', () => {
+    if (imageFileInput.files[0]) {
+      const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
+      updateImagePreview(fileUrl);
+    } else {
+      updateImagePreview('');
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', hydrate);
 })();
