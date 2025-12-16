@@ -2,7 +2,13 @@
   const API_ENDPOINT = '/api/content';
   const FILES_ENDPOINT = '/api/files';
   const params = new URLSearchParams(window.location.search);
-  const currentFile = params.get('file') || 'index.html';
+  const pathFile = (() => {
+    const pathName = window.location.pathname || '/';
+    if (pathName === '/' || pathName === '') return 'index.html';
+    const trimmed = pathName.replace(/^\//, '');
+    return trimmed.toLowerCase().endsWith('.html') ? trimmed : `${trimmed}.html`;
+  })();
+  const currentFile = params.get('file') || pathFile;
   let mergedContent = {};
   let storedTags = {};
   let editMode = false;
@@ -507,13 +513,8 @@
   });
   fileSelect.addEventListener('change', () => {
     const nextFile = fileSelect.value;
-    const url = new URL(window.location.href);
-    if (nextFile === 'index.html') {
-      url.searchParams.delete('file');
-    } else {
-      url.searchParams.set('file', nextFile);
-    }
-    window.location.href = url.toString();
+    const nextPath = nextFile === 'index.html' ? '/' : `/${nextFile}`;
+    window.location.href = nextPath;
   });
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {

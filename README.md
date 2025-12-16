@@ -37,4 +37,4 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 
 ## Editing different HTML files
 - The file dropdown in the CMS sidebar lists all `.html` files at the project root (from `/api/files`).
-- Switching files updates the URL to `/?file=<name>` and reloads the page rendered with that file's stored content and tags.
+- Switching files updates the URL to the selected HTML path (for example, `/contact-us.html`) and reloads the page rendered with that file's stored content and tags.
