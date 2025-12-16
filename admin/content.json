@@ -11,7 +11,7 @@
       "hero.supporting": "That's why your growth is our goal.",
       "hero.image": "/images/Products-1765869784445.png",
       "brand.logo": "images/logowhite.png",
-      "cta.logo": "images/powerbi.png",
+      "cta.logo": "/images/image_1-1765870021810.png",
       "features.strategy.title": "Strategy",
       "features.strategy.copy": "Audience-first roadmaps that align every campaign to measurable outcomes.",
       "features.production.title": "Production",
@@ -22,6 +22,10 @@
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
           "key": "hero.image",
           "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3) > img:nth-child(1)": {
+          "key": "cta.logo",
+          "type": "image"
         }
       }
     },
@@ -29,6 +33,7 @@
       "div.let-s-talk-results-ready-to-grow-your-brand-our-team-is-here-to-champion-your-success-": "/images/geejourney_A_Clean_premium_corporate_aesthetic__Focus_on_team_b2fb5187-2314-401b-b5a3-78a40b4affb7_2-1765868468186.png",
       "div.contact-information-our-office-123-marketing-avenuesuite-500new-york-ny-10001-phone-number-1-555-123-4567-mon-fri-9am-6pm-est-email-address-hello-resultsmarketing-com-general-inquiries-follow-us": "/images/ChatGPT_Image_Dec_8__2025__04_28_07_AM-1765868495254.png",
       "div.map-integration-area-google-maps-or-other-service-can-be-embedded-here": "/images/geejourney_give_me_a_43_two_dimensional_speedometer_accelerat_7b9eeeb4-bebb-4b2c-96f1-6df8c743876e_2-1765868556967.png",
+      "auto.img": "/images/image_1-1765870047555.png",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2)": {
           "key": "div.let-s-talk-results-ready-to-grow-your-brand-our-team-is-here-to-champion-your-success-",
@@ -41,6 +46,10 @@
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)": {
           "key": "div.map-integration-area-google-maps-or-other-service-can-be-embedded-here",
           "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3) > img:nth-child(1)": {
+          "key": "auto.img",
+          "type": "image"
         }
       }
     }
@@ -54,7 +63,7 @@
   "hero.supporting": "That's why your growth is our goal.",
   "hero.image": "/images/Products-1765869784445.png",
   "brand.logo": "images/logowhite.png",
-  "cta.logo": "images/powerbi.png",
+  "cta.logo": "/images/image_1-1765870021810.png",
   "features.strategy.title": "Strategy",
   "features.strategy.copy": "Audience-first roadmaps that align every campaign to measurable outcomes.",
   "features.production.title": "Production",
@@ -65,6 +74,10 @@
     "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
       "key": "hero.image",
       "type": "background"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3) > img:nth-child(1)": {
+      "key": "cta.logo",
+      "type": "image"
     }
   }
 }
