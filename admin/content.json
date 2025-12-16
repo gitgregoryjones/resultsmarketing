@@ -18,6 +18,21 @@
       "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
       "features.optimization.title": "Optimization",
       "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+      "auto.img": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+      "auto.img-2": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+      "auto.img-3": "https://purepng.com/public/uploads/large/purepng.com-target-logologobrand-logoiconslogos-251519939151pkaty.png",
+      "auto.img-4": "https://purepng.com/public/uploads/large/purepng.com-target-logologobrand-logoiconslogos-251519939151pkaty.png",
+      "auto.img-5": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
+      "auto.img-6": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
+      "auto.img-7": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTObz4NDqv0wEB-M91YNVvRXanbUtZPg-twAQ&s",
+      "auto.img-8": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+      "a.contact-us": "Contact Us",
+      "auto.img-9": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+      "auto.img-10": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+      "auto.img-11": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png",
+      "auto.img-12": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+      "auto.img-13": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png",
+      "auto.img-14": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
           "key": "hero.image",
@@ -25,6 +40,70 @@
         },
         "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3) > img:nth-child(1)": {
           "key": "cta.logo",
+          "type": "image",
+          "link": "https://app.powerbi.com/singleSignOn?ru=https%3A%2F%2Fapp.powerbi.com%2F%3FnoSignUpCheck%3D1"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(3)": {
+          "key": "auto.img",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(4)": {
+          "key": "auto.img-2",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(6)": {
+          "key": "auto.img-3",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(6)": {
+          "key": "auto.img-4",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(5)": {
+          "key": "auto.img-5",
+          "type": "image",
+          "link": "https://www.amazon.com"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(5)": {
+          "key": "auto.img-6",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(7)": {
+          "key": "auto.img-7",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(4)": {
+          "key": "auto.img-8",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(5)": {
+          "key": "a.contact-us",
+          "type": "text",
+          "link": "contact-us.html"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(1)": {
+          "key": "auto.img-9",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(3) > img:nth-child(1)": {
+          "key": "auto.img-10",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(2)": {
+          "key": "auto.img-11",
+          "type": "image",
+          "link": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(2)": {
+          "key": "auto.img-12",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(3)": {
+          "key": "auto.img-13",
+          "type": "image"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(1)": {
+          "key": "auto.img-14",
           "type": "image"
         }
       }
@@ -70,6 +149,21 @@
   "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
   "features.optimization.title": "Optimization",
   "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+  "auto.img": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+  "auto.img-2": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+  "auto.img-3": "https://purepng.com/public/uploads/large/purepng.com-target-logologobrand-logoiconslogos-251519939151pkaty.png",
+  "auto.img-4": "https://purepng.com/public/uploads/large/purepng.com-target-logologobrand-logoiconslogos-251519939151pkaty.png",
+  "auto.img-5": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
+  "auto.img-6": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
+  "auto.img-7": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTObz4NDqv0wEB-M91YNVvRXanbUtZPg-twAQ&s",
+  "auto.img-8": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+  "a.contact-us": "Contact Us",
+  "auto.img-9": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+  "auto.img-10": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHEHGu1lUggt_vfolR8fqVGcYN9Rg1VTz1VA&s",
+  "auto.img-11": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png",
+  "auto.img-12": "https://1000logos.net/wp-content/uploads/2021/03/Kroger-logo.jpg",
+  "auto.img-13": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png",
+  "auto.img-14": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRRG5LNkcjdh5Mo1WG_vawOsAhFc-CsF84jGQ&s",
   "__tags": {
     "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
       "key": "hero.image",
@@ -77,6 +171,70 @@
     },
     "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3) > img:nth-child(1)": {
       "key": "cta.logo",
+      "type": "image",
+      "link": "https://app.powerbi.com/singleSignOn?ru=https%3A%2F%2Fapp.powerbi.com%2F%3FnoSignUpCheck%3D1"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(3)": {
+      "key": "auto.img",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(4)": {
+      "key": "auto.img-2",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(6)": {
+      "key": "auto.img-3",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(6)": {
+      "key": "auto.img-4",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(5)": {
+      "key": "auto.img-5",
+      "type": "image",
+      "link": "https://www.amazon.com"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(5)": {
+      "key": "auto.img-6",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(7)": {
+      "key": "auto.img-7",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(4)": {
+      "key": "auto.img-8",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > a:nth-child(5)": {
+      "key": "a.contact-us",
+      "type": "text",
+      "link": "contact-us.html"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(1)": {
+      "key": "auto.img-9",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(3) > img:nth-child(1)": {
+      "key": "auto.img-10",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > img:nth-child(2)": {
+      "key": "auto.img-11",
+      "type": "image",
+      "link": "https://www.tellermate.com/ca-en/wp-content/uploads/sites/14/2017/09/Schnucks-Logo-resized.png"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(2)": {
+      "key": "auto.img-12",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(3)": {
+      "key": "auto.img-13",
+      "type": "image"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(4) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > img:nth-child(1)": {
+      "key": "auto.img-14",
       "type": "image"
     }
   }
