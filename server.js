@@ -12,15 +12,26 @@ async function readContent() {
   try {
     const raw = await fs.readFile(CONTENT_FILE, 'utf8');
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+    const tags =
+      parsed && typeof parsed.__tags === 'object' && parsed.__tags !== null
+        ? parsed.__tags
+        : {};
+    const values =
+      parsed && typeof parsed === 'object' && parsed !== null ? { ...parsed } : {};
+    delete values.__tags;
+    return { values, tags };
   } catch (err) {
     console.warn('Unable to read content.json, falling back to empty object', err);
-    return {};
+    return { values: {}, tags: {} };
   }
 }
 
-async function writeContent(content) {
-  await fs.writeFile(CONTENT_FILE, JSON.stringify(content, null, 2));
+async function writeContent({ values, tags }) {
+  const payload = { ...values };
+  if (tags && Object.keys(tags).length) {
+    payload.__tags = tags;
+  }
+  await fs.writeFile(CONTENT_FILE, JSON.stringify(payload, null, 2));
 }
 
 function escapeHtml(value) {
@@ -44,11 +55,11 @@ function replaceDataText(html, key, value) {
 }
 
 async function renderIndex() {
-  const [html, content] = await Promise.all([
+  const [html, { values }] = await Promise.all([
     fs.readFile(INDEX_FILE, 'utf8'),
     readContent(),
   ]);
-  return Object.entries(content).reduce((acc, [key, value]) => replaceDataText(acc, key, value), html);
+  return Object.entries(values).reduce((acc, [key, value]) => replaceDataText(acc, key, value), html);
 }
 
 function contentTypeFor(filePath) {
@@ -87,9 +98,9 @@ async function serveStatic(res, filePath) {
 
 async function handleApiContent(req, res) {
   if (req.method === 'GET') {
-    const content = await readContent();
+    const { values, tags } = await readContent();
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ content }));
+    res.end(JSON.stringify({ content: values, tags }));
     return;
   }
 
@@ -101,16 +112,19 @@ async function handleApiContent(req, res) {
     req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
-        const { key, value, originalOuterHTML, updatedOuterHTML } = payload;
+        const { key, value, originalOuterHTML, updatedOuterHTML, path } = payload;
         if (!key) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
         }
 
-        const content = await readContent();
-        content[key] = value ?? '';
-        await writeContent(content);
+        const { values, tags } = await readContent();
+        values[key] = value ?? '';
+        if (path) {
+          tags[path] = key;
+        }
+        await writeContent({ values, tags });
 
         if (originalOuterHTML && updatedOuterHTML) {
           try {
@@ -125,7 +139,7 @@ async function handleApiContent(req, res) {
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ content }));
+        res.end(JSON.stringify({ content: values, tags }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));

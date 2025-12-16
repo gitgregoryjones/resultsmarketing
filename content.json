@@ -11,5 +11,6 @@
   "features.production.title": "Production",
   "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
   "features.optimization.title": "Optimization",
-  "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert."
+  "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+  "__tags": {}
 }

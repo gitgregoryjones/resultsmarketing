@@ -6,7 +6,7 @@ A tiny tag-and-hydrate CMS MVP now backed by a Node.js server. Content is hydrat
 1. HTML contains elements with `data-cms-text="key"` attributes.
 2. The Node server reads `content.json` and renders the page with matching text replacements so content is visible to crawlers and users on first paint.
 3. The floating **Edit** button toggles edit mode. While enabled you can click any text, assign a key, edit its value in the sidebar, and save the changes back to `content.json` through `/api/content`.
-4. Newly tagged elements persist because the server rewrites `index.html` with the added `data-cms-text` attribute and latest text.
+4. Newly tagged elements persist because the server rewrites `index.html` with the added `data-cms-text` attribute and latest text while also storing their selectors in `content.json` under `__tags`.
 
 ## Local development
 Run the lightweight Node server from the repo root:
@@ -26,7 +26,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 
 ## API
 - `GET /api/content` – Returns `{ content }` from `content.json`.
-- `POST /api/content` – Accepts `{ key, value, originalOuterHTML, updatedOuterHTML }`, updates `content.json`, and rewrites `index.html` with new tags when provided.
+- `POST /api/content` – Accepts `{ key, value, originalOuterHTML, updatedOuterHTML, path }`, updates `content.json` (including tag selectors under `__tags`), and rewrites `index.html` with new tags when provided.
 
 ## Notes
 - Content persists to disk in `content.json`; no `localStorage` is used.

@@ -1,6 +1,7 @@
 (function () {
   const API_ENDPOINT = '/api/content';
   let mergedContent = {};
+  let storedTags = {};
   let editMode = false;
   let selectedElement = null;
 
@@ -208,6 +209,8 @@
       }
       const data = await res.json();
       mergedContent = data.content || mergedContent;
+      storedTags = data.tags || storedTags;
+      applyStoredTags(storedTags);
       refreshList();
     } catch (err) {
       messageEl.textContent = 'Unable to save content to the server.';
@@ -239,12 +242,23 @@
     refreshList();
   }
 
+  function applyStoredTags(tags = {}) {
+    Object.entries(tags).forEach(([path, key]) => {
+      const el = document.querySelector(path);
+      if (el && key) {
+        el.setAttribute('data-cms-text', key);
+      }
+    });
+  }
+
   async function hydrate() {
     try {
       const res = await fetch(API_ENDPOINT);
       if (res.ok) {
         const data = await res.json();
         mergedContent = data.content || {};
+        storedTags = data.tags || {};
+        applyStoredTags(storedTags);
       }
       applyContent();
     } catch (err) {
