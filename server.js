@@ -6,11 +6,12 @@ const { parse } = require('node-html-parser');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
+const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
-const CONTENT_FILE = path.join(ROOT, 'content.json');
+const CONTENT_FILE = path.join(ADMIN_DIR, 'content.json');
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
-const PUBLISHED_DIR = path.join(ROOT, 'published');
+const PUBLISH_TARGET = ROOT;
 
 function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
   const base = path.basename(fileName);
@@ -21,7 +22,7 @@ function sanitizeHtmlFile(fileName = DEFAULT_FILE) {
 }
 
 function htmlPathFor(fileName = DEFAULT_FILE) {
-  return path.join(ROOT, sanitizeHtmlFile(fileName));
+  return path.join(ADMIN_DIR, sanitizeHtmlFile(fileName));
 }
 
 async function ensureDir(dirPath) {
@@ -29,7 +30,7 @@ async function ensureDir(dirPath) {
 }
 
 async function listHtmlFiles() {
-  const entries = await fs.readdir(ROOT, { withFileTypes: true });
+  const entries = await fs.readdir(ADMIN_DIR, { withFileTypes: true });
   const discovered = entries
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
     .map((entry) => entry.name);
@@ -41,7 +42,7 @@ async function listHtmlFiles() {
     const fileKeys = raw && raw.__files && typeof raw.__files === 'object' ? Object.keys(raw.__files) : [];
     for (const key of fileKeys) {
       const safe = sanitizeHtmlFile(key);
-      const candidate = path.join(ROOT, safe);
+      const candidate = path.join(ADMIN_DIR, safe);
       try {
         const stat = await fs.stat(candidate);
         if (stat.isFile() && safe.toLowerCase().endsWith('.html') && !discovered.includes(safe)) {
@@ -237,12 +238,30 @@ async function copyDirIfExists(sourceDir, targetDir) {
   }
 }
 
+async function copyAdminAssets() {
+  try {
+    await fs.cp(ADMIN_DIR, PUBLISH_TARGET, {
+      recursive: true,
+      filter: (src) => {
+        const relative = path.relative(ADMIN_DIR, src);
+        if (!relative) return true;
+        const base = path.basename(src);
+        if (base === 'content.json' || base === 'cms.js' || base === 'cms.css') return false;
+        if (relative.toLowerCase().endsWith('.html')) return false;
+        return true;
+      },
+    });
+  } catch (err) {
+    console.warn('Unable to copy admin assets to root', err);
+  }
+}
+
 async function publishSite() {
   const files = await listHtmlFiles();
 
   // Do not remove any existing published output; simply overwrite the files we
   // render so older exports remain available if needed.
-  await ensureDir(PUBLISHED_DIR);
+  await ensureDir(PUBLISH_TARGET);
 
   const publishedFiles = [];
 
@@ -250,15 +269,16 @@ async function publishSite() {
     try {
       let html = await renderFile(file);
       html = stripCmsAssets(html);
-      await fs.writeFile(path.join(PUBLISHED_DIR, file), html);
+      await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
     } catch (err) {
       console.warn(`Unable to publish ${file}`, err);
     }
   }
 
-  await copyDirIfExists(IMAGES_DIR, path.join(PUBLISHED_DIR, 'images'));
-  await copyDirIfExists(BRANDS_DIR, path.join(PUBLISHED_DIR, 'brands'));
+  await copyAdminAssets();
+  await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
+  await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
 
   return publishedFiles;
 }
@@ -306,16 +326,23 @@ function contentTypeFor(filePath) {
 }
 
 async function serveStatic(res, filePath) {
-  try {
-    const safePath = path.normalize(filePath).replace(/^\/+/, '');
-    const absolute = path.join(ROOT, safePath);
-    const data = await fs.readFile(absolute);
-    res.writeHead(200, { 'Content-Type': contentTypeFor(absolute) });
-    res.end(data);
-  } catch (err) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not found');
+  const safePath = path.normalize(filePath).replace(/^\/+/, '');
+  const searchBases = [ADMIN_DIR, ROOT];
+
+  for (const base of searchBases) {
+    try {
+      const absolute = path.join(base, safePath);
+      const data = await fs.readFile(absolute);
+      res.writeHead(200, { 'Content-Type': contentTypeFor(absolute) });
+      res.end(data);
+      return;
+    } catch (err) {
+      // continue to next base
+    }
   }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Not found');
 }
 
 async function handleApiContent(req, res, fileName = DEFAULT_FILE) {

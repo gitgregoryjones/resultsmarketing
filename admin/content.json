@@ -1,0 +1,79 @@
+{
+  "__files": {
+    "index.html": {
+      "brand.name": "Results Marketing",
+      "brand.tagline": "Performance-first creative",
+      "cta.primary": "Let's Talk RESULTS",
+      "hero.eyebrow": "Case-study ready in weeks",
+      "hero.headline.prefix": "Every Brand Deserves A",
+      "hero.headline.emphasis": "Champion",
+      "hero.supporting": "That's why your growth is our goal.",
+      "hero.image": "/images/Atlanta-Google-Maps-1765865748044.png",
+      "brand.logo": "images/logowhite.png",
+      "cta.logo": "images/powerbi.png",
+      "features.strategy.title": "Strategy",
+      "features.strategy.copy": "Audience-first roadmaps that align every campaign to measurable outcomes.",
+      "features.production.title": "Production",
+      "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
+      "features.optimization.title": "Optimization",
+      "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+      "__tags": {
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
+          "key": "hero.image",
+          "type": "background"
+        }
+      }
+    },
+    "contact-us.html": {
+      "div.let-s-talk-results-ready-to-grow-your-brand-our-team-is-here-to-champion-your-success-": "/images/geejourney_A_Clean_premium_corporate_aesthetic__Focus_on_team_b2fb5187-2314-401b-b5a3-78a40b4affb7_2-1765865880866.png",
+      "div.contact-information-our-office-123-marketing-avenuesuite-500new-york-ny-10001-phone-number-1-555-123-4567-mon-fri-9am-6pm-est-email-address-hello-resultsmarketing-com-general-inquiries-follow-us": "/images/ChatGPT_Image_Dec_8__2025__04_28_07_AM-1765865902238.png",
+      "div.map-integration-area-google-maps-or-other-service-can-be-embedded-here": "/images/geejourney_give_me_a_43_area_chart_gradually_increasing_towar_e9382afd-3166-4047-b65b-21d09802b3b4_3-1765865952870.png",
+      "p.map-integration-area": "Atlanta * Chicago Offices",
+      "p.google-maps-or-other-service-can-be-embedded-here": "Google Maps or other service can be embedded here",
+      "__tags": {
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2)": {
+          "key": "div.let-s-talk-results-ready-to-grow-your-brand-our-team-is-here-to-champion-your-success-",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)": {
+          "key": "div.contact-information-our-office-123-marketing-avenuesuite-500new-york-ny-10001-phone-number-1-555-123-4567-mon-fri-9am-6pm-est-email-address-hello-resultsmarketing-com-general-inquiries-follow-us",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)": {
+          "key": "div.map-integration-area-google-maps-or-other-service-can-be-embedded-here",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > p:nth-child(2)": {
+          "key": "p.map-integration-area",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > p:nth-child(3)": {
+          "key": "p.google-maps-or-other-service-can-be-embedded-here",
+          "type": "text"
+        }
+      }
+    }
+  },
+  "brand.name": "Results Marketing",
+  "brand.tagline": "Performance-first creative",
+  "cta.primary": "Let's Talk RESULTS",
+  "hero.eyebrow": "Case-study ready in weeks",
+  "hero.headline.prefix": "Every Brand Deserves A",
+  "hero.headline.emphasis": "Champion",
+  "hero.supporting": "That's why your growth is our goal.",
+  "hero.image": "/images/Atlanta-Google-Maps-1765865748044.png",
+  "brand.logo": "images/logowhite.png",
+  "cta.logo": "images/powerbi.png",
+  "features.strategy.title": "Strategy",
+  "features.strategy.copy": "Audience-first roadmaps that align every campaign to measurable outcomes.",
+  "features.production.title": "Production",
+  "features.production.copy": "Video, static, and UGC variations delivered in weekly sprints.",
+  "features.optimization.title": "Optimization",
+  "features.optimization.copy": "Rapid experimentation that uncovers the hooks that actually convert.",
+  "__tags": {
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(3) > div:nth-child(1)": {
+      "key": "hero.image",
+      "type": "background"
+    }
+  }
+}

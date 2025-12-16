@@ -40,19 +40,20 @@
             font-family: 'Oswald', sans-serif;
         }
     </style>
-    </head>
+    <link rel="stylesheet" href="cms.css">
+</head>
 <body class="bg-white">
 <div class="flex justify-center">
     <div class="w-full flex flex-col lg:px-20 bg-[#F5F6F8] max-w-md lg:max-w-[1440px]">
-        
+        <!-- Navigation -->
         <nav class="w-full py-4 px-4 bg-white md:px-8 border-b border-gray-100">
             <div class="max-w-7xl mx-auto flex justify-between items-center">
-                
+                <!-- Logo -->
                 <div class="w-[147px] h-[69px] flex items-center justify-center rounded">
-                    <img src="images/logowhite.png" alt="Results Marketing logo" class="max-h-full max-w-full object-contain" >
+                    <img src="images/logowhite.png" alt="Results Marketing logo" class="max-h-full max-w-full object-contain" />
                 </div>
 
-                
+                <!-- Desktop Menu -->
                 <div class="hidden md:flex flex-1 justify-center items-center">
                     <div class="flex justify-start items-center gap-6 lg:gap-8">
                         <a href="index.html" class="text-black text-base font-normal hover:text-red-500 transition-colors">Home</a>
@@ -63,10 +64,10 @@
                     </div>
                 </div>
                 <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded">
-                    <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" >
+                    <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" />
                 </div>
 
-                
+                <!-- Hamburger Menu Button -->
                 <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
                     <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
                     <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
@@ -74,7 +75,7 @@
                 </button>
             </div>
 
-            
+            <!-- Mobile Menu -->
             <div class="md:hidden mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-6" id="mobileMenu">
                 <div class="flex justify-end mb-8">
                     <button class="hamburger open w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="closeMenu">
@@ -92,19 +93,19 @@
                     <a href="contact.html" class="text-red-500 text-lg font-bold hover:text-red-600 transition-colors py-2 border-b border-gray-100">Contact Us</a>
                     
                     <div class="mt-8 w-full h-[49px] flex items-center justify-center rounded">
-                        <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" >
+                        <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" />
                     </div>
                 </div>
             </div>
 
-            
+            <!-- Overlay for mobile menu -->
             <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay"></div>
         </nav>
 
-        
+        <!-- Hero Section -->
         <div class="w-full relative min-h-[400px] md:h-[400px] bg-black overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black to-red-900/20"></div>
-            <div class="relative h-full flex flex-col justify-center items-center text-center px-4 md:px-8 py-12" data-cms-bg="div.let-s-talk-results-ready-to-grow-your-brand-our-team-is-here-to-champion-your-success-" style="background-image:url('/images/geejourney_A_Clean_premium_corporate_aesthetic__Focus_on_team_b2fb5187-2314-401b-b5a3-78a40b4affb7_2-1765865880866.png')">
+            <div class="relative h-full flex flex-col justify-center items-center text-center px-4 md:px-8 py-12">
                 <h1 class="text-white text-4xl md:text-5xl lg:text-6xl font-bold font-oswald mb-4 leading-tight">
                     Let's Talk <span class="text-red-500">Results</span>
                 </h1>
@@ -114,12 +115,12 @@
             </div>
         </div>
 
-        
+        <!-- Main Content -->
         <div class="w-full px-4 md:px-8 py-12 md:py-16">
             <div class="max-w-7xl mx-auto">
-                
+                <!-- Two Column Layout -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    
+                    <!-- Left Column: Contact Form -->
                     <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
                         <h2 class="text-3xl font-bold text-gray-800 mb-2">Get in Touch</h2>
                         <p class="text-gray-600 mb-8">Fill out the form below and we'll get back to you within 24 hours.</p>
@@ -190,10 +191,10 @@
                         </form>
                     </div>
 
-                    
+                    <!-- Right Column: Contact Info & Map -->
                     <div class="space-y-8">
-                        
-                        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8" data-cms-bg="div.contact-information-our-office-123-marketing-avenuesuite-500new-york-ny-10001-phone-number-1-555-123-4567-mon-fri-9am-6pm-est-email-address-hello-resultsmarketing-com-general-inquiries-follow-us" style="background-image:url('/images/ChatGPT_Image_Dec_8__2025__04_28_07_AM-1765865902238.png')">
+                        <!-- Contact Information -->
+                        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
                             <h3 class="text-2xl font-bold text-gray-800 mb-6">Contact Information</h3>
                             
                             <div class="space-y-6">
@@ -237,7 +238,7 @@
                                 </div>
                             </div>
                             
-                            
+                            <!-- Social Media -->
                             <div class="mt-8 pt-8 border-t border-gray-100">
                                 <h4 class="font-semibold text-gray-800 mb-4">Follow Us</h4>
                                 <div class="flex gap-4">
@@ -260,17 +261,17 @@
                             </div>
                         </div>
 
-                        
+                        <!-- Map Placeholder -->
                         <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
                             <div class="h-64 bg-gradient-to-br from-gray-100 to-gray-300 relative">
-                                <div class="absolute inset-0 flex items-center justify-center" data-cms-bg="div.map-integration-area-google-maps-or-other-service-can-be-embedded-here" style="background-image:url('/images/geejourney_give_me_a_43_area_chart_gradually_increasing_towar_e9382afd-3166-4047-b65b-21d09802b3b4_3-1765865952870.png')">
+                                <div class="absolute inset-0 flex items-center justify-center">
                                     <div class="text-center">
                                         <svg class="w-12 h-12 text-red-500 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         </svg>
-                                        <p class="text-gray-600 font-medium" data-cms-text="p.map-integration-area">Atlanta * Chicago Offices</p>
-                                        <p class="text-sm text-gray-500" data-cms-text="p.google-maps-or-other-service-can-be-embedded-here">Google Maps or other service can be embedded here</p>
+                                        <p class="text-gray-600 font-medium">Map Integration Area</p>
+                                        <p class="text-sm text-gray-500">Google Maps or other service can be embedded here</p>
                                     </div>
                                 </div>
                             </div>
@@ -278,7 +279,7 @@
                     </div>
                 </div>
 
-                
+                <!-- FAQ Section -->
                 <div class="mt-16 md:mt-20">
                     <h2 class="text-3xl font-bold text-center text-gray-800 mb-2">Frequently Asked Questions</h2>
                     <p class="text-gray-600 text-center mb-10 max-w-2xl mx-auto">Have questions? We've got answers. If you don't see your question here, feel free to contact us directly.</p>
@@ -308,7 +309,7 @@
             </div>
         </div>
 
-        
+        <!-- CTA Section -->
         <div class="w-full px-4 sm:px-8 py-12 md:py-16 bg-red-500 outline outline-2 outline-offset-[-2px] outline-black">
             <div class="max-w-3xl mx-auto text-center">
                 <h2 class="text-white text-3xl md:text-4xl font-bold font-oswald mb-4">
@@ -396,6 +397,7 @@
         }
     });
 </script>
+<script src="cms.js"></script>
 </body>
 
 </html>
