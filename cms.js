@@ -26,9 +26,19 @@
 
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
+  const POSITION_STORAGE_KEY = 'cmsSidebarPosition';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
+      <div class="cms-dock">
+        <span>Dock</span>
+        <div class="cms-dock__buttons">
+          <button type="button" data-pos="left">Left</button>
+          <button type="button" data-pos="top">Top</button>
+          <button type="button" data-pos="right" class="active">Right</button>
+          <button type="button" data-pos="bottom">Bottom</button>
+        </div>
+      </div>
       <div class="cms-field cms-field--file">
         <label for="cms-file">HTML file</label>
         <select id="cms-file"></select>
@@ -82,6 +92,17 @@
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
+  const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+
+  let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
+
+  function applySidebarPosition() {
+    sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
+    sidebar.classList.add(`cms-pos-${sidebarPosition}`);
+    dockButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
+  }
+
+  applySidebarPosition();
 
   function clearForm() {
     keyInput.value = '';
@@ -528,6 +549,15 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
+    applySidebarPosition();
     hydrate();
+  });
+
+  dockButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      sidebarPosition = button.dataset.pos;
+      localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
+      applySidebarPosition();
+    });
   });
 })();

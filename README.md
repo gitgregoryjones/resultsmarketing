@@ -34,6 +34,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 - Server-side rendering keeps the hydrated text in the HTML response for SEO.
 - Auto-tagged elements are stored by rewriting the active HTML file so they survive reloads.
 - Images and backgrounds can be swapped by uploading a file (persisted to `/images`) or pasting a remote URL.
+- The sidebar can be docked to the left, right, top, or bottom via the Dock controls; top and bottom docking shrink the panel height while keeping every control scrollable.
 
 ## Editing different HTML files
 - The file dropdown in the CMS sidebar lists all `.html` files at the project root (from `/api/files`).

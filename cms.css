@@ -35,17 +35,67 @@
   max-width: 90vw;
   height: 100vh;
   background: white;
-  border-left: 1px solid var(--cms-border);
-  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.08);
-  transform: translateX(100%);
   transition: transform 200ms ease;
   z-index: 9998;
   display: flex;
   flex-direction: column;
 }
 
-#cms-sidebar.open {
+#cms-sidebar.cms-pos-right {
+  border-left: 1px solid var(--cms-border);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.08);
+  transform: translateX(100%);
+}
+
+#cms-sidebar.cms-pos-right.open {
   transform: translateX(0);
+}
+
+#cms-sidebar.cms-pos-left {
+  left: 0;
+  right: auto;
+  border-right: 1px solid var(--cms-border);
+  border-left: none;
+  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.08);
+  transform: translateX(-100%);
+}
+
+#cms-sidebar.cms-pos-left.open {
+  transform: translateX(0);
+}
+
+#cms-sidebar.cms-pos-top {
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: none;
+  height: 60vh;
+  max-height: 80vh;
+  border-bottom: 1px solid var(--cms-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(-100%);
+}
+
+#cms-sidebar.cms-pos-top.open {
+  transform: translateY(0);
+}
+
+#cms-sidebar.cms-pos-bottom {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: none;
+  height: 60vh;
+  max-height: 80vh;
+  border-top: 1px solid var(--cms-border);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.08);
+  transform: translateY(100%);
+}
+
+#cms-sidebar.cms-pos-bottom.open {
+  transform: translateY(0);
 }
 
 .cms-sidebar__header {
@@ -57,6 +107,43 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
+}
+
+.cms-dock {
+  margin: 12px 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cms-dock span {
+  font-size: 13px;
+  color: var(--cms-gray);
+  font-weight: 600;
+}
+
+.cms-dock__buttons {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.cms-dock__buttons button {
+  border: 1px solid var(--cms-border);
+  background: white;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.cms-dock__buttons button.active,
+.cms-dock__buttons button:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
 
 .cms-sidebar__body {
