@@ -101,6 +101,7 @@ async function readContent(fileName = DEFAULT_FILE) {
       acc[path] = { key: entry, type: 'text' };
     } else if (entry && typeof entry === 'object' && entry.key) {
       acc[path] = { key: entry.key, type: entry.type || 'text' };
+      if (entry.link) acc[path].link = entry.link;
     }
     return acc;
   }, {});
@@ -122,6 +123,7 @@ async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE })
     fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
       if (!entry || !entry.key) return acc;
       acc[path] = { key: entry.key, type: entry.type || 'text' };
+      if (entry.link) acc[path].link = entry.link;
       return acc;
     }, {});
   }
@@ -423,6 +425,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           image,
           file,
           siteName,
+          link,
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
         if (!key && sanitizedSiteName === undefined) {
@@ -460,7 +463,15 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         if (key) {
           values[key] = storedValue;
           if (elementPath) {
-            tags[elementPath] = { key, type: type || 'text' };
+            const existingTag = tags[elementPath] || {};
+            tags[elementPath] = { ...existingTag, key, type: type || 'text' };
+            if (link !== undefined) {
+              if (link) {
+                tags[elementPath].link = link;
+              } else {
+                delete tags[elementPath].link;
+              }
+            }
           }
 
           if (originalOuterHTML && updatedOuterHTML) {

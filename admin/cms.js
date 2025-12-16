@@ -14,6 +14,7 @@
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
+  let selectedLinkTarget = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -74,6 +75,11 @@
         <label for="cms-value">Content</label>
         <textarea id="cms-value" placeholder="Type content here..."></textarea>
       </div>
+      <div class="cms-field cms-field--link">
+        <label for="cms-link">Link (optional)</label>
+        <input id="cms-link" type="text" placeholder="https://example.com or #section" />
+        <p class="cms-hint cms-hint--subtle">Add full URLs, page names, or on-page anchors.</p>
+      </div>
       <div class="cms-field cms-field--image">
         <label for="cms-image-url">Image URL</label>
         <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
@@ -95,6 +101,7 @@
 
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
+  const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
@@ -127,6 +134,7 @@
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
+    linkInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
@@ -299,6 +307,39 @@
     return 'text';
   }
 
+  function findLinkTarget(el) {
+    if (!el || !el.closest) return null;
+    return el.closest('a');
+  }
+
+  function applyLink(el, href) {
+    let linkTarget = findLinkTarget(el);
+    const trimmedHref = (href || '').trim();
+
+    if (trimmedHref) {
+      if (!linkTarget) {
+        linkTarget = document.createElement('a');
+        linkTarget.setAttribute('data-cms-link-wrapper', 'true');
+        linkTarget.href = trimmedHref;
+        el.replaceWith(linkTarget);
+        linkTarget.appendChild(el);
+      } else {
+        linkTarget.setAttribute('href', trimmedHref);
+      }
+      return linkTarget;
+    }
+
+    if (linkTarget) {
+      if (linkTarget.getAttribute('data-cms-link-wrapper') === 'true') {
+        const children = Array.from(linkTarget.childNodes);
+        linkTarget.replaceWith(...children);
+      } else {
+        linkTarget.removeAttribute('href');
+      }
+    }
+    return null;
+  }
+
   function updateImagePreview(src) {
     if (!src) {
       imagePreview.textContent = 'No image selected';
@@ -361,6 +402,7 @@
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
+    selectedLinkTarget = findLinkTarget(el);
     el.classList.add('cms-outlined');
     const attributeName =
       selectedType === 'image'
@@ -373,6 +415,10 @@
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
     keyInput.value = key || generateKeySuggestion(el);
+    const path = buildElementPath(el);
+    const storedLink = path && storedTags[path] && storedTags[path].link ? storedTags[path].link : null;
+    const linkValue = storedLink || (selectedLinkTarget ? selectedLinkTarget.getAttribute('href') : '');
+    linkInput.value = linkValue || '';
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
@@ -426,6 +472,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
+    const link = linkInput.value.trim();
     if (!key) {
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
@@ -440,7 +487,8 @@
           : 'data-cms-text';
     const currentKey = selectedElement.getAttribute(attributeName);
     const uniqueKey = ensureUniqueKey(key, currentKey);
-    const originalOuterHTML = selectedElement.outerHTML;
+    let persistTarget = selectedLinkTarget || selectedElement;
+    const originalOuterHTML = persistTarget.outerHTML;
 
     if (uniqueKey !== key) {
       messageEl.textContent = `Key exists. Saved as ${uniqueKey}.`;
@@ -474,8 +522,17 @@
       selectedElement.textContent = value;
     }
 
+    const updatedLinkTarget = applyLink(selectedElement, link);
+    selectedLinkTarget = updatedLinkTarget;
+    persistTarget = updatedLinkTarget || selectedElement;
+
     const path = buildElementPath(selectedElement);
-    const updatedOuterHTML = selectedElement.outerHTML;
+    if (link) {
+      storedTags[path] = { ...(storedTags[path] || {}), link };
+    } else if (storedTags[path]) {
+      delete storedTags[path].link;
+    }
+    const updatedOuterHTML = persistTarget.outerHTML;
 
     try {
       const res = await fetch(buildApiUrl(), {
@@ -486,6 +543,7 @@
           value: bodyValue,
           path,
           type: selectedType,
+          link,
           image: imagePayload,
           originalOuterHTML,
           updatedOuterHTML,
@@ -582,6 +640,7 @@
     Object.entries(tags).forEach(([path, entry]) => {
       const key = typeof entry === 'string' ? entry : entry.key;
       const type = typeof entry === 'object' && entry.type ? entry.type : 'text';
+      const linkValue = typeof entry === 'object' && entry.link ? entry.link : undefined;
       const el = document.querySelector(path);
       if (el && key) {
         if (type === 'image') {
@@ -591,6 +650,9 @@
         } else {
           el.setAttribute('data-cms-text', key);
         }
+      }
+      if (el && linkValue !== undefined) {
+        applyLink(el, linkValue);
       }
     });
   }
