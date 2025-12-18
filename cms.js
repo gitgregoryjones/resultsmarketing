@@ -549,6 +549,21 @@
 
   async function hydrate() {
     try {
+      const res = await fetch('/content.json');
+      if (res.ok) {
+        const data = await res.json();
+        const fileEntry = data?.__files?.[currentFile];
+        const tags = fileEntry?.__tags || {};
+        Object.keys(tags).forEach((selector) => {
+          const el = document.querySelector(selector);
+          if (el) ensureElementId(el);
+        });
+      }
+    } catch (err) {
+      console.warn('Unable to assign CMS IDs from content.json', err);
+    }
+
+    try {
       const res = await fetch(buildApiUrl());
       if (res.ok) {
         const data = await res.json();
