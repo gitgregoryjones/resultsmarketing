@@ -535,6 +535,7 @@
       const type = typeof entry === 'object' && entry.type ? entry.type : 'text';
       const el = document.querySelector(path);
       if (el && key) {
+        ensureElementId(el);
         if (type === 'image') {
           el.setAttribute('data-cms-image', key);
         } else if (type === 'background') {
