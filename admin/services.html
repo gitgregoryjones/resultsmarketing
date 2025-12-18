@@ -34,8 +34,8 @@
     </style>
     <link rel="stylesheet" href="cms.css">
 </head>
-<body class="nobg-white">
-<div class="flex justify-center bg-black">
+<body class="nobg-white ">
+<div class="flex justify-center bg-gray-200">
     <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] bg-white max-w-md lg:max-w-[1440px]">
         <!-- Navigation (same as index.html) -->
         <nav class="w-full py-4 px-4 bg-white md:px-8 border-b border-gray-100">
@@ -46,7 +46,7 @@
                 </div>
 
                 <!-- Desktop Menu -->
-                <div class="hidden md:flex flex-1 justify-center items-center">
+                <div class="hidden lg:flex flex-1 justify-center items-center">
                     <div class="flex justify-start items-center gap-6 lg:gap-8">
                         <a href="index.html" class="text-black text-base font-normal hover:text-red-500 transition-colors">Home</a>
                         <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors">About Us</a>
@@ -60,7 +60,7 @@
                 </div>
 
                 <!-- Hamburger Menu Button -->
-                <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
+                <button class="lg:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
                     <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
                     <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
                     <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
@@ -84,8 +84,8 @@
                     <a href="services.html" class="text-red-500 text-lg font-bold hover:text-red-600 transition-colors py-2 border-b border-gray-100">Our Services</a>
                     <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100">Contact Us</a>
                     
-                    <a href="#" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity">
-                        <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-contain" />
+                    <a href="#" style="background-size: contain; background-repeat: no-repeat;" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity">
+                        <img src="images/powerbi.png" alt="Power BI" class="max-h-full max-w-full object-cover" />
                     </a>
                 </div>
             </div>
@@ -95,40 +95,122 @@
         </nav>
 
         <!-- Hero Section -->
-        <div class="w-full relative overflow-hidden">
-            <div class="w-full flex flex-col lg:flex-row">
-                <!-- Hero Image -->
-                <div class="w-full lg:w-[63%] h-[250px] lg:h-[400px] relative border border-red-500/30 overflow-hidden"
-                  data-cms-bg="hero.image"
-                  style="background-image:url('images/Products.png'); background-size:cover; background-position:center;">
-                    <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10"></div>
-                </div>
-                
-                <!-- Hero Content -->
-                <div class="w-full lg:w-[37%] h-auto lg:h-[400px] bg-black p-6 lg:p-12 flex flex-col justify-center">
-                    <div class="max-w-full lg:max-w-[480px]">
-                        <h1 class="text-white text-3xl md:text-4xl lg:text-[32px]] font-semibold font-oswald leading-tight lg:leading-[64px] mb-4 lg:mb-6">
-                            <span data-cms-text="hero.headline.prefix">Our</span>
-                            <span class="text-red-500 block lg:inline" data-cms-text="hero.headline.emphasis">Services</span>
-                        </h1>
-                        <p class="text-white text-lg md:text-xl lg:text-2xl font-normal font-oswald leading-relaxed lg:leading-8 mb-6 lg:mb-10">
-                            Comprehensive solutions for brand growth
-                        </p>
-                        <button class="group w-full px-6 py-4 bg-red-500 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300">
-                            <span class="text-white text-sm sm:text-base font-extrabold font-inter">
-                                Let's Talk RESULTS
-                            </span>
-                            <svg class="w-6 h-6 group-hover:translate-x-2 transition-transform duration-300"
-                                viewBox="0 0 24 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M23 9.00006H1M23 9.00006L16.7143 17.0001M23 9.00006L16.7143 1.00006"
-                                    stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <div class="grid  lg:grid-cols-12 gap-4 md:gap-0  bg-black md:h-96 relative">
+ 
+  <div style="background-size: cover;" class="h-48 md:h-full col-span-6   text-white"></div>
+  <div class="p-6 mb-4 md:mb-0 gap-4 md:gap-8 col-span-6 flex flex-col justify-center items-center md:items-start relative">
+  
+    <div class=" justify-start text-white text-3xl md:text-5xl  xl-text-6xl font-semibold font-['Oswald'] leading-8">Meet The People</div>
+    <div class="justify-start text-red-500 text-3xl md:text-5xl font-semibold font-['Oswald'] leading-8">Behind The RESULTS</div>
+    <div class=" md:text-start text-center   justify-start text-white text-xl md:text-2xl font-normal font-['Oswald'] leading-8">Multicultural corporate consultancy specializing in sales strategy, retail execution, and measurable growth.  Ready for a change?</div>
 
+  </div>
+      </div>
+        <div class="w-full grid grid-cols-1 xl:grid-cols-12 gap-4 md:gap-0 p-4 md:p-0 overflow-hidden">
+      <!-- Second Card: Testimonial -->
+  <div class="md:col-span-6 w-full relative bg-white  h-72 border-gray-200">
+    <!-- Quote SVG -->
+    <div class="absolute left-4 top-4 md:left-6 md:top-6 z-0">
+      <svg width="72" height="69" viewBox="0 0 144 137" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 md:w-12 md:h-12">
+        <path d="M143.1 1.35L139.8 26.25C131.6 25.65 125.4 27.25 121.2 31.05C117 34.85 114.3 40.05 113.1 46.65C111.9 53.25 111.6 60.55 112.2 68.55H143.1V136.35H84.3V59.55C84.3 38.55 89.4 22.75 99.6 12.15C110 1.35 124.5 -2.25 143.1 1.35ZM58.8 1.35L55.5 26.25C47.3 25.65 41.1 27.25 36.9 31.05C32.7 34.85 30 40.05 28.8 46.65C27.6 53.25 27.3 60.55 27.9 68.55H58.8V136.35H0V59.55C0 38.55 5.1 22.75 15.3 12.15C25.7 1.35 40.2 -2.25 58.8 1.35Z" fill="#2930B9" fill-opacity="0.1"/>
+      </svg>
+    </div>
+    
+    <!-- Content -->
+    <div class="relative z-10 h-full p-6 md:p-8 pl-12 md:pl-14 flex flex-col justify-center">
+      <div class="text-black text-sm md:text-base font-normal font-['Work_Sans'] leading-5 md:leading-6 mb-4 md:mb-6 break-words">
+        Elsie and team said YES when other firms said NO during the COVID shutdown years. She helped save my business...
+      </div>
+      <div class="text-gray-600 text-sm md:text-base font-normal font-['Work_Sans'] leading-5 md:leading-6 break-words">
+        John Ford, Job Title, Company, Inc.
+      </div>
+    </div>
+  </div>
+   <!-- First Card: Sales Consultant -->
+  <div class="md:col-span-6 h-72 w-full bg-[#F4483A] overflow-hidden shadow-sm">
+    <div class="flex flex-col md:flex-row h-full">
+      <!-- Image Placeholder -->
+      <div style="background-size:cover" class="w-full md:w-72 h-72  md:h-full bg-gradient-to-br from-gray-300 to-gray-200 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-gray-300">
+        <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/30 flex items-center justify-center mb-3">
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+        </div>
+        <div class="text-gray-700 text-xs md:text-sm font-medium text-center">
+          [Sales Consultant Photo]
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="flex-1 p-4 md:p-6 flex flex-col justify-center">
+        <div class="self-stretch justify-center text-stone-900 text-2xl font-extrabold font-['Manrope'] leading-7">Elsie - Founder</div>
+        <div class="py-4 h-24 self-stretch justify-center text-white text-sm font-normal font-['Work_Sans'] leading-5 overflow-y-scroll">Elsie is one of the most trusted and respected leaders in the multicultural beauty industry, having influenced the sales destiny of national and international hair care brands representing in the hundreds of millions in global sales. Elsie is one of the most trusted and respected leaders in the multicultural beauty industry, having influenced the sales destiny of national and international hair care brands representing in the hundreds of millions in global sales.Elsie is one of the most trusted and respected leaders in the multicultural beauty industry, having influenced the sales destiny of national and international hair care brands representing in the hundreds of millions in global sales.Elsie is one of the most trusted and respected leaders in the multicultural beauty industry, having influenced the sales destiny of national and international hair care brands representing in the hundreds of millions in global sales.Elsie is one of the most trusted and respected leaders in the multicultural beauty industry, having influenced the sales destiny of national and international hair care brands representing in the hundreds of millions in global sales.</div>
+      </div>
+    </div>
+  </div>
+  
+
+
+  <!-- Third Card: Vice President -->
+  <div class="md:col-span-6 w-full h-72 bg-gray-200  overflow-hidden shadow-sm">
+    <div class="flex flex-col md:flex-row h-full">
+      <!-- Image Placeholder -->
+      <div style="background-size:cover" class="w-full md:w-72 h-72 md:h-full bg-gradient-to-br from-gray-300 to-gray-200 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-gray-300">
+        <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/30 flex items-center justify-center mb-3">
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5 16H5V5h14v14z"/>
+          </svg>
+        </div>
+        <div class="text-gray-700 text-xs md:text-sm font-medium text-center">
+          [VP Photo]
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="flex-1 p-4 md:p-6 flex flex-col justify-center">
+        <div class="text-stone-900 text-lg md:text-xl font-medium font-['Manrope'] leading-6 md:leading-7 mb-2 md:mb-3 break-words">
+          April - Vice President
+        </div>
+        <div class="text-neutral-700 text-sm md:text-base font-normal font-['Work_Sans'] leading-5 md:leading-6 break-words">
+          April Singleton is a forward-thinking business professional with a proven ability to get the job done.
+        </div>
+      </div>
+    </div>
+  </div>
+<div class="md:col-span-6 w-full flex items-center justify-center  md:h-72 p-6 md:py-8">
+    <div class=" justify-center  text-[var(--Option-7-typography-text-secondary,#746c6c)] text-2xl font-medium font-['Oswald'] leading-8"> Our team is a collective of full-time sales, strategists, and marketers—dedicated to building ....</div>
+  </div>
+  <!-- First Card: Sales Consultant -->
+  <div class="md:col-span-6 h-72 w-full bg-gray-200  overflow-hidden shadow-sm">
+    <div class="flex flex-col md:flex-row h-full">
+      <!-- Image Placeholder -->
+      <div style="background-size:cover" class="w-full md:w-72 h-72 md:h-full bg-gradient-to-br from-gray-300 to-gray-200 flex flex-col items-center justify-center p-4 border-b md:border-b-0 md:border-r border-gray-300">
+        <div class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-white/30 flex items-center justify-center mb-3">
+          <svg class="w-8 h-8 md:w-10 md:h-10 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+          </svg>
+        </div>
+        <div class="text-gray-700 text-xs md:text-sm font-medium text-center">
+          [Sales Consultant Photo]
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="flex-1 p-4 md:p-6 flex flex-col justify-center">
+        <div class="text-stone-900 text-lg md:text-xl font-medium font-['Manrope'] leading-6 md:leading-7 mb-2 md:mb-3 break-words">
+          Jane Doe - Sales Consultant
+        </div>
+        <div class="text-neutral-700 text-sm md:text-base font-normal font-['Work_Sans'] leading-5 md:leading-6 break-words">
+          Jane has countless relationships in the CPG space....
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Team Description (Full Width) -->
+  
+
+</div>
         <!-- Services Section - Made Responsive -->
         <div class="w-full px-4 md:px-8 lg:px-28 py-8 md:py-12 lg:py-16">
             <div class="flex flex-col justify-center items-start gap-6 md:gap-0">

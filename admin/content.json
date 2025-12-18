@@ -7,6 +7,9 @@
       "a.our-services": "Our Services",
       "a.contact-us": "Contact Us",
       "auto.div": "/images/image_1-1765917753544.png",
+      "a.read-more-about-our-services": "Read more about our services",
+      "auto.svg": "",
+      "button.sell-through-2": "Sales Management",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)": {
           "key": "button.growth-planning",
@@ -29,6 +32,20 @@
         "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3)": {
           "key": "auto.div",
           "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(2) > a:nth-child(2)": {
+          "key": "a.read-more-about-our-services",
+          "type": "text",
+          "link": "services.html"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(3) > a:nth-child(2) > svg:nth-child(1)": {
+          "key": "auto.svg",
+          "type": "text",
+          "link": "services.html"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(1) > button:nth-child(3)": {
+          "key": "button.sell-through-2",
+          "type": "text"
         }
       }
     },
@@ -45,6 +62,18 @@
       "div.body-hygiene": "",
       "a.contact-us": "Contact Us",
       "auto.div-5": "/images/image_1-1765917713154.png",
+      "div.-sales-consultant-photo-": "/images/Elsie-1765938204850.png",
+      "div.-sales-consultant-photo--2": "",
+      "div.-sales-consultant-photo--3": "/images/April-1765938949988.png",
+      "div.-sales-consultant-photo--4": "",
+      "div.-vp-photo-": "/images/April-1765938386544.png",
+      "div.-vp-photo--2": "",
+      "div.-sales-consultant-photo--5": "/images/person-1765938967784.png",
+      "div.-sales-consultant-photo--6": "",
+      "div.image": "/images/geejourney_A_Clean_premium_corporate_aesthetic__Focus_on_team_b2fb5187-2314-401b-b5a3-78a40b4affb7_2-1765940540874.png",
+      "div.meet-the-people": "The RESULTS Process",
+      "div.behind-the-results": "Our Services",
+      "auto.a": "/images/image_1-1765943884133.png",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h1:nth-child(1) > span:nth-child(1)": {
           "key": "hero.headline.prefix",
@@ -94,6 +123,54 @@
         "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3)": {
           "key": "auto.div-5",
           "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1)": {
+          "key": "div.-sales-consultant-photo-",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)": {
+          "key": "div.-sales-consultant-photo--2",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1)": {
+          "key": "div.-sales-consultant-photo--3",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(3) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)": {
+          "key": "div.-sales-consultant-photo--4",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(4) > div:nth-child(1) > div:nth-child(1)": {
+          "key": "div.-vp-photo-",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(4) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)": {
+          "key": "div.-vp-photo--2",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > div:nth-child(1)": {
+          "key": "div.-sales-consultant-photo--5",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > div:nth-child(1) > div:nth-child(2)": {
+          "key": "div.-sales-consultant-photo--6",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)": {
+          "key": "div.image",
+          "type": "background"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1)": {
+          "key": "div.meet-the-people",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2)": {
+          "key": "div.behind-the-results",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(2) > div:nth-child(2) > a:nth-child(6)": {
+          "key": "auto.a",
+          "type": "background"
         }
       }
     },
@@ -127,6 +204,9 @@
   "a.our-services": "Our Services",
   "a.contact-us": "Contact Us",
   "auto.div": "/images/image_1-1765917753544.png",
+  "a.read-more-about-our-services": "Read more about our services",
+  "auto.svg": "",
+  "button.sell-through-2": "Sales Management",
   "__tags": {
     "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(1) > button:nth-child(2)": {
       "key": "button.growth-planning",
@@ -149,6 +229,20 @@
     "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(1) > div:nth-child(3)": {
       "key": "auto.div",
       "type": "background"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(2) > a:nth-child(2)": {
+      "key": "a.read-more-about-our-services",
+      "type": "text",
+      "link": "services.html"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(3) > a:nth-child(2) > svg:nth-child(1)": {
+      "key": "auto.svg",
+      "type": "text",
+      "link": "services.html"
+    },
+    "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(7) > div:nth-child(2) > div:nth-child(1) > button:nth-child(3)": {
+      "key": "button.sell-through-2",
+      "type": "text"
     }
   }
 }
