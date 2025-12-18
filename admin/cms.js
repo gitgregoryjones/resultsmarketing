@@ -116,6 +116,7 @@
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
+  let activeListKey = null;
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -391,6 +392,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
+    highlightListItem(key || null);
     linkInput.value = el.getAttribute('data-link') || '';
     keyInput.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
@@ -402,26 +404,49 @@
     }
   }
 
+  function findElementByKey(key) {
+    return document.querySelector(
+      `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"]`
+    );
+  }
+
+  function focusElementForKey(key) {
+    const el = findElementByKey(key);
+    if (!el) return;
+    selectElement(el);
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }
+
+  function highlightListItem(key) {
+    activeListKey = key || null;
+    listEl.querySelectorAll('li').forEach((item) => {
+      item.classList.toggle('active', !!key && item.dataset.key === key);
+    });
+  }
+
   function refreshList() {
     const keys = getExistingKeys();
     listEl.innerHTML = '';
     emptyEl.style.display = keys.length ? 'none' : 'block';
     keys.forEach((key) => {
       const item = document.createElement('li');
+      item.dataset.key = key;
       const label = document.createElement('span');
       label.textContent = key;
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', () => {
-        const el = document.querySelector(
-          `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"]`
-        );
-        if (el) selectElement(el);
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        focusElementForKey(key);
       });
+      item.addEventListener('click', () => focusElementForKey(key));
       item.appendChild(label);
       item.appendChild(editBtn);
       listEl.appendChild(item);
     });
+    highlightListItem(activeListKey);
   }
 
   function buildElementPath(el) {
