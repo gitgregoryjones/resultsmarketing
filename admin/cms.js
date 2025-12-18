@@ -450,9 +450,27 @@
   }
 
   function buildElementPath(el) {
-    const id = ensureElementId(el);
-    const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(id) : id;
-    return `[data-cms-id="${escaped}"]`;
+    const segments = [];
+    let current = el;
+
+    while (current && current.nodeType === 1 && current !== document.documentElement) {
+      const parent = current.parentElement;
+      if (!parent) break;
+
+      const tag = current.tagName.toLowerCase();
+      const index = Array.from(parent.children).indexOf(current) + 1;
+      segments.unshift(`${tag}:nth-child(${index})`);
+
+      if (parent === document.body || !parent.parentElement) {
+        segments.unshift(parent.tagName.toLowerCase());
+        break;
+      }
+
+      current = parent;
+    }
+
+    ensureElementId(el);
+    return segments.join(' > ');
   }
 
   async function saveSelection() {
@@ -660,6 +678,21 @@
   }
 
   async function hydrate() {
+    try {
+      const res = await fetch('/content.json');
+      if (res.ok) {
+        const data = await res.json();
+        const fileEntry = data?.__files?.[currentFile];
+        const tags = fileEntry?.__tags || {};
+        Object.keys(tags).forEach((selector) => {
+          const el = document.querySelector(selector);
+          if (el) ensureElementId(el);
+        });
+      }
+    } catch (err) {
+      console.warn('Unable to assign CMS IDs from content.json', err);
+    }
+
     try {
       const res = await fetch(buildApiUrl());
       if (res.ok) {
