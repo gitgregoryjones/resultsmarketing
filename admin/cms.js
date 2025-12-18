@@ -389,6 +389,21 @@
     }
   }
 
+  function findElementByKey(key) {
+    return document.querySelector(
+      `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"]`
+    );
+  }
+
+  function focusElementForKey(key) {
+    const el = findElementByKey(key);
+    if (!el) return;
+    selectElement(el);
+    if (typeof el.scrollIntoView === 'function') {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+    }
+  }
+
   function refreshList() {
     const keys = getExistingKeys();
     listEl.innerHTML = '';
@@ -399,12 +414,11 @@
       label.textContent = key;
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
-      editBtn.addEventListener('click', () => {
-        const el = document.querySelector(
-          `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"]`
-        );
-        if (el) selectElement(el);
+      editBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        focusElementForKey(key);
       });
+      item.addEventListener('click', () => focusElementForKey(key));
       item.appendChild(label);
       item.appendChild(editBtn);
       listEl.appendChild(item);
