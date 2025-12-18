@@ -74,6 +74,11 @@
       "div.meet-the-people": "The RESULTS Process",
       "div.behind-the-results": "Our Services",
       "auto.a": "/images/image_1-1765943884133.png",
+      "div.image-icon": "/images/elsie-1766099127354.png",
+      "div.image-icon-2": "",
+      "div.our-services": "Our Services",
+      "div.services-header-1": "The RESULTS Process",
+      "div.services-header-2": "Our Services",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h1:nth-child(1) > span:nth-child(1)": {
           "key": "hero.headline.prefix",
@@ -161,16 +166,24 @@
           "type": "background"
         },
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(1)": {
-          "key": "div.meet-the-people",
+          "key": "div.services-header-1",
           "type": "text"
         },
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2)": {
-          "key": "div.behind-the-results",
+          "key": "div.services-header-2",
           "type": "text"
         },
         "body > div:nth-child(1) > div:nth-child(1) > nav:nth-child(1) > div:nth-child(2) > div:nth-child(2) > a:nth-child(6)": {
           "key": "auto.a",
           "type": "background"
+        },
+        "[data-cms-id=\"cms-86a17f84-65ef-40d4-8d5a-6c959acd98d0\"]": {
+          "key": "div.image-icon",
+          "type": "background"
+        },
+        "[data-cms-id=\"cms-a70bb3e1-70a6-4134-9f4c-f5484bcec960\"]": {
+          "key": "div.image-icon-2",
+          "type": "text"
         }
       }
     },
