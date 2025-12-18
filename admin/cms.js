@@ -263,6 +263,19 @@
       .filter(Boolean);
   }
 
+  function ensureElementId(el) {
+    const existing = el.getAttribute('data-cms-id');
+    if (existing) return existing;
+
+    const generated =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? `cms-${crypto.randomUUID()}`
+        : `cms-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    el.setAttribute('data-cms-id', generated);
+    return generated;
+  }
+
   function ensureUniqueKey(base, currentKey) {
     const existing = new Set([...getExistingKeys(), ...Object.keys(mergedContent)]);
     if (currentKey) existing.delete(currentKey);
@@ -412,15 +425,9 @@
   }
 
   function buildElementPath(el) {
-    const segments = [];
-    let node = el;
-    while (node && node.nodeType === 1 && node !== document.body) {
-      const siblings = Array.from(node.parentNode.children);
-      const index = siblings.indexOf(node) + 1;
-      segments.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
-      node = node.parentNode;
-    }
-    return segments.length ? `body > ${segments.join(' > ')}` : '';
+    const id = ensureElementId(el);
+    const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(id) : id;
+    return `[data-cms-id="${escaped}"]`;
   }
 
   async function saveSelection() {
@@ -610,6 +617,7 @@
       const type = typeof entry === 'object' && entry.type ? entry.type : 'text';
       const el = document.querySelector(path);
       if (el && key) {
+        ensureElementId(el);
         if (type === 'image') {
           el.setAttribute('data-cms-image', key);
         } else if (type === 'background') {
