@@ -116,6 +116,7 @@
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
+  let activeListKey = null;
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -378,6 +379,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
+    highlightListItem(key || null);
     linkInput.value = el.getAttribute('data-link') || '';
     keyInput.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
@@ -404,12 +406,20 @@
     }
   }
 
+  function highlightListItem(key) {
+    activeListKey = key || null;
+    listEl.querySelectorAll('li').forEach((item) => {
+      item.classList.toggle('active', !!key && item.dataset.key === key);
+    });
+  }
+
   function refreshList() {
     const keys = getExistingKeys();
     listEl.innerHTML = '';
     emptyEl.style.display = keys.length ? 'none' : 'block';
     keys.forEach((key) => {
       const item = document.createElement('li');
+      item.dataset.key = key;
       const label = document.createElement('span');
       label.textContent = key;
       const editBtn = document.createElement('button');
@@ -423,6 +433,7 @@
       item.appendChild(editBtn);
       listEl.appendChild(item);
     });
+    highlightListItem(activeListKey);
   }
 
   function buildElementPath(el) {

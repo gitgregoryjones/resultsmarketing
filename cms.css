@@ -330,6 +330,11 @@
   align-items: center;
 }
 
+.cms-list li.active {
+  background: #eef2ff;
+  border-left: 3px solid #4338ca;
+}
+
 .cms-list li button {
   border: none;
   background: #eef2ff;
