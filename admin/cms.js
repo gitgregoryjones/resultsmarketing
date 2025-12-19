@@ -16,17 +16,28 @@
   let selectedType = 'text';
 
   const outline = document.createElement('div');
-  outline.className = 'cms-outline';
+  outline.className = 'cms-outline cms-ui';
   document.body.appendChild(outline);
 
   const toggleButton = document.createElement('button');
   toggleButton.id = 'cms-toggle';
+  toggleButton.classList.add('cms-ui');
   toggleButton.textContent = 'Edit';
   document.body.appendChild(toggleButton);
 
+  const wireframeToggle = document.createElement('button');
+  wireframeToggle.id = 'cms-wireframe-toggle';
+  wireframeToggle.classList.add('cms-ui');
+  wireframeToggle.setAttribute('type', 'button');
+  wireframeToggle.setAttribute('aria-pressed', 'false');
+  wireframeToggle.textContent = 'Wireframe Off';
+  document.body.appendChild(wireframeToggle);
+
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
+  sidebar.classList.add('cms-ui');
   const POSITION_STORAGE_KEY = 'cmsSidebarPosition';
+  const WIREFRAME_STORAGE_KEY = 'cmsWireframeEnabled';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
@@ -117,6 +128,15 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
 
+  function setWireframeState(enabled) {
+    document.body.classList.toggle('cms-wireframe', enabled);
+    wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
+    localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
+  }
+
+  setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
+
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
     sidebar.classList.add(`cms-pos-${sidebarPosition}`);
@@ -189,6 +209,10 @@
       messageEl.style.color = '#ef4444';
     }
   }
+
+  wireframeToggle.addEventListener('click', () => {
+    setWireframeState(!document.body.classList.contains('cms-wireframe'));
+  });
 
   async function loadFiles() {
     try {

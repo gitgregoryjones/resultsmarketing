@@ -22,6 +22,27 @@
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
+#cms-wireframe-toggle {
+  position: fixed;
+  bottom: 78px;
+  right: 20px;
+  padding: 10px 14px;
+  background: white;
+  color: var(--cms-dark);
+  border: 1px solid var(--cms-border);
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 9999;
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+#cms-wireframe-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--cms-red);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
 #cms-toggle:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.16);
@@ -178,6 +199,24 @@
 .cms-field textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.cms-wireframe *:not(.cms-ui):not(.cms-ui *) {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  outline: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.cms-wireframe img:not(.cms-ui),
+.cms-wireframe svg:not(.cms-ui) {
+  opacity: 0 !important;
+}
+
+.cms-wireframe button:not(.cms-ui),
+.cms-wireframe a:not(.cms-ui) {
+  border: 1px dashed rgba(0, 0, 0, 0.4);
 }
 
 .cms-field--file select {
