@@ -329,6 +329,7 @@ async function copyDirIfExists(sourceDir, targetDir) {
     await fs.access(sourceDir);
     await ensureDir(path.dirname(targetDir));
     await fs.cp(sourceDir, targetDir, { recursive: true });
+    console.log(`Copied Dir worked ${sourceDir} to ${targetDir}`);
   } catch (err) {
     if (err && err.code !== 'ENOENT') {
       console.warn(`Unable to copy ${sourceDir} to ${targetDir}`, err);
@@ -398,6 +399,7 @@ async function publishSite() {
       }
       html = wrapDataLinks(html);
       html = stripCmsAssets(html);
+      console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
     } catch (err) {
@@ -406,15 +408,22 @@ async function publishSite() {
   }
 
   await copyAdminAssets();
-  await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
-  await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
-
+  //await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
+  //await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
+ console.log(`Loo at Without ADMIN name root Publishing site assets to site name folder... ${siteName}`);
   if (siteName) {
     const siteRoot = path.join(PUBLISH_TARGET, siteName);
+    console.log(`Publishing site assets to site name folder... ${siteRoot}`);
     await ensureDir(siteRoot);
+    console.log(`siteRoot ensured: ${siteRoot}`);
+    console.log(`Copying image to: ${path.join(siteRoot, 'images')}`);
     await copyDirIfExists(IMAGES_DIR, path.join(siteRoot, 'images'));
+    console.log(`Images copied to: ${path.join(siteRoot, 'images')}`);
     await copyDirIfExists(BRANDS_DIR, path.join(siteRoot, 'brands'));
-  }
+    console.log(`Brands copied to: ${path.join(siteRoot, 'brands')}`);
+    
+  } 
+
 
   return publishedFiles;
 }
@@ -597,6 +606,7 @@ const server = http.createServer(async (req, res) => {
 
   if (pathname === '/api/publish' && req.method === 'POST') {
     try {
+      console.log(`Triggering site publish...`);
       const published = await publishSite();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ published }));
