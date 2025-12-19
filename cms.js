@@ -498,6 +498,43 @@
     selectElement(target);
   }
 
+  async function handleDrop(e) {
+    if (!editMode) return;
+    const target = e.target;
+    if (isCmsUi(target)) return;
+    const [file] = e.dataTransfer.files || [];
+    if (!file) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!file.type.startsWith('image/')) {
+      messageEl.textContent = 'Drop an image file to use it as a background.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      selectElement(target);
+      setTypeSelection('background');
+      imageUrlInput.value = dataUrl;
+      updateImagePreview(dataUrl);
+      applyImageToElement(target, dataUrl, 'background');
+      messageEl.textContent = 'Background image ready. Click Save to store.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to read dropped image file.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
+  function handleDragOver(e) {
+    if (!editMode) return;
+    const target = e.target;
+    if (isCmsUi(target)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    positionOutline(target);
+  }
+
   function applyContent() {
     document.querySelectorAll('[data-cms-text]').forEach((el) => {
       const key = el.getAttribute('data-cms-text');
@@ -557,6 +594,8 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
+  document.addEventListener('dragover', handleDragOver, true);
+  document.addEventListener('drop', handleDrop, true);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
   typeInputs.forEach((input) => {
