@@ -188,9 +188,17 @@
     return element.closest && element.closest('#cms-sidebar, #cms-toggle, .cms-outline');
   }
 
+  function getElementTarget(node) {
+    if (node && node.nodeType === Node.TEXT_NODE) {
+      return node.parentElement;
+    }
+    return node;
+  }
+
   function handleHover(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) {
       outline.style.display = 'none';
       return;
@@ -521,7 +529,8 @@
 
   function handleClick(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) return;
     if (selectedElement === target && target.isContentEditable) {
       return;
