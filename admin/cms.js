@@ -43,17 +43,9 @@
         <label for="cms-file">HTML file</label>
         <select id="cms-file"></select>
       </div>
-      <div class="cms-field cms-field--site">
-        <label for="cms-sitename">Site name (used when publishing)</label>
-        <div class="cms-site-input">
-          <input id="cms-sitename" type="text" placeholder="enter-site-name" />
-          <button type="button" id="cms-save-sitename">Save</button>
-        </div>
-        <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
-      </div>
       <div class="cms-publish">
         <button type="button" id="cms-publish">Publish static site</button>
-        <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
+        <p class="cms-pill cms-pill--subtle">Merges all pages into /published without editor assets</p>
       </div>
       <p class="cms-pill">Click text or images while editing</p>
     </div>
@@ -69,10 +61,6 @@
       <div class="cms-field">
         <label for="cms-key">Field key</label>
         <input id="cms-key" type="text" placeholder="auto.tag.hash" />
-      </div>
-      <div class="cms-field">
-        <label for="cms-link">Link (optional)</label>
-        <input id="cms-link" type="text" placeholder="https://example.com or #section" />
       </div>
       <div class="cms-field cms-field--text">
         <label for="cms-value">Content</label>
@@ -99,15 +87,12 @@
 
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
-  const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
   const publishButton = sidebar.querySelector('#cms-publish');
-  const siteNameInput = sidebar.querySelector('#cms-sitename');
-  const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
@@ -115,7 +100,6 @@
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
-  let siteName = '';
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -125,26 +109,13 @@
 
   applySidebarPosition();
 
-  function sanitizeSiteName(value) {
-    return (value || '').toLowerCase().replace(/\s+/g, '').trim();
-  }
-
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
-    linkInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
-  }
-
-  function updateSiteName(value) {
-    siteName = sanitizeSiteName(value);
-    siteNameInput.value = siteName;
-    if (!siteName) {
-      siteNameInput.placeholder = 'required for publishing';
-    }
   }
 
   function clearMessage() {
@@ -163,31 +134,6 @@
     const query = new URLSearchParams();
     query.set('file', currentFile);
     return `${API_ENDPOINT}?${query.toString()}`;
-  }
-
-  async function persistSiteName() {
-    const desiredName = sanitizeSiteName(siteNameInput.value);
-    if (!desiredName) {
-      messageEl.textContent = 'Enter a site name (lowercase, no spaces) before saving.';
-      messageEl.style.color = '#ef4444';
-      return;
-    }
-
-    try {
-      const res = await fetch(buildApiUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ siteName: desiredName, file: currentFile }),
-      });
-      if (!res.ok) throw new Error('Site name save failed');
-      const data = await res.json();
-      updateSiteName(data.siteName || desiredName);
-      messageEl.textContent = 'Site name saved for publishing.';
-      messageEl.style.color = '#16a34a';
-    } catch (err) {
-      messageEl.textContent = 'Unable to save site name. Please try again.';
-      messageEl.style.color = '#ef4444';
-    }
   }
 
   async function loadFiles() {
@@ -378,7 +324,6 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
-    linkInput.value = el.getAttribute('data-link') || '';
     keyInput.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
@@ -433,7 +378,6 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
-    const link = linkInput.value.trim();
     if (!key) {
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
@@ -457,11 +401,6 @@
     }
 
     selectedElement.setAttribute(attributeName, uniqueKey);
-    if (link) {
-      selectedElement.setAttribute('data-link', link);
-    } else {
-      selectedElement.removeAttribute('data-link');
-    }
     let bodyValue = value;
     let imagePayload = null;
 
@@ -500,7 +439,6 @@
           path,
           type: selectedType,
           image: imagePayload,
-          link,
           originalOuterHTML,
           updatedOuterHTML,
           file: currentFile,
@@ -512,7 +450,6 @@
       const data = await res.json();
       mergedContent = data.content || mergedContent;
       storedTags = data.tags || storedTags;
-      updateSiteName(data.siteName || siteName);
       applyStoredTags(storedTags);
       applyContent();
       refreshList();
@@ -523,17 +460,10 @@
   }
 
   async function publishStaticSite() {
-    if (!siteName) {
-      messageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
-      messageEl.style.color = '#ef4444';
-      siteNameInput.focus();
-      return;
-    }
-
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
-    messageEl.textContent = 'Publishing merged HTML to the site root...';
+    messageEl.textContent = 'Publishing merged HTML to /published...';
     messageEl.style.color = '#111827';
 
     try {
@@ -541,7 +471,7 @@
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
-      messageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      messageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to /published.`;
       messageEl.style.color = '#16a34a';
     } catch (err) {
       messageEl.textContent = 'Unable to publish static pages.';
@@ -561,23 +491,48 @@
     if (!hasText && type === 'text') {
       messageEl.textContent = 'Select an element that contains text, an image, or a background.';
       messageEl.style.color = '#ef4444';
-      //return;
+      return;
     }
     e.preventDefault();
     e.stopPropagation();
     selectElement(target);
   }
 
-  function handleLinkNavigation(e) {
-    if (editMode) return;
-    if (isCmsUi(e.target)) return;
-    const target = e.target.closest ? e.target.closest('[data-link]') : null;
-    if (!target) return;
-    const href = target.getAttribute('data-link');
-    if (!href) return;
+  async function handleDrop(e) {
+    if (!editMode) return;
+    const target = e.target;
+    if (isCmsUi(target)) return;
+    const [file] = e.dataTransfer.files || [];
+    if (!file) return;
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = href;
+    if (!file.type.startsWith('image/')) {
+      messageEl.textContent = 'Drop an image file to use it as a background.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      selectElement(target);
+      setTypeSelection('background');
+      imageUrlInput.value = dataUrl;
+      updateImagePreview(dataUrl);
+      applyImageToElement(target, dataUrl, 'background');
+      messageEl.textContent = 'Background image ready. Click Save to store.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to read dropped image file.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
+  function handleDragOver(e) {
+    if (!editMode) return;
+    const target = e.target;
+    if (isCmsUi(target)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    positionOutline(target);
   }
 
   function applyContent() {
@@ -617,11 +572,6 @@
         } else {
           el.setAttribute('data-cms-text', key);
         }
-        if (entry && entry.link) {
-          el.setAttribute('data-link', entry.link);
-        } else {
-          el.removeAttribute('data-link');
-        }
       }
     });
   }
@@ -633,7 +583,6 @@
         const data = await res.json();
         mergedContent = data.content || {};
         storedTags = data.tags || {};
-        updateSiteName(data.siteName || siteName);
         applyStoredTags(storedTags);
       }
       applyContent();
@@ -645,10 +594,10 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
-  document.addEventListener('click', handleLinkNavigation);
+  document.addEventListener('dragover', handleDragOver, true);
+  document.addEventListener('drop', handleDrop, true);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
-  siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
