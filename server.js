@@ -8,7 +8,6 @@ const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
 const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
-const CONTENT_FILE = path.join(ADMIN_DIR, 'content.json');
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 const PUBLISH_TARGET = ROOT;
@@ -38,108 +37,9 @@ async function ensureDir(dirPath) {
 
 async function listHtmlFiles() {
   const entries = await fs.readdir(ADMIN_DIR, { withFileTypes: true });
-  const discovered = entries
+  return entries
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
     .map((entry) => entry.name);
-
-  // Include any file keys present in content.json that still exist on disk so
-  // we can publish them even if they were added before the current server run.
-  try {
-    const raw = await readRawContent();
-    const fileKeys = raw && raw.__files && typeof raw.__files === 'object' ? Object.keys(raw.__files) : [];
-    for (const key of fileKeys) {
-      const safe = sanitizeHtmlFile(key);
-      const candidate = path.join(ADMIN_DIR, safe);
-      try {
-        const stat = await fs.stat(candidate);
-        if (stat.isFile() && safe.toLowerCase().endsWith('.html') && !discovered.includes(safe)) {
-          discovered.push(safe);
-        }
-      } catch (err) {
-        // skip missing files
-      }
-    }
-  } catch (err) {
-    console.warn('Unable to merge file list from content.json', err);
-  }
-
-  return discovered;
-}
-
-async function readRawContent() {
-  try {
-    const raw = await fs.readFile(CONTENT_FILE, 'utf8');
-    return JSON.parse(raw);
-  } catch (err) {
-    console.warn('Unable to read content.json, falling back to empty object', err);
-    return {};
-  }
-}
-
-async function readContent(fileName = DEFAULT_FILE) {
-  const parsed = await readRawContent();
-  const siteName = sanitizeSiteName(parsed.siteName || '');
-  const safeFile = sanitizeHtmlFile(fileName);
-  const hasFileMap = parsed && parsed.__files && typeof parsed.__files === 'object';
-  const fileBlock = hasFileMap ? parsed.__files[safeFile] || null : null;
-
-  const block =
-    fileBlock && typeof fileBlock === 'object'
-      ? fileBlock
-      : hasFileMap
-        ? {}
-        : parsed && typeof parsed === 'object'
-          ? parsed
-          : {};
-
-  const rawTags = block && typeof block.__tags === 'object' ? block.__tags : {};
-  const values = block && typeof block === 'object' ? { ...block } : {};
-  delete values.__tags;
-
-  const tags = Object.entries(rawTags).reduce((acc, [path, entry]) => {
-    if (typeof entry === 'string') {
-      acc[path] = { key: entry, type: 'text' };
-    } else if (entry && typeof entry === 'object' && entry.key) {
-      acc[path] = { key: entry.key, type: entry.type || 'text', ...(entry.link ? { link: entry.link } : {}) };
-    }
-    return acc;
-  }, {});
-
-  return { values, tags, siteName };
-}
-
-async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE }) {
-  const safeFile = sanitizeHtmlFile(fileName);
-  const raw = await readRawContent();
-  const payload = { ...raw };
-  const fileBlock = { ...values };
-
-  if (siteName !== undefined) {
-    payload.siteName = sanitizeSiteName(siteName);
-  }
-
-  if (tags && Object.keys(tags).length) {
-    fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
-      if (!entry || !entry.key) return acc;
-      acc[path] = { key: entry.key, type: entry.type || 'text' };
-      if (entry.link) {
-        acc[path].link = entry.link;
-      }
-      return acc;
-    }, {});
-  }
-
-  payload.__files = payload.__files && typeof payload.__files === 'object' ? payload.__files : {};
-  payload.__files[safeFile] = fileBlock;
-
-  if (safeFile === DEFAULT_FILE) {
-    Object.keys(payload)
-      .filter((key) => key !== '__files' && key !== 'siteName')
-      .forEach((key) => delete payload[key]);
-    Object.assign(payload, fileBlock);
-  }
-
-  await fs.writeFile(CONTENT_FILE, JSON.stringify(payload, null, 2));
 }
 
 function escapeHtml(value) {
@@ -215,42 +115,149 @@ function prefixAssetPath(value, siteName) {
   return `${trimmedSite}/${value}`;
 }
 
+function extractBackgroundImage(style = '') {
+  if (!style) return '';
+  const match = style.match(/background-image\s*:\s*url\(["']?(.*?)["']?\)/i);
+  return match ? match[1] : '';
+}
+
+function updateBackgroundStyle(style = '', value = '') {
+  const parts = style
+    .split(';')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => !item.toLowerCase().startsWith('background-image'));
+  if (value) {
+    parts.push(`background-image:url('${escapeHtml(value)}')`);
+  }
+  return parts.join('; ');
+}
+
+function extractContentFromHtml(html) {
+  const root = parse(html);
+  const values = {};
+  root.querySelectorAll('[data-cms-text]').forEach((el) => {
+    const key = el.getAttribute('data-cms-text');
+    if (key) values[key] = el.text;
+  });
+  root.querySelectorAll('[data-cms-image]').forEach((el) => {
+    const key = el.getAttribute('data-cms-image');
+    if (!key) return;
+    if ((el.tagName || '').toLowerCase() === 'img') {
+      values[key] = el.getAttribute('src') || '';
+      return;
+    }
+    const style = el.getAttribute('style') || '';
+    values[key] = extractBackgroundImage(style);
+  });
+  root.querySelectorAll('[data-cms-bg]').forEach((el) => {
+    const key = el.getAttribute('data-cms-bg');
+    if (!key) return;
+    const style = el.getAttribute('style') || '';
+    values[key] = extractBackgroundImage(style);
+  });
+  const htmlEl = root.querySelector('html');
+  const bodyEl = root.querySelector('body');
+  const siteName =
+    sanitizeSiteName(htmlEl && htmlEl.getAttribute('data-site-name')) ||
+    sanitizeSiteName(bodyEl && bodyEl.getAttribute('data-site-name')) ||
+    '';
+  return { values, siteName };
+}
+
+async function readContent(fileName = DEFAULT_FILE) {
+  const safeFile = sanitizeHtmlFile(fileName);
+  const htmlPath = htmlPathFor(safeFile);
+  const html = await fs.readFile(htmlPath, 'utf8');
+  const { values, siteName } = extractContentFromHtml(html);
+  if (siteName || safeFile === DEFAULT_FILE) {
+    return { values, tags: {}, siteName };
+  }
+  try {
+    const fallbackHtml = await fs.readFile(htmlPathFor(DEFAULT_FILE), 'utf8');
+    const fallbackSite = extractContentFromHtml(fallbackHtml).siteName;
+    return { values, tags: {}, siteName: fallbackSite };
+  } catch (err) {
+    return { values, tags: {}, siteName: '' };
+  }
+}
+
+function updateSiteNameInHtml(html, siteName) {
+  const root = parse(html);
+  const htmlEl = root.querySelector('html');
+  if (!htmlEl) return html;
+  if (siteName) {
+    htmlEl.setAttribute('data-site-name', siteName);
+  } else {
+    htmlEl.removeAttribute('data-site-name');
+  }
+  return root.toString();
+}
+
+function setCmsAttributes(element, { key, type, link }) {
+  element.removeAttribute('data-cms-text');
+  element.removeAttribute('data-cms-image');
+  element.removeAttribute('data-cms-bg');
+  if (type === 'image') {
+    element.setAttribute('data-cms-image', key);
+  } else if (type === 'background') {
+    element.setAttribute('data-cms-bg', key);
+  } else {
+    element.setAttribute('data-cms-text', key);
+  }
+  if (link) {
+    element.setAttribute('data-link', link);
+  } else {
+    element.removeAttribute('data-link');
+  }
+}
+
+function mergeContentIntoHtml(html, { key, type, value, elementPath, link, originalOuterHTML, updatedOuterHTML }) {
+  const resolvedValue = value ?? '';
+  let nextHtml = html;
+  let didReplaceOuter = false;
+  if (originalOuterHTML && updatedOuterHTML && nextHtml.includes(originalOuterHTML)) {
+    nextHtml = nextHtml.replace(originalOuterHTML, updatedOuterHTML);
+    didReplaceOuter = true;
+  }
+
+  if (!didReplaceOuter && (elementPath || key)) {
+    try {
+      const root = parse(nextHtml);
+      let target = null;
+      if (elementPath) {
+        target = root.querySelector(elementPath);
+      }
+      if (!target && key) {
+        target = root.querySelector(
+          `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"]`
+        );
+      }
+      if (target && key) {
+        setCmsAttributes(target, { key, type: type || 'text', link });
+        nextHtml = root.toString();
+      }
+    } catch (err) {
+      console.warn('Unable to update CMS tag in HTML', err);
+    }
+  }
+
+  if (key) {
+    if (type === 'image') {
+      nextHtml = replaceDataImage(nextHtml, key, resolvedValue);
+    } else if (type === 'background') {
+      nextHtml = replaceDataBackground(nextHtml, key, resolvedValue);
+    } else {
+      nextHtml = replaceDataText(nextHtml, key, resolvedValue);
+    }
+  }
+
+  return nextHtml;
+}
+
 function stripCmsAssets(html) {
   const withoutCss = html.replace(/<link[^>]+href=["']cms\.css["'][^>]*>\s*/gi, '');
   return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
-}
-
-function applyTagsToHtml(html, tags = {}) {
-  if (!tags || !Object.keys(tags).length) return html;
-
-  try {
-    const root = parse(html);
-
-    Object.entries(tags).forEach(([selector, entry]) => {
-      const key = typeof entry === 'string' ? entry : entry && entry.key;
-      const type = entry && entry.type ? entry.type : 'text';
-      if (!key) return;
-
-      const target = root.querySelector(selector);
-      if (!target) return;
-
-      if (type === 'image') {
-        target.setAttribute('data-cms-image', key);
-      } else if (type === 'background') {
-        target.setAttribute('data-cms-bg', key);
-      } else {
-        target.setAttribute('data-cms-text', key);
-      }
-      if (entry && entry.link) {
-        target.setAttribute('data-link', entry.link);
-      }
-    });
-
-    return root.toString();
-  } catch (err) {
-    console.warn('Unable to apply stored tags to HTML', err);
-    return html;
-  }
 }
 
 function ensureAnchorStyles(element) {
@@ -337,7 +344,7 @@ async function copyAdminAssets() {
         const relative = path.relative(ADMIN_DIR, src);
         if (!relative) return true;
         const base = path.basename(src);
-        if (base === 'content.json' || base === 'cms.js' || base === 'cms.css') return false;
+        if (base === 'cms.js' || base === 'cms.css') return false;
         if (relative.toLowerCase().endsWith('.html')) return false;
         return true;
       },
@@ -349,8 +356,16 @@ async function copyAdminAssets() {
 
 async function publishSite() {
   const files = await listHtmlFiles();
-  const rawContent = await readRawContent();
-  const siteName = sanitizeSiteName(rawContent.siteName || '');
+  let siteName = '';
+  for (const file of [DEFAULT_FILE, ...files]) {
+    try {
+      const html = await fs.readFile(htmlPathFor(file), 'utf8');
+      siteName = extractContentFromHtml(html).siteName;
+      if (siteName) break;
+    } catch (err) {
+      // continue to next file
+    }
+  }
 
   // Do not remove any existing published output; simply overwrite the files we
   // render so older exports remain available if needed.
@@ -360,7 +375,27 @@ async function publishSite() {
 
   for (const file of files) {
     try {
-      let html = await renderFile(file, { prefixImagesWithSiteName: Boolean(siteName), siteName });
+      let html = await fs.readFile(htmlPathFor(file), 'utf8');
+      if (siteName) {
+        const root = parse(html);
+        root.querySelectorAll('[data-cms-image]').forEach((el) => {
+          const src = el.getAttribute('src') || '';
+          if (!src) return;
+          el.setAttribute('src', prefixAssetPath(src, siteName));
+        });
+        root.querySelectorAll('[data-cms-bg]').forEach((el) => {
+          const style = el.getAttribute('style') || '';
+          const current = extractBackgroundImage(style);
+          if (!current) return;
+          const updatedStyle = updateBackgroundStyle(style, prefixAssetPath(current, siteName));
+          if (updatedStyle) {
+            el.setAttribute('style', updatedStyle);
+          } else {
+            el.removeAttribute('style');
+          }
+        });
+        html = root.toString();
+      }
       html = wrapDataLinks(html);
       html = stripCmsAssets(html);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
@@ -384,47 +419,10 @@ async function publishSite() {
   return publishedFiles;
 }
 
-async function renderFile(fileName = DEFAULT_FILE, options = {}) {
+async function renderFile(fileName = DEFAULT_FILE) {
   const safeFile = sanitizeHtmlFile(fileName);
   const htmlPath = htmlPathFor(safeFile);
-  const [html, { values, tags, siteName }] = await Promise.all([
-    fs.readFile(htmlPath, 'utf8'),
-    readContent(safeFile),
-  ]);
-
-  const hydratedHtml = applyTagsToHtml(html, tags);
-
-  const typeByKey = Object.values(tags || {}).reduce((acc, entry) => {
-    const key = typeof entry === 'string' ? entry : entry && entry.key;
-    const type = entry && entry.type ? entry.type : 'text';
-    if (key) acc[key] = type;
-    return acc;
-  }, {});
-
-  const prefixedValues = Object.entries(values).reduce((acc, [key, value]) => {
-    let inferredType = typeByKey[key];
-    if (!inferredType && options.prefixImagesWithSiteName) {
-      if (hydratedHtml.includes(`data-cms-image="${key}"`)) inferredType = 'image';
-      if (hydratedHtml.includes(`data-cms-bg="${key}"`)) inferredType = 'background';
-    }
-
-    if (options.prefixImagesWithSiteName && (inferredType === 'image' || inferredType === 'background')) {
-      acc[key] = prefixAssetPath(value, options.siteName || siteName);
-    } else {
-      acc[key] = value;
-    }
-    return acc;
-  }, {});
-
-  return Object.entries(prefixedValues).reduce((acc, [key, value]) => {
-    if (acc.includes(`data-cms-image="${key}"`)) {
-      return replaceDataImage(acc, key, value);
-    }
-    if (acc.includes(`data-cms-bg="${key}"`)) {
-      return replaceDataBackground(acc, key, value);
-    }
-    return replaceDataText(acc, key, value);
-  }, hydratedHtml);
+  return fs.readFile(htmlPath, 'utf8');
 }
 
 function contentTypeFor(filePath) {
@@ -506,7 +504,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
         const targetFile = sanitizeHtmlFile(file || fileName);
         const htmlPath = htmlPathFor(targetFile);
-        const { values, tags, siteName: existingSiteName } = await readContent(targetFile);
+        let currentHtml = await fs.readFile(htmlPath, 'utf8');
+        const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
         let storedValue = value ?? '';
         if (type === 'image' || type === 'background') {
           try {
@@ -530,25 +529,6 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           }
         }
 
-        if (key) {
-          values[key] = storedValue;
-          if (elementPath) {
-            tags[elementPath] = { key, type: type || 'text', ...(linkValue ? { link: linkValue } : {}) };
-          }
-
-          if (originalOuterHTML && updatedOuterHTML) {
-            try {
-              let currentHtml = await fs.readFile(htmlPath, 'utf8');
-              if (currentHtml.includes(originalOuterHTML)) {
-                currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
-                await fs.writeFile(htmlPath, currentHtml);
-              }
-            } catch (err) {
-              console.warn(`Unable to persist new tag in ${targetFile}`, err);
-            }
-          }
-        }
-
         const finalSiteName =
           sanitizedSiteName !== undefined ? sanitizedSiteName : existingSiteName || sanitizeSiteName(siteName);
 
@@ -558,10 +538,43 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           return;
         }
 
-        await writeContent({ values, tags, fileName: targetFile, siteName: finalSiteName });
+        if (siteName !== undefined) {
+          const files = await listHtmlFiles();
+          await Promise.all(
+            files.map(async (file) => {
+              try {
+                const filePath = htmlPathFor(file);
+                const html = file === targetFile ? currentHtml : await fs.readFile(filePath, 'utf8');
+                const updated = updateSiteNameInHtml(html, finalSiteName);
+                await fs.writeFile(filePath, updated);
+                if (file === targetFile) {
+                  currentHtml = updated;
+                }
+              } catch (err) {
+                console.warn(`Unable to update site name in ${file}`, err);
+              }
+            })
+          );
+        }
+
+        if (key) {
+          currentHtml = mergeContentIntoHtml(currentHtml, {
+            key,
+            type: type || 'text',
+            value: storedValue,
+            elementPath,
+            link: linkValue,
+            originalOuterHTML,
+            updatedOuterHTML,
+          });
+        }
+
+        await fs.writeFile(htmlPath, currentHtml);
+
+        const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ content: values, tags, siteName: finalSiteName }));
+        res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));

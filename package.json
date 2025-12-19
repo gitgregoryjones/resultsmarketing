@@ -1,7 +1,7 @@
 {
   "name": "resultsmarketing",
   "version": "1.0.0",
-  "description": "Inline CMS with server-rendered hydration and persistent content storage in content.json.",
+  "description": "Inline CMS with edits persisted directly into the HTML files on disk.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
