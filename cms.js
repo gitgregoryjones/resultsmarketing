@@ -69,6 +69,10 @@
       <div class="cms-field cms-field--image">
         <label for="cms-image-url">Image URL</label>
         <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+        <div class="cms-gallery-actions">
+          <button type="button" id="cms-open-gallery">Choose from gallery</button>
+          <span class="cms-gallery-note">Pick uploaded images or saved URLs.</span>
+        </div>
         <div class="cms-upload">
           <label class="cms-upload__label" for="cms-image-file">Upload image</label>
           <input id="cms-image-file" type="file" accept="image/*" />
@@ -91,6 +95,7 @@
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
+  const galleryButton = sidebar.querySelector('#cms-open-gallery');
   const saveButton = sidebar.querySelector('#cms-save');
   const publishButton = sidebar.querySelector('#cms-publish');
   const messageEl = sidebar.querySelector('#cms-message');
@@ -100,6 +105,47 @@
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
+  let galleryImages = [];
+
+  const galleryOverlay = document.createElement('div');
+  galleryOverlay.id = 'cms-gallery';
+  galleryOverlay.innerHTML = `
+    <div class="cms-gallery__backdrop" data-action="close"></div>
+    <div class="cms-gallery__panel" role="dialog" aria-modal="true" aria-labelledby="cms-gallery-title">
+      <div class="cms-gallery__header">
+        <h3 id="cms-gallery-title">Image gallery</h3>
+        <button type="button" class="cms-gallery__close" data-action="close">Close</button>
+      </div>
+      <div class="cms-gallery__body">
+        <div class="cms-gallery__section">
+          <h4>Uploaded images</h4>
+          <div class="cms-gallery__grid" data-gallery="uploaded"></div>
+          <p class="cms-gallery__empty" data-empty="uploaded">No uploaded images yet.</p>
+        </div>
+        <div class="cms-gallery__section">
+          <h4>Remote URLs</h4>
+          <div class="cms-gallery__grid" data-gallery="remote"></div>
+          <p class="cms-gallery__empty" data-empty="remote">No remote URLs saved yet.</p>
+        </div>
+        <div class="cms-gallery__section cms-gallery__add">
+          <h4>Add remote URL</h4>
+          <div class="cms-gallery__add-row">
+            <input id="cms-gallery-url" type="url" placeholder="https://example.com/photo.jpg" />
+            <button type="button" id="cms-gallery-add">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(galleryOverlay);
+  const galleryUrlInput = galleryOverlay.querySelector('#cms-gallery-url');
+  const galleryAddButton = galleryOverlay.querySelector('#cms-gallery-add');
+  const galleryUploadedGrid = galleryOverlay.querySelector('[data-gallery="uploaded"]');
+  const galleryRemoteGrid = galleryOverlay.querySelector('[data-gallery="remote"]');
+  const galleryEmptyStates = {
+    uploaded: galleryOverlay.querySelector('[data-empty="uploaded"]'),
+    remote: galleryOverlay.querySelector('[data-empty="remote"]'),
+  };
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -116,6 +162,7 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    galleryUrlInput.value = '';
   }
 
   function clearMessage() {
@@ -196,6 +243,7 @@
       clearMessage();
       clearForm();
       removeOutlines();
+      closeGallery();
     }
   }
 
@@ -307,6 +355,75 @@
       return { sourceType: 'url', url: urlValue };
     }
     return null;
+  }
+
+  async function loadGalleryImages() {
+    try {
+      const res = await fetch('/api/images');
+      if (!res.ok) throw new Error('Unable to load images');
+      const data = await res.json();
+      galleryImages = Array.isArray(data.images) ? data.images : [];
+    } catch (err) {
+      galleryImages = [];
+    }
+  }
+
+  function collectRemoteUrls() {
+    const urls = new Set();
+    Object.values(storedTags).forEach((entry) => {
+      const type = entry && entry.type ? entry.type : 'text';
+      if (type !== 'image' && type !== 'background') return;
+      const value = mergedContent[entry.key];
+      if (typeof value === 'string' && value.trim()) {
+        urls.add(value.trim());
+      }
+    });
+    const current = imageUrlInput.value.trim();
+    if (current) urls.add(current);
+    return Array.from(urls).filter((value) => !value.startsWith('/images/'));
+  }
+
+  function buildGalleryItem(src, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cms-gallery__item';
+    button.style.backgroundImage = `url('${src}')`;
+    button.setAttribute('data-src', src);
+    const caption = document.createElement('span');
+    caption.textContent = label;
+    button.appendChild(caption);
+    button.addEventListener('click', () => {
+      imageUrlInput.value = src;
+      updateImagePreview(src);
+      closeGallery();
+    });
+    return button;
+  }
+
+  function renderGallery() {
+    galleryUploadedGrid.innerHTML = '';
+    galleryRemoteGrid.innerHTML = '';
+    const uploadedItems = galleryImages
+      .filter((item) => item && item.src)
+      .map((item) => buildGalleryItem(item.src, item.name || item.src));
+    uploadedItems.forEach((item) => galleryUploadedGrid.appendChild(item));
+    galleryEmptyStates.uploaded.style.display = uploadedItems.length ? 'none' : 'block';
+
+    const remoteUrls = collectRemoteUrls();
+    const remoteItems = remoteUrls.map((src) => buildGalleryItem(src, src));
+    remoteItems.forEach((item) => galleryRemoteGrid.appendChild(item));
+    galleryEmptyStates.remote.style.display = remoteItems.length ? 'none' : 'block';
+  }
+
+  function openGallery() {
+    if (selectedType !== 'image' && selectedType !== 'background') return;
+    galleryOverlay.classList.add('open');
+    galleryUrlInput.value = '';
+    loadGalleryImages().then(renderGallery);
+  }
+
+  function closeGallery() {
+    galleryOverlay.classList.remove('open');
   }
 
   function applyImageToElement(el, src, mode = 'image') {
@@ -582,6 +699,20 @@
     } else {
       updateImagePreview('');
     }
+  });
+  galleryButton.addEventListener('click', openGallery);
+  galleryOverlay.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target && target.dataset && target.dataset.action === 'close') {
+      closeGallery();
+    }
+  });
+  galleryAddButton.addEventListener('click', () => {
+    const urlValue = galleryUrlInput.value.trim();
+    if (!urlValue) return;
+    imageUrlInput.value = urlValue;
+    updateImagePreview(urlValue);
+    closeGallery();
   });
 
   document.addEventListener('DOMContentLoaded', () => {

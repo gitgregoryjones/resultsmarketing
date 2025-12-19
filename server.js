@@ -12,6 +12,7 @@ const CONTENT_FILE = path.join(ADMIN_DIR, 'content.json');
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 const PUBLISH_TARGET = ROOT;
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp']);
 
 function sanitizeSiteName(name = '') {
   return String(name || '')
@@ -448,6 +449,23 @@ function contentTypeFor(filePath) {
   }
 }
 
+async function listImages() {
+  try {
+    const entries = await fs.readdir(IMAGES_DIR, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+      .map((entry) => ({
+        name: entry.name,
+        src: `/images/${entry.name}`,
+      }));
+  } catch (err) {
+    if (err && err.code === 'ENOENT') {
+      return [];
+    }
+    throw err;
+  }
+}
+
 async function serveStatic(res, filePath) {
   const safePath = path.normalize(filePath).replace(/^\/+/, '');
   const searchBases = [ADMIN_DIR, ROOT];
@@ -602,6 +620,18 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to list files' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/images' && req.method === 'GET') {
+    try {
+      const images = await listImages();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ images }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to list images' }));
     }
     return;
   }
