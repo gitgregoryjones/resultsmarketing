@@ -14,6 +14,7 @@
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
+  let inlineInputHandler = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -130,6 +131,17 @@
     outline.style.display = 'none';
   }
 
+  function clearInlineEditing() {
+    if (!selectedElement) return;
+    if (inlineInputHandler) {
+      selectedElement.removeEventListener('input', inlineInputHandler);
+      inlineInputHandler = null;
+    }
+    if (selectedElement.isContentEditable) {
+      selectedElement.contentEditable = 'false';
+    }
+  }
+
   function buildApiUrl() {
     const query = new URLSearchParams();
     query.set('file', currentFile);
@@ -176,9 +188,17 @@
     return element.closest && element.closest('#cms-sidebar, #cms-toggle, .cms-outline');
   }
 
+  function getElementTarget(node) {
+    if (node && node.nodeType === Node.TEXT_NODE) {
+      return node.parentElement;
+    }
+    return node;
+  }
+
   function handleHover(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) {
       outline.style.display = 'none';
       return;
@@ -192,6 +212,7 @@
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
     if (!editMode) {
+      clearInlineEditing();
       selectedElement = null;
       clearMessage();
       clearForm();
@@ -235,6 +256,12 @@
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
     selectedType = type;
+    if (!selectedElement) return;
+    if (selectedType === 'text' && editMode) {
+      enableInlineEditing(selectedElement);
+    } else {
+      clearInlineEditing();
+    }
   }
 
   function determineElementType(el) {
@@ -308,8 +335,21 @@
     el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
+  function enableInlineEditing(el) {
+    if (!editMode || selectedType !== 'text') return;
+    clearInlineEditing();
+    inlineInputHandler = () => {
+      valueInput.value = el.textContent;
+    };
+    el.contentEditable = 'true';
+    el.addEventListener('input', inlineInputHandler);
+  }
+
   function selectElement(el) {
     document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
+    if (selectedElement && selectedElement !== el) {
+      clearInlineEditing();
+    }
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
@@ -331,6 +371,8 @@
       updateImagePreview(displayValue);
     } else {
       valueInput.value = mergedContent[key] ?? value;
+      enableInlineEditing(el);
+      el.focus({ preventScroll: true });
     }
   }
 
@@ -373,6 +415,9 @@
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
       messageEl.style.color = '#ef4444';
       return;
+    }
+    if (selectedType === 'text') {
+      valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
     const value = selectedType === 'image' || selectedType === 'background'
@@ -484,8 +529,12 @@
 
   function handleClick(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) return;
+    if (selectedElement === target && target.isContentEditable) {
+      return;
+    }
     const hasText = target.textContent && target.textContent.trim();
     const type = determineElementType(target);
     if (!hasText && type === 'text') {
@@ -559,6 +608,10 @@
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  valueInput.addEventListener('input', (e) => {
+    if (!editMode || !selectedElement || selectedType !== 'text') return;
+    selectedElement.textContent = e.target.value;
+  });
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
