@@ -1,6 +1,7 @@
 (function () {
   const API_ENDPOINT = '/api/content';
   const FILES_ENDPOINT = '/api/files';
+  const GALLERY_ENDPOINT = '/api/images';
   const params = new URLSearchParams(window.location.search);
   const pathFile = (() => {
     const pathName = window.location.pathname || '/';
@@ -69,6 +70,9 @@
       <div class="cms-field cms-field--image">
         <label for="cms-image-url">Image URL</label>
         <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+        <div class="cms-image-actions">
+          <button type="button" id="cms-open-gallery">Browse gallery</button>
+        </div>
         <div class="cms-upload">
           <label class="cms-upload__label" for="cms-image-file">Upload image</label>
           <input id="cms-image-file" type="file" accept="image/*" />
@@ -85,6 +89,33 @@
   `;
   document.body.appendChild(sidebar);
 
+  const gallery = document.createElement('div');
+  gallery.id = 'cms-gallery';
+  gallery.innerHTML = `
+    <div class="cms-gallery__backdrop" data-gallery-close="true"></div>
+    <div class="cms-gallery__dialog" role="dialog" aria-modal="true" aria-labelledby="cms-gallery-title">
+      <div class="cms-gallery__header">
+        <div>
+          <h3 id="cms-gallery-title">Image gallery</h3>
+          <p class="cms-gallery__subtitle">Choose from uploaded images or saved remote URLs.</p>
+        </div>
+        <button type="button" class="cms-gallery__close" data-gallery-close="true">Close</button>
+      </div>
+      <div class="cms-gallery__body">
+        <div class="cms-gallery__section">
+          <h4>Uploaded images</h4>
+          <div class="cms-gallery__grid" data-gallery-section="uploads"></div>
+        </div>
+        <div class="cms-gallery__section">
+          <h4>Remote URLs</h4>
+          <div class="cms-gallery__grid" data-gallery-section="remote"></div>
+        </div>
+        <p class="cms-gallery__empty">No images found yet.</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(gallery);
+
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
@@ -98,8 +129,13 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
+  const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
+  const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
+  const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
+  let galleryAssets = { uploads: [], remote: [] };
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -259,6 +295,59 @@
     }
     imagePreview.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+  }
+
+  function toggleGallery(open) {
+    gallery.classList.toggle('open', open);
+    document.body.classList.toggle('cms-gallery-open', open);
+  }
+
+  function buildGalleryItem(src, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cms-gallery__item';
+    button.style.backgroundImage = `url('${src}')`;
+    button.title = label || src;
+    const caption = document.createElement('span');
+    caption.textContent = label || src;
+    button.appendChild(caption);
+    button.addEventListener('click', () => {
+      imageUrlInput.value = src;
+      updateImagePreview(src);
+      toggleGallery(false);
+    });
+    return button;
+  }
+
+  function renderGallery() {
+    const uploads = galleryAssets.uploads || [];
+    const remote = galleryAssets.remote || [];
+    galleryUploads.innerHTML = '';
+    galleryRemote.innerHTML = '';
+    uploads.forEach((src) => {
+      galleryUploads.appendChild(buildGalleryItem(src, src.replace('/images/', '')));
+    });
+    remote.forEach((src) => {
+      galleryRemote.appendChild(buildGalleryItem(src, src));
+    });
+    const hasAny = uploads.length || remote.length;
+    galleryEmpty.style.display = hasAny ? 'none' : 'block';
+  }
+
+  async function loadGalleryAssets() {
+    try {
+      const res = await fetch(GALLERY_ENDPOINT);
+      if (!res.ok) throw new Error('Unable to load images');
+      const data = await res.json();
+      galleryAssets = {
+        uploads: Array.isArray(data.uploads) ? data.uploads : [],
+        remote: Array.isArray(data.remote) ? data.remote : [],
+      };
+      renderGallery();
+    } catch (err) {
+      galleryAssets = { uploads: [], remote: [] };
+      renderGallery();
+    }
   }
 
   function getImageValue(el, key, type = 'image') {
@@ -573,6 +662,17 @@
       updateImagePreview(fileUrl);
     } else {
       updateImagePreview('');
+    }
+  });
+  galleryOpenButton.addEventListener('click', async () => {
+    await loadGalleryAssets();
+    toggleGallery(true);
+  });
+
+  gallery.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target && target.dataset && target.dataset.galleryClose) {
+      toggleGallery(false);
     }
   });
 

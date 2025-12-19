@@ -11,6 +11,7 @@ const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 const PUBLISH_TARGET = ROOT;
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
 
 function sanitizeSiteName(name = '') {
   return String(name || '')
@@ -40,6 +41,49 @@ async function listHtmlFiles() {
   return entries
     .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
     .map((entry) => entry.name);
+}
+
+function isRemoteImageUrl(value = '') {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^(https?:)?\/\//i.test(trimmed);
+}
+
+async function listUploadedImages() {
+  try {
+    const entries = await fs.readdir(IMAGES_DIR, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && IMAGE_EXTENSIONS.has(path.extname(entry.name).toLowerCase()))
+      .map((entry) => `/images/${entry.name}`)
+      .sort();
+  } catch (err) {
+    if (err && err.code !== 'ENOENT') {
+      console.warn('Unable to read images directory', err);
+    }
+    return [];
+  }
+}
+
+async function listRemoteImagesFromContent() {
+  const files = await listHtmlFiles();
+  const remoteUrls = new Set();
+  await Promise.all(
+    files.map(async (file) => {
+      try {
+        const html = await fs.readFile(htmlPathFor(file), 'utf8');
+        const { values } = extractContentFromHtml(html);
+        Object.values(values).forEach((value) => {
+          if (isRemoteImageUrl(value)) {
+            remoteUrls.add(value.trim());
+          }
+        });
+      } catch (err) {
+        console.warn(`Unable to read ${file} for remote images`, err);
+      }
+    })
+  );
+  return Array.from(remoteUrls).sort();
 }
 
 function escapeHtml(value) {
@@ -625,6 +669,18 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to list files' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/images' && req.method === 'GET') {
+    try {
+      const [uploads, remote] = await Promise.all([listUploadedImages(), listRemoteImagesFromContent()]);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ uploads, remote }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to list images' }));
     }
     return;
   }
