@@ -14,6 +14,7 @@
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
+  let inlineInputHandler = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -159,6 +160,17 @@
     outline.style.display = 'none';
   }
 
+  function clearInlineEditing() {
+    if (!selectedElement) return;
+    if (inlineInputHandler) {
+      selectedElement.removeEventListener('input', inlineInputHandler);
+      inlineInputHandler = null;
+    }
+    if (selectedElement.isContentEditable) {
+      selectedElement.contentEditable = 'false';
+    }
+  }
+
   function buildApiUrl() {
     const query = new URLSearchParams();
     query.set('file', currentFile);
@@ -246,6 +258,7 @@
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
     if (!editMode) {
+      clearInlineEditing();
       selectedElement = null;
       clearMessage();
       clearForm();
@@ -289,6 +302,12 @@
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
     selectedType = type;
+    if (!selectedElement) return;
+    if (selectedType === 'text' && editMode) {
+      enableInlineEditing(selectedElement);
+    } else {
+      clearInlineEditing();
+    }
   }
 
   function determineElementType(el) {
@@ -362,8 +381,21 @@
     el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
+  function enableInlineEditing(el) {
+    if (!editMode || selectedType !== 'text') return;
+    clearInlineEditing();
+    inlineInputHandler = () => {
+      valueInput.value = el.textContent;
+    };
+    el.contentEditable = 'true';
+    el.addEventListener('input', inlineInputHandler);
+  }
+
   function selectElement(el) {
     document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
+    if (selectedElement && selectedElement !== el) {
+      clearInlineEditing();
+    }
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
@@ -386,6 +418,8 @@
       updateImagePreview(displayValue);
     } else {
       valueInput.value = mergedContent[key] ?? value;
+      enableInlineEditing(el);
+      el.focus({ preventScroll: true });
     }
   }
 
@@ -556,6 +590,9 @@
     if (!editMode) return;
     const target = e.target;
     if (isCmsUi(target)) return;
+    if (selectedElement === target && target.isContentEditable) {
+      return;
+    }
     const hasText = target.textContent && target.textContent.trim();
     const type = determineElementType(target);
     if (!hasText && type === 'text') {
@@ -648,6 +685,10 @@
   document.addEventListener('click', handleLinkNavigation);
   saveButton.addEventListener('click', saveSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  valueInput.addEventListener('input', (e) => {
+    if (!editMode || !selectedElement || selectedType !== 'text') return;
+    selectedElement.textContent = e.target.value;
+  });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
