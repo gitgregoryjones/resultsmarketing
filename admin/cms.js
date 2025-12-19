@@ -463,6 +463,9 @@
       messageEl.style.color = '#ef4444';
       return;
     }
+    if (selectedType === 'text') {
+      valueInput.value = selectedElement.textContent;
+    }
     const key = keyInput.value.trim();
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
