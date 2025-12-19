@@ -411,16 +411,29 @@
     });
   }
 
-  function buildElementPath(el) {
-    const segments = [];
-    let node = el;
-    while (node && node.nodeType === 1 && node !== document.body) {
-      const siblings = Array.from(node.parentNode.children);
-      const index = siblings.indexOf(node) + 1;
-      segments.unshift(`${node.tagName.toLowerCase()}:nth-child(${index})`);
-      node = node.parentNode;
+  function generateCmsId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `cms-${window.crypto.randomUUID()}`;
     }
-    return segments.length ? `body > ${segments.join(' > ')}` : '';
+    const stamp = Date.now().toString(36);
+    const rand = Math.random().toString(36).slice(2, 10);
+    return `cms-${stamp}-${rand}`;
+  }
+
+  function ensureCmsId(el) {
+    let cmsId = el.getAttribute('data-cms-id');
+    if (cmsId) return cmsId;
+    cmsId = generateCmsId();
+    while (document.querySelector(`[data-cms-id="${CSS.escape(cmsId)}"]`)) {
+      cmsId = generateCmsId();
+    }
+    el.setAttribute('data-cms-id', cmsId);
+    return cmsId;
+  }
+
+  function buildElementSelector(el) {
+    const cmsId = ensureCmsId(el);
+    return `[data-cms-id="${cmsId}"]`;
   }
 
   async function saveSelection() {
@@ -487,7 +500,7 @@
       selectedElement.textContent = value;
     }
 
-    const path = buildElementPath(selectedElement);
+    const path = buildElementSelector(selectedElement);
     const updatedOuterHTML = selectedElement.outerHTML;
 
     try {
