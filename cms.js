@@ -10,7 +10,6 @@
   })();
   const currentFile = params.get('file') || pathFile;
   let mergedContent = {};
-  let storedTags = {};
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
@@ -462,8 +461,6 @@
       }
       const data = await res.json();
       mergedContent = data.content || mergedContent;
-      storedTags = data.tags || storedTags;
-      applyStoredTags(storedTags);
       applyContent();
       refreshList();
     } catch (err) {
@@ -535,31 +532,12 @@
     refreshList();
   }
 
-  function applyStoredTags(tags = {}) {
-    Object.entries(tags).forEach(([path, entry]) => {
-      const key = typeof entry === 'string' ? entry : entry.key;
-      const type = typeof entry === 'object' && entry.type ? entry.type : 'text';
-      const el = document.querySelector(path);
-      if (el && key) {
-        if (type === 'image') {
-          el.setAttribute('data-cms-image', key);
-        } else if (type === 'background') {
-          el.setAttribute('data-cms-bg', key);
-        } else {
-          el.setAttribute('data-cms-text', key);
-        }
-      }
-    });
-  }
-
   async function hydrate() {
     try {
       const res = await fetch(buildApiUrl());
       if (res.ok) {
         const data = await res.json();
         mergedContent = data.content || {};
-        storedTags = data.tags || {};
-        applyStoredTags(storedTags);
       }
       applyContent();
     } catch (err) {

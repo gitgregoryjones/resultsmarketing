@@ -46,7 +46,9 @@ async function listHtmlFiles() {
   // we can publish them even if they were added before the current server run.
   try {
     const raw = await readRawContent();
-    const fileKeys = raw && raw.__files && typeof raw.__files === 'object' ? Object.keys(raw.__files) : [];
+    const fileKeys = raw && typeof raw === 'object'
+      ? Object.keys(raw).filter((key) => key.toLowerCase().endsWith('.html'))
+      : [];
     for (const key of fileKeys) {
       const safe = sanitizeHtmlFile(key);
       const candidate = path.join(ADMIN_DIR, safe);
@@ -80,28 +82,20 @@ async function readContent(fileName = DEFAULT_FILE) {
   const parsed = await readRawContent();
   const siteName = sanitizeSiteName(parsed.siteName || '');
   const safeFile = sanitizeHtmlFile(fileName);
-  const hasFileMap = parsed && parsed.__files && typeof parsed.__files === 'object';
-  const fileBlock = hasFileMap ? parsed.__files[safeFile] || null : null;
+  const fileBlock = parsed && typeof parsed === 'object' ? parsed[safeFile] : null;
+  const rawTags = fileBlock && typeof fileBlock === 'object' && fileBlock._tags ? fileBlock._tags : {};
 
-  const block =
-    fileBlock && typeof fileBlock === 'object'
-      ? fileBlock
-      : hasFileMap
-        ? {}
-        : parsed && typeof parsed === 'object'
-          ? parsed
-          : {};
-
-  const rawTags = block && typeof block.__tags === 'object' ? block.__tags : {};
-  const values = block && typeof block === 'object' ? { ...block } : {};
-  delete values.__tags;
-
-  const tags = Object.entries(rawTags).reduce((acc, [path, entry]) => {
-    if (typeof entry === 'string') {
-      acc[path] = { key: entry, type: 'text' };
-    } else if (entry && typeof entry === 'object' && entry.key) {
-      acc[path] = { key: entry.key, type: entry.type || 'text', ...(entry.link ? { link: entry.link } : {}) };
+  const tags = Object.entries(rawTags).reduce((acc, [key, entry]) => {
+    if (entry && typeof entry === 'object') {
+      acc[key] = { type: entry.type || 'text', value: entry.value ?? '' };
+    } else {
+      acc[key] = { type: 'text', value: entry };
     }
+    return acc;
+  }, {});
+
+  const values = Object.entries(tags).reduce((acc, [key, entry]) => {
+    acc[key] = entry.value;
     return acc;
   }, {});
 
@@ -112,32 +106,23 @@ async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE })
   const safeFile = sanitizeHtmlFile(fileName);
   const raw = await readRawContent();
   const payload = { ...raw };
-  const fileBlock = { ...values };
+  const fileBlock = {};
 
   if (siteName !== undefined) {
     payload.siteName = sanitizeSiteName(siteName);
   }
 
-  if (tags && Object.keys(tags).length) {
-    fileBlock.__tags = Object.entries(tags).reduce((acc, [path, entry]) => {
-      if (!entry || !entry.key) return acc;
-      acc[path] = { key: entry.key, type: entry.type || 'text' };
-      if (entry.link) {
-        acc[path].link = entry.link;
-      }
-      return acc;
-    }, {});
-  }
+  const normalizedTags = Object.entries(tags || {}).reduce((acc, [key, entry]) => {
+    if (entry && typeof entry === 'object' && entry.value !== undefined) {
+      acc[key] = { type: entry.type || 'text', value: entry.value };
+    } else if (values && values[key] !== undefined) {
+      acc[key] = { type: 'text', value: values[key] };
+    }
+    return acc;
+  }, {});
 
-  payload.__files = payload.__files && typeof payload.__files === 'object' ? payload.__files : {};
-  payload.__files[safeFile] = fileBlock;
-
-  if (safeFile === DEFAULT_FILE) {
-    Object.keys(payload)
-      .filter((key) => key !== '__files' && key !== 'siteName')
-      .forEach((key) => delete payload[key]);
-    Object.assign(payload, fileBlock);
-  }
+  fileBlock._tags = normalizedTags;
+  payload[safeFile] = fileBlock;
 
   await fs.writeFile(CONTENT_FILE, JSON.stringify(payload, null, 2));
 }
@@ -392,10 +377,9 @@ async function renderFile(fileName = DEFAULT_FILE, options = {}) {
     readContent(safeFile),
   ]);
 
-  const hydratedHtml = applyTagsToHtml(html, tags);
+  const hydratedHtml = html;
 
-  const typeByKey = Object.values(tags || {}).reduce((acc, entry) => {
-    const key = typeof entry === 'string' ? entry : entry && entry.key;
+  const typeByKey = Object.entries(tags || {}).reduce((acc, [key, entry]) => {
     const type = entry && entry.type ? entry.type : 'text';
     if (key) acc[key] = type;
     return acc;
@@ -489,15 +473,12 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           value,
           originalOuterHTML,
           updatedOuterHTML,
-          path: elementPath,
           type,
           image,
-          link,
           file,
           siteName,
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
-        const linkValue = typeof link === 'string' ? link.trim() : '';
         if (!key && sanitizedSiteName === undefined) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
@@ -532,9 +513,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
         if (key) {
           values[key] = storedValue;
-          if (elementPath) {
-            tags[elementPath] = { key, type: type || 'text', ...(linkValue ? { link: linkValue } : {}) };
-          }
+          tags[key] = { type: type || 'text', value: storedValue };
 
           if (originalOuterHTML && updatedOuterHTML) {
             try {
