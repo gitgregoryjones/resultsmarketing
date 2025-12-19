@@ -317,6 +317,22 @@ function wrapDataLinks(html) {
   }
 }
 
+function ensureCmsIdInHtml(html, { elementId, domPath }) {
+  if (!elementId || !domPath) return html;
+  try {
+    const root = parse(html);
+    const selector = `[data-cms-id="${elementId}"]`;
+    if (root.querySelector(selector)) return html;
+    const target = root.querySelector(domPath);
+    if (!target) return html;
+    target.setAttribute('data-cms-id', elementId);
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to persist data-cms-id to HTML', err);
+    return html;
+  }
+}
+
 async function copyDirIfExists(sourceDir, targetDir) {
   try {
     await fs.access(sourceDir);
@@ -490,6 +506,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           originalOuterHTML,
           updatedOuterHTML,
           path: elementPath,
+          domPath,
+          elementId,
           type,
           image,
           link,
@@ -532,8 +550,15 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
         if (key) {
           values[key] = storedValue;
-          if (elementPath) {
-            tags[elementPath] = { key, type: type || 'text', ...(linkValue ? { link: linkValue } : {}) };
+          const selector =
+            elementId && typeof elementId === 'string' && elementId.trim()
+              ? `[data-cms-id="${elementId.trim()}"]`
+              : elementPath;
+          if (selector) {
+            if (elementPath && elementPath !== selector) {
+              delete tags[elementPath];
+            }
+            tags[selector] = { key, type: type || 'text', ...(linkValue ? { link: linkValue } : {}) };
           }
 
           if (originalOuterHTML && updatedOuterHTML) {
@@ -541,8 +566,10 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
               let currentHtml = await fs.readFile(htmlPath, 'utf8');
               if (currentHtml.includes(originalOuterHTML)) {
                 currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
-                await fs.writeFile(htmlPath, currentHtml);
+              } else if (elementId && domPath) {
+                currentHtml = ensureCmsIdInHtml(currentHtml, { elementId: elementId.trim(), domPath });
               }
+              await fs.writeFile(htmlPath, currentHtml);
             } catch (err) {
               console.warn(`Unable to persist new tag in ${targetFile}`, err);
             }

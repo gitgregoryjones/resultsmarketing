@@ -455,6 +455,21 @@
     return `[data-cms-id="${escaped}"]`;
   }
 
+  function buildDomPath(el) {
+    const segments = [];
+    let node = el;
+    while (node && node.nodeType === Node.ELEMENT_NODE && node.tagName.toLowerCase() !== 'html') {
+      const tag = node.tagName.toLowerCase();
+      const parent = node.parentElement;
+      if (!parent) break;
+      const siblings = Array.from(parent.children).filter((child) => child.tagName.toLowerCase() === tag);
+      const index = siblings.indexOf(node) + 1;
+      segments.unshift(`${tag}:nth-of-type(${index})`);
+      node = parent;
+    }
+    return segments.length ? `body > ${segments.join(' > ')}` : '';
+  }
+
   async function saveSelection() {
     if (!selectedElement) {
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
@@ -520,6 +535,8 @@
     }
 
     const path = buildElementPath(selectedElement);
+    const domPath = buildDomPath(selectedElement);
+    const elementId = selectedElement.getAttribute('data-cms-id');
     const updatedOuterHTML = selectedElement.outerHTML;
 
     try {
@@ -530,6 +547,8 @@
           key: uniqueKey,
           value: bodyValue,
           path,
+          domPath,
+          elementId,
           type: selectedType,
           image: imagePayload,
           link,
