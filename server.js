@@ -76,6 +76,17 @@ async function readRawContent() {
   }
 }
 
+async function readComponents() {
+  const raw = await readRawContent();
+  return Array.isArray(raw.__components) ? raw.__components : [];
+}
+
+async function writeComponents(components) {
+  const raw = await readRawContent();
+  raw.__components = Array.isArray(components) ? components : [];
+  await fs.writeFile(CONTENT_FILE, JSON.stringify(raw, null, 2));
+}
+
 async function readContent(fileName = DEFAULT_FILE) {
   const parsed = await readRawContent();
   const siteName = sanitizeSiteName(parsed.siteName || '');
@@ -134,7 +145,7 @@ async function writeContent({ values, tags, siteName, fileName = DEFAULT_FILE })
 
   if (safeFile === DEFAULT_FILE) {
     Object.keys(payload)
-      .filter((key) => key !== '__files' && key !== 'siteName')
+      .filter((key) => key !== '__files' && key !== '__components' && key !== 'siteName')
       .forEach((key) => delete payload[key]);
     Object.assign(payload, fileBlock);
   }
@@ -574,12 +585,106 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
   res.end('Method not allowed');
 }
 
+async function handleApiComponents(req, res) {
+  if (req.method === 'GET') {
+    const components = await readComponents();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ components }));
+    return;
+  }
+
+  if (req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const name = typeof payload.name === 'string' ? payload.name.trim() : '';
+        const html = typeof payload.html === 'string' ? payload.html.trim() : '';
+        if (!name || !html) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Component name and HTML are required' }));
+          return;
+        }
+        const components = await readComponents();
+        const entry = {
+          id: `component-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          name,
+          html,
+          createdAt: new Date().toISOString(),
+        };
+        components.push(entry);
+        await writeComponents(components);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ components }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+      }
+    });
+    return;
+  }
+
+  res.writeHead(405, { 'Content-Type': 'text/plain' });
+  res.end('Method not allowed');
+}
+
+async function handleApiComponentInsert(req, res) {
+  if (req.method !== 'POST') {
+    res.writeHead(405, { 'Content-Type': 'text/plain' });
+    res.end('Method not allowed');
+    return;
+  }
+
+  let body = '';
+  req.on('data', (chunk) => {
+    body += chunk;
+  });
+  req.on('end', async () => {
+    try {
+      const payload = JSON.parse(body || '{}');
+      const targetFile = sanitizeHtmlFile(payload.file || DEFAULT_FILE);
+      const originalOuterHTML = payload.originalOuterHTML || '';
+      const updatedOuterHTML = payload.updatedOuterHTML || '';
+      if (!originalOuterHTML || !updatedOuterHTML) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'HTML replacement payload is required' }));
+        return;
+      }
+      const htmlPath = htmlPathFor(targetFile);
+      let currentHtml = await fs.readFile(htmlPath, 'utf8');
+      if (!currentHtml.includes(originalOuterHTML)) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Target element not found in HTML' }));
+        return;
+      }
+      currentHtml = currentHtml.replace(originalOuterHTML, updatedOuterHTML);
+      await fs.writeFile(htmlPath, currentHtml);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+    }
+  });
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname || '/';
 
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
+  }
+
+  if (pathname === '/api/components') {
+    return handleApiComponents(req, res);
+  }
+
+  if (pathname === '/api/components/insert') {
+    return handleApiComponentInsert(req, res);
   }
 
   if (pathname === '/api/publish' && req.method === 'POST') {

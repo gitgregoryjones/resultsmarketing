@@ -1,6 +1,8 @@
 (function () {
   const API_ENDPOINT = '/api/content';
   const FILES_ENDPOINT = '/api/files';
+  const COMPONENTS_ENDPOINT = '/api/components';
+  const COMPONENT_INSERT_ENDPOINT = '/api/components/insert';
   const params = new URLSearchParams(window.location.search);
   const pathFile = (() => {
     const pathName = window.location.pathname || '/';
@@ -14,6 +16,7 @@
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
+  let components = [];
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -88,6 +91,16 @@
         <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
       <button id="cms-save">Save</button>
+      <div class="cms-divider"></div>
+      <div class="cms-field cms-field--component">
+        <label for="cms-component-name">Component name</label>
+        <input id="cms-component-name" type="text" placeholder="Hero section" />
+      </div>
+      <button id="cms-save-component" type="button">Save as component</button>
+      <div class="cms-hint">Select an element to replace with a saved component.</div>
+      <h4 class="cms-sidebar__list-title">Saved components</h4>
+      <p id="cms-components-empty">No components saved yet.</p>
+      <ul class="cms-list" id="cms-components-list"></ul>
       <div id="cms-message"></div>
       <div class="cms-hint">Existing keys on the page</div>
       <h4 class="cms-sidebar__list-title">Discovered</h4>
@@ -105,6 +118,10 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
+  const componentNameInput = sidebar.querySelector('#cms-component-name');
+  const saveComponentButton = sidebar.querySelector('#cms-save-component');
+  const componentListEl = sidebar.querySelector('#cms-components-list');
+  const componentEmptyEl = sidebar.querySelector('#cms-components-empty');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
@@ -138,6 +155,7 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    componentNameInput.value = '';
   }
 
   function updateSiteName(value) {
@@ -290,6 +308,21 @@
     return candidate;
   }
 
+  function ensureUniqueComponentKey(base, existingKeys) {
+    if (!existingKeys.has(base)) {
+      existingKeys.add(base);
+      return base;
+    }
+    let i = 2;
+    let candidate = `${base}-${i}`;
+    while (existingKeys.has(candidate)) {
+      i += 1;
+      candidate = `${base}-${i}`;
+    }
+    existingKeys.add(candidate);
+    return candidate;
+  }
+
   function generateKeySuggestion(el) {
     const tag = el.tagName.toLowerCase();
     const text = (el.textContent || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -402,6 +435,9 @@
     } else {
       valueInput.value = mergedContent[key] ?? value;
     }
+    if (!componentNameInput.value.trim()) {
+      componentNameInput.value = key || el.tagName.toLowerCase();
+    }
   }
 
   function findElementByKey(key) {
@@ -453,6 +489,148 @@
     const id = ensureElementId(el);
     const escaped = typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(id) : id;
     return `[data-cms-id="${escaped}"]`;
+  }
+
+  function buildComponentHtml(element) {
+    const clone = element.cloneNode(true);
+    clone.classList.remove('cms-outlined');
+    clone.removeAttribute('data-cms-id');
+    clone.querySelectorAll('[data-cms-id]').forEach((node) => node.removeAttribute('data-cms-id'));
+    return clone.outerHTML;
+  }
+
+  function parseComponentHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const root = template.content.firstElementChild;
+    if (!root || template.content.children.length !== 1) {
+      return null;
+    }
+    root.removeAttribute('data-cms-id');
+    root.querySelectorAll('[data-cms-id]').forEach((node) => node.removeAttribute('data-cms-id'));
+    const existingKeys = new Set([...getExistingKeys(), ...Object.keys(mergedContent)]);
+    root.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg]').forEach((node) => {
+      if (node.hasAttribute('data-cms-text')) {
+        const key = node.getAttribute('data-cms-text');
+        if (key) {
+          node.setAttribute('data-cms-text', ensureUniqueComponentKey(key, existingKeys));
+        }
+        return;
+      }
+      if (node.hasAttribute('data-cms-image')) {
+        const key = node.getAttribute('data-cms-image');
+        if (key) {
+          node.setAttribute('data-cms-image', ensureUniqueComponentKey(key, existingKeys));
+        }
+        return;
+      }
+      const key = node.getAttribute('data-cms-bg');
+      if (key) {
+        node.setAttribute('data-cms-bg', ensureUniqueComponentKey(key, existingKeys));
+      }
+    });
+    return root;
+  }
+
+  function refreshComponentList() {
+    componentListEl.innerHTML = '';
+    componentEmptyEl.style.display = components.length ? 'none' : 'block';
+    components.forEach((component) => {
+      const item = document.createElement('li');
+      item.dataset.componentId = component.id;
+      const label = document.createElement('span');
+      label.textContent = component.name;
+      const actions = document.createElement('div');
+      actions.className = 'cms-component-actions';
+      const insertBtn = document.createElement('button');
+      insertBtn.textContent = 'Insert';
+      insertBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        insertComponent(component);
+      });
+      actions.appendChild(insertBtn);
+      item.appendChild(label);
+      item.appendChild(actions);
+      componentListEl.appendChild(item);
+    });
+  }
+
+  async function loadComponents() {
+    try {
+      const res = await fetch(COMPONENTS_ENDPOINT);
+      if (!res.ok) throw new Error('Unable to fetch components');
+      const data = await res.json();
+      components = Array.isArray(data.components) ? data.components : [];
+      refreshComponentList();
+    } catch (err) {
+      components = [];
+      refreshComponentList();
+    }
+  }
+
+  async function saveComponent() {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element before saving a component.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const name = componentNameInput.value.trim();
+    if (!name) {
+      messageEl.textContent = 'Component name is required.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const html = buildComponentHtml(selectedElement);
+    try {
+      const res = await fetch(COMPONENTS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, html }),
+      });
+      if (!res.ok) throw new Error('Component save failed');
+      const data = await res.json();
+      components = Array.isArray(data.components) ? data.components : components;
+      refreshComponentList();
+      componentNameInput.value = '';
+      messageEl.textContent = 'Component saved.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to save component.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
+  async function insertComponent(component) {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to replace with the component.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const originalOuterHTML = selectedElement.outerHTML;
+    const componentNode = parseComponentHtml(component.html || '');
+    if (!componentNode) {
+      messageEl.textContent = 'Component HTML is invalid. Please re-save it.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    selectedElement.replaceWith(componentNode);
+    selectedElement = componentNode;
+    const updatedOuterHTML = componentNode.outerHTML;
+
+    try {
+      const res = await fetch(COMPONENT_INSERT_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: currentFile, originalOuterHTML, updatedOuterHTML }),
+      });
+      if (!res.ok) throw new Error('Component insert failed');
+      messageEl.textContent = `Inserted "${component.name}".`;
+      messageEl.style.color = '#16a34a';
+      refreshList();
+    } catch (err) {
+      messageEl.textContent = 'Unable to insert component.';
+      messageEl.style.color = '#ef4444';
+    }
   }
 
   async function saveSelection() {
@@ -680,6 +858,7 @@
   document.addEventListener('click', handleClick, true);
   document.addEventListener('click', handleLinkNavigation);
   saveButton.addEventListener('click', saveSelection);
+  saveComponentButton.addEventListener('click', saveComponent);
   publishButton.addEventListener('click', publishStaticSite);
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
@@ -701,6 +880,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
+    loadComponents();
     applySidebarPosition();
     hydrate();
   });
