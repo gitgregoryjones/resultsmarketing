@@ -79,6 +79,12 @@
       "div.our-services": "Our Services",
       "div.services-header-1": "The RESULTS Process",
       "div.services-header-2": "Our Services",
+      "div.jane-doe-sales-consultant": "Jane Smith - Sales Consultant",
+      "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building-": "Our team is a collective of full-time sales, strategists, and marketers—dedicated to building ....!",
+      "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building--2": "Our team is a collective of full-time sales, strategists, and marketers—dedicated to building .....",
+      "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building--3": "Our team is a collective of full-time sales, strategists, and marketers—dedicated to building ....!",
+      "div.april-vice-president": "April - Vice President!",
+      "div.jane-doe-sales-consultant-2": "Jane Smith - Sales Consultant",
       "__tags": {
         "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h1:nth-child(1) > span:nth-child(1)": {
           "key": "hero.headline.prefix",
@@ -183,6 +189,34 @@
         },
         "[data-cms-id=\"cms-a70bb3e1-70a6-4134-9f4c-f5484bcec960\"]": {
           "key": "div.image-icon-2",
+          "type": "text"
+        },
+        "[data-cms-id=\"cms-2196dbb9-83dc-4ad5-b1a5-bc2a661719ec\"]": {
+          "key": "div.-sales-consultant-photo--3",
+          "type": "background"
+        },
+        "[data-cms-id=\"cms-0d9b2598-28ed-4a8d-8c9b-425e6af11639\"]": {
+          "key": "div.jane-doe-sales-consultant",
+          "type": "text"
+        },
+        "[data-cms-id=\"cms-77ec7c5a-f305-4f9b-a118-2de392991991\"]": {
+          "key": "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building-",
+          "type": "text"
+        },
+        "[data-cms-id=\"cms-6a64258b-c75c-4442-9542-474050696f6c\"]": {
+          "key": "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building--2",
+          "type": "text"
+        },
+        "[data-cms-id=\"cms-35ab2f04-adf7-4169-a075-71ff04cc26c3\"]": {
+          "key": "div.our-team-is-a-collective-of-full-time-sales-strategists-and-marketers-dedicated-to-building--3",
+          "type": "text"
+        },
+        "[data-cms-id=\"cms-d8e2d4c9-cdda-4e40-a598-8d40a85c7fd7\"]": {
+          "key": "div.april-vice-president",
+          "type": "text"
+        },
+        "body > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > div:nth-child(5) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1)": {
+          "key": "div.jane-doe-sales-consultant-2",
           "type": "text"
         }
       }
