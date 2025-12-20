@@ -15,6 +15,13 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
+  const HOVER_CLASS_MAP = {
+    lift: 'cms-hover-lift',
+    glow: 'cms-hover-glow',
+    zoom: 'cms-hover-zoom',
+    shadow: 'cms-hover-shadow',
+  };
+  const HOVER_CLASSES = Object.values(HOVER_CLASS_MAP);
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -102,6 +109,32 @@
         </div>
         <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
+      <div class="cms-divider"></div>
+      <div class="cms-field cms-field--effects">
+        <label>Effects &amp; Colors</label>
+        <div class="cms-effects">
+          <button type="button" id="cms-effect-flip" class="cms-effects__toggle">Flip card</button>
+          <button type="button" id="cms-effect-scroll" class="cms-effects__toggle">Scroller</button>
+          <div class="cms-effects__row">
+            <label for="cms-scroll-height">Scroll height</label>
+            <input id="cms-scroll-height" type="number" min="80" step="10" value="240" />
+          </div>
+          <div class="cms-effects__row">
+            <label for="cms-hover-effect">Hover effect</label>
+            <select id="cms-hover-effect">
+              <option value="none">None</option>
+              <option value="lift">Lift</option>
+              <option value="glow">Glow</option>
+              <option value="zoom">Zoom</option>
+              <option value="shadow">Shadow</option>
+            </select>
+          </div>
+          <div class="cms-effects__row cms-effects__colors">
+            <button type="button" id="cms-color-dialog-open" class="cms-effects__toggle">Pick colors</button>
+            <div class="cms-color-preview" id="cms-color-preview"></div>
+          </div>
+        </div>
+      </div>
       <button id="cms-save">Save</button>
       <button id="cms-delete" type="button">Delete element</button>
       <div id="cms-message"></div>
@@ -112,6 +145,37 @@
     </div>
   `;
   document.body.appendChild(sidebar);
+
+  const colorDialog = document.createElement('dialog');
+  colorDialog.id = 'cms-color-dialog';
+  colorDialog.classList.add('cms-ui');
+  colorDialog.innerHTML = `
+    <form method="dialog" class="cms-color-dialog">
+      <h3>Colors</h3>
+      <label for="cms-color-text">Text color</label>
+      <div class="cms-color-row">
+        <input type="color" id="cms-color-text" value="#111827" />
+        <input type="text" id="cms-color-text-value" placeholder="#111827" />
+      </div>
+      <label for="cms-color-bg">Background color</label>
+      <div class="cms-color-row">
+        <input type="color" id="cms-color-bg" value="#ffffff" />
+        <input type="text" id="cms-color-bg-value" placeholder="#ffffff" />
+      </div>
+      <label for="cms-color-border">Border color</label>
+      <div class="cms-color-row">
+        <input type="color" id="cms-color-border" value="#e5e7eb" />
+        <input type="text" id="cms-color-border-value" placeholder="#e5e7eb" />
+      </div>
+      <div class="cms-color-actions">
+        <button type="button" id="cms-color-clear">Clear</button>
+        <div class="cms-color-actions__spacer"></div>
+        <button type="submit" id="cms-color-close">Close</button>
+        <button type="button" id="cms-color-apply">Apply</button>
+      </div>
+    </form>
+  `;
+  document.body.appendChild(colorDialog);
 
   const gallery = document.createElement('div');
   gallery.id = 'cms-gallery';
@@ -161,6 +225,20 @@
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
   const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
+  const effectsFlipButton = sidebar.querySelector('#cms-effect-flip');
+  const effectsScrollButton = sidebar.querySelector('#cms-effect-scroll');
+  const scrollHeightInput = sidebar.querySelector('#cms-scroll-height');
+  const hoverEffectSelect = sidebar.querySelector('#cms-hover-effect');
+  const colorDialogOpenButton = sidebar.querySelector('#cms-color-dialog-open');
+  const colorPreview = sidebar.querySelector('#cms-color-preview');
+  const colorTextInput = colorDialog.querySelector('#cms-color-text');
+  const colorTextValueInput = colorDialog.querySelector('#cms-color-text-value');
+  const colorBgInput = colorDialog.querySelector('#cms-color-bg');
+  const colorBgValueInput = colorDialog.querySelector('#cms-color-bg-value');
+  const colorBorderInput = colorDialog.querySelector('#cms-color-border');
+  const colorBorderValueInput = colorDialog.querySelector('#cms-color-border-value');
+  const colorApplyButton = colorDialog.querySelector('#cms-color-apply');
+  const colorClearButton = colorDialog.querySelector('#cms-color-clear');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
@@ -201,6 +279,11 @@
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
+    effectsFlipButton.classList.remove('active');
+    effectsScrollButton.classList.remove('active');
+    scrollHeightInput.value = '240';
+    hoverEffectSelect.value = 'none';
+    colorPreview.style.background = 'transparent';
   }
 
   function updateSiteName(value) {
@@ -214,6 +297,46 @@
   function clearMessage() {
     messageEl.textContent = '';
     messageEl.style.color = '#16a34a';
+  }
+
+  function rgbToHex(value) {
+    if (!value) return '';
+    if (value.startsWith('#')) return value;
+    const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!match) return '';
+    const [_, r, g, b] = match;
+    return (
+      '#' +
+      [r, g, b]
+        .map((num) => {
+          const hex = Number(num).toString(16);
+          return hex.length === 1 ? `0${hex}` : hex;
+        })
+        .join('')
+    );
+  }
+
+  function syncColorInputs({ textColor, bgColor, borderColor }) {
+    if (textColor) {
+      colorTextInput.value = textColor;
+      colorTextValueInput.value = textColor;
+    }
+    if (bgColor) {
+      colorBgInput.value = bgColor;
+      colorBgValueInput.value = bgColor;
+    }
+    if (borderColor) {
+      colorBorderInput.value = borderColor;
+      colorBorderValueInput.value = borderColor;
+    }
+  }
+
+  function updateColorPreview(textColor, bgColor) {
+    const previewBg = bgColor || '#ffffff';
+    const previewText = textColor || '#111827';
+    colorPreview.style.background = previewBg;
+    colorPreview.style.color = previewText;
+    colorPreview.textContent = 'Aa';
   }
 
   function removeOutlines() {
@@ -307,7 +430,7 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
+      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline, #cms-gallery, #cms-color-dialog');
   }
 
   function getElementTarget(node) {
@@ -404,6 +527,81 @@
       return 'background';
     }
     return 'text';
+  }
+
+  function getHoverEffectFromElement(el) {
+    const match = Object.entries(HOVER_CLASS_MAP).find(([, className]) => el.classList.contains(className));
+    return match ? match[0] : 'none';
+  }
+
+  function updateEffectsControls(el) {
+    if (!el) return;
+    const computed = window.getComputedStyle(el);
+    effectsFlipButton.classList.toggle('active', el.classList.contains('cms-effect-flip'));
+    effectsScrollButton.classList.toggle('active', el.classList.contains('cms-effect-scroll'));
+    hoverEffectSelect.value = getHoverEffectFromElement(el);
+    const scrollHeight = el.getAttribute('data-cms-scroll-height') || el.style.maxHeight;
+    if (scrollHeight) {
+      const parsedHeight = parseInt(scrollHeight, 10);
+      if (!Number.isNaN(parsedHeight)) {
+        scrollHeightInput.value = String(parsedHeight);
+      }
+    }
+    const textColor = rgbToHex(computed.color) || '#111827';
+    const bgColor = rgbToHex(computed.backgroundColor) || '#ffffff';
+    const borderColor = rgbToHex(computed.borderColor) || '#e5e7eb';
+    syncColorInputs({ textColor, bgColor, borderColor });
+    updateColorPreview(textColor, bgColor);
+  }
+
+  function ensureFlipStructure(el) {
+    const existing = el.querySelector('.cms-flip-inner');
+    if (existing) return;
+    const inner = document.createElement('div');
+    inner.className = 'cms-flip-inner';
+    const front = document.createElement('div');
+    front.className = 'cms-flip-front';
+    const back = document.createElement('div');
+    back.className = 'cms-flip-back';
+    while (el.firstChild) {
+      front.appendChild(el.firstChild);
+    }
+    back.textContent = 'Back side';
+    inner.appendChild(front);
+    inner.appendChild(back);
+    el.appendChild(inner);
+  }
+
+  function applyHoverEffect(el, effect) {
+    HOVER_CLASSES.forEach((className) => el.classList.remove(className));
+    if (effect && effect !== 'none' && HOVER_CLASS_MAP[effect]) {
+      el.classList.add(HOVER_CLASS_MAP[effect]);
+    }
+  }
+
+  function applyScrollEffect(el, enabled, height) {
+    if (enabled) {
+      el.classList.add('cms-effect-scroll');
+      el.style.overflow = 'auto';
+      el.style.maxHeight = `${height}px`;
+      el.setAttribute('data-cms-scroll-height', String(height));
+      return;
+    }
+    el.classList.remove('cms-effect-scroll');
+    el.style.overflow = '';
+    el.style.maxHeight = '';
+    el.removeAttribute('data-cms-scroll-height');
+  }
+
+  async function persistElementHtml(originalOuterHTML, updatedOuterHTML) {
+    if (!selectedElement) return;
+    const key = keyInput.value.trim();
+    if (!key) {
+      messageEl.textContent = 'Add a key before saving effects.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    await saveSelection({ originalOuterHTML, updatedOuterHTML, skipContentUpdate: true });
   }
 
   function updateImagePreview(src) {
@@ -595,6 +793,7 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
+    updateEffectsControls(el);
     deleteButton.disabled = false;
   }
 
@@ -632,13 +831,13 @@
     return segments.length ? `body > ${segments.join(' > ')}` : '';
   }
 
-  async function saveSelection() {
+  async function saveSelection(overrides = {}) {
     if (!selectedElement) {
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
       messageEl.style.color = '#ef4444';
       return;
     }
-    if (selectedType === 'text') {
+    if (selectedType === 'text' && !overrides.skipContentUpdate) {
       valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
@@ -660,7 +859,7 @@
           : 'data-cms-text';
     const currentKey = selectedElement.getAttribute(attributeName);
     const uniqueKey = ensureUniqueKey(key, currentKey);
-    const originalOuterHTML = selectedElement.outerHTML;
+    const originalOuterHTML = overrides.originalOuterHTML || selectedElement.outerHTML;
 
     if (uniqueKey !== key) {
       messageEl.textContent = `Key exists. Saved as ${uniqueKey}.`;
@@ -677,30 +876,32 @@
     let bodyValue = value;
     let imagePayload = null;
 
-    if (selectedType === 'image' || selectedType === 'background') {
-      try {
-        imagePayload = await buildImagePayload();
-      } catch (err) {
-        messageEl.textContent = 'Unable to read image file.';
-        messageEl.style.color = '#ef4444';
-        return;
+    if (!overrides.skipContentUpdate) {
+      if (selectedType === 'image' || selectedType === 'background') {
+        try {
+          imagePayload = await buildImagePayload();
+        } catch (err) {
+          messageEl.textContent = 'Unable to read image file.';
+          messageEl.style.color = '#ef4444';
+          return;
+        }
+        if (!imagePayload && !value) {
+          messageEl.textContent = 'Provide an image URL or upload a file.';
+          messageEl.style.color = '#ef4444';
+          return;
+        }
+        applyImageToElement(
+          selectedElement,
+          value || (imagePayload && imagePayload.data),
+          selectedType === 'background' ? 'background' : 'image'
+        );
+      } else {
+        selectedElement.textContent = value;
       }
-      if (!imagePayload && !value) {
-        messageEl.textContent = 'Provide an image URL or upload a file.';
-        messageEl.style.color = '#ef4444';
-        return;
-      }
-      applyImageToElement(
-        selectedElement,
-        value || (imagePayload && imagePayload.data),
-        selectedType === 'background' ? 'background' : 'image'
-      );
-    } else {
-      selectedElement.textContent = value;
     }
 
     const path = buildElementPath(selectedElement);
-    const updatedOuterHTML = selectedElement.outerHTML;
+    const updatedOuterHTML = overrides.updatedOuterHTML || selectedElement.outerHTML;
 
     try {
       const res = await fetch(buildApiUrl(), {
@@ -936,6 +1137,119 @@
     } else {
       updateImagePreview('');
     }
+  });
+
+  function ensureElementSelected(actionLabel) {
+    if (!selectedElement) {
+      messageEl.textContent = `Select an element to apply ${actionLabel}.`;
+      messageEl.style.color = '#ef4444';
+      return false;
+    }
+    return true;
+  }
+
+  function ensureDivSelected(actionLabel) {
+    if (!ensureElementSelected(actionLabel)) return false;
+    if (selectedElement.tagName !== 'DIV') {
+      messageEl.textContent = `${actionLabel} works on div elements only.`;
+      messageEl.style.color = '#ef4444';
+      return false;
+    }
+    return true;
+  }
+
+  effectsFlipButton.addEventListener('click', async () => {
+    if (!ensureDivSelected('flip card effects')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    selectedElement.classList.toggle('cms-effect-flip');
+    if (selectedElement.classList.contains('cms-effect-flip')) {
+      ensureFlipStructure(selectedElement);
+    }
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  effectsScrollButton.addEventListener('click', async () => {
+    if (!ensureDivSelected('scrolling')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    const nextHeight = Number.parseInt(scrollHeightInput.value, 10) || 240;
+    const isEnabled = !selectedElement.classList.contains('cms-effect-scroll');
+    applyScrollEffect(selectedElement, isEnabled, nextHeight);
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  scrollHeightInput.addEventListener('change', async () => {
+    if (!selectedElement || !selectedElement.classList.contains('cms-effect-scroll')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    const nextHeight = Number.parseInt(scrollHeightInput.value, 10) || 240;
+    applyScrollEffect(selectedElement, true, nextHeight);
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  hoverEffectSelect.addEventListener('change', async () => {
+    if (!ensureElementSelected('hover effects')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    applyHoverEffect(selectedElement, hoverEffectSelect.value);
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  colorDialogOpenButton.addEventListener('click', () => {
+    if (!ensureElementSelected('colors')) return;
+    updateEffectsControls(selectedElement);
+    if (typeof colorDialog.showModal === 'function') {
+      colorDialog.showModal();
+    } else {
+      colorDialog.setAttribute('open', 'true');
+    }
+  });
+
+  function syncColorField(colorInput, textInput) {
+    const value = textInput.value.trim();
+    if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
+      colorInput.value = value;
+    }
+  }
+
+  colorTextInput.addEventListener('input', () => {
+    colorTextValueInput.value = colorTextInput.value;
+  });
+  colorBgInput.addEventListener('input', () => {
+    colorBgValueInput.value = colorBgInput.value;
+  });
+  colorBorderInput.addEventListener('input', () => {
+    colorBorderValueInput.value = colorBorderInput.value;
+  });
+  colorTextValueInput.addEventListener('input', () => syncColorField(colorTextInput, colorTextValueInput));
+  colorBgValueInput.addEventListener('input', () => syncColorField(colorBgInput, colorBgValueInput));
+  colorBorderValueInput.addEventListener('input', () => syncColorField(colorBorderInput, colorBorderValueInput));
+
+  colorApplyButton.addEventListener('click', async () => {
+    if (!ensureElementSelected('colors')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    selectedElement.style.color = colorTextInput.value;
+    selectedElement.style.backgroundColor = colorBgInput.value;
+    selectedElement.style.borderColor = colorBorderInput.value;
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  colorClearButton.addEventListener('click', async () => {
+    if (!ensureElementSelected('colors')) return;
+    const originalOuterHTML = selectedElement.outerHTML;
+    selectedElement.style.color = '';
+    selectedElement.style.backgroundColor = '';
+    selectedElement.style.borderColor = '';
+    updateEffectsControls(selectedElement);
+    const updatedOuterHTML = selectedElement.outerHTML;
+    await persistElementHtml(originalOuterHTML, updatedOuterHTML);
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
