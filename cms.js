@@ -15,7 +15,6 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
-  let dropPreviewUrl = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -122,17 +121,6 @@
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
-    if (dropPreviewUrl) {
-      URL.revokeObjectURL(dropPreviewUrl);
-      dropPreviewUrl = null;
-    }
-  }
-
-  function clearDropPreview() {
-    if (dropPreviewUrl) {
-      URL.revokeObjectURL(dropPreviewUrl);
-      dropPreviewUrl = null;
-    }
   }
 
   function clearMessage() {
@@ -329,7 +317,6 @@
     const file = imageFileInput.files[0];
     const urlValue = imageUrlInput.value.trim();
     if (file) {
-      clearDropPreview();
       const data = await readFileAsDataUrl(file);
       updateImagePreview(data);
       return { sourceType: 'upload', data, name: file.name };
@@ -393,28 +380,6 @@
       el.focus({ preventScroll: true });
     }
     deleteButton.disabled = false;
-  }
-
-  function getImageFileFromDrag(event) {
-    const files = event.dataTransfer ? Array.from(event.dataTransfer.files || []) : [];
-    if (!files.length) return null;
-    return files.find((file) => file.type && file.type.startsWith('image/')) || null;
-  }
-
-  function applyDroppedImage(file, target) {
-    if (!file || !target) return;
-    clearDropPreview();
-    dropPreviewUrl = URL.createObjectURL(file);
-    selectElement(target);
-    setTypeSelection('background');
-    imageUrlInput.value = '';
-    const dataTransfer = new DataTransfer();
-    dataTransfer.items.add(file);
-    imageFileInput.files = dataTransfer.files;
-    updateImagePreview(dropPreviewUrl);
-    applyImageToElement(target, dropPreviewUrl, 'background');
-    messageEl.textContent = 'Background image ready. Click Save to persist.';
-    messageEl.style.color = '#111827';
   }
 
   function refreshList() {
@@ -639,26 +604,6 @@
     selectElement(target);
   }
 
-  function handleDragOver(e) {
-    if (!editMode) return;
-    const target = getElementTarget(e.target);
-    if (!target || isCmsUi(target)) return;
-    const imageFile = getImageFileFromDrag(e);
-    if (!imageFile) return;
-    e.preventDefault();
-    positionOutline(target);
-  }
-
-  function handleDrop(e) {
-    if (!editMode) return;
-    const target = getElementTarget(e.target);
-    if (!target || isCmsUi(target)) return;
-    const imageFile = getImageFileFromDrag(e);
-    if (!imageFile) return;
-    e.preventDefault();
-    applyDroppedImage(imageFile, target);
-  }
-
   function applyContent() {
     document.querySelectorAll('[data-cms-text]').forEach((el) => {
       const key = el.getAttribute('data-cms-text');
@@ -718,8 +663,6 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
-  document.addEventListener('dragover', handleDragOver, true);
-  document.addEventListener('drop', handleDrop, true);
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
@@ -737,9 +680,7 @@
   });
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
-      clearDropPreview();
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
-      dropPreviewUrl = fileUrl;
       updateImagePreview(fileUrl);
     } else {
       updateImagePreview('');
