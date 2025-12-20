@@ -221,6 +221,21 @@
   outline: 1px solid rgba(0, 0, 0, 0.15);
 }
 
+.cms-wireframe [draggable="true"]:not(.cms-ui):not(.cms-ui *) {
+  cursor: grab;
+}
+
+.cms-wireframe .cms-dragging {
+  cursor: grabbing;
+  opacity: 0.6;
+  outline: 2px solid #93c5fd !important;
+}
+
+.cms-wireframe .cms-drop-target {
+  outline: 2px dashed #2563eb !important;
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+
 .cms-wireframe h1:not(.cms-ui),
 .cms-wireframe h2:not(.cms-ui),
 .cms-wireframe h3:not(.cms-ui),

@@ -15,6 +15,8 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
+  let draggedElement = null;
+  let dropTarget = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -176,6 +178,7 @@
     wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
+    setWireframeDragState(enabled);
   }
 
   setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
@@ -308,6 +311,93 @@
   function isCmsUi(element) {
     return element.closest
       && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
+  }
+
+  function isWireframeEnabled() {
+    return document.body.classList.contains('cms-wireframe');
+  }
+
+  function isValidDragElement(element) {
+    return element
+      && element.nodeType === Node.ELEMENT_NODE
+      && element !== document.body
+      && element !== document.documentElement
+      && !isCmsUi(element);
+  }
+
+  function setWireframeDragState(enabled) {
+    document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
+      if (!isValidDragElement(el)) return;
+      if (enabled) {
+        el.setAttribute('draggable', 'true');
+      } else {
+        el.removeAttribute('draggable');
+      }
+    });
+    if (!enabled) {
+      clearDropTarget();
+      if (draggedElement) {
+        draggedElement.classList.remove('cms-dragging');
+        draggedElement = null;
+      }
+      document.body.classList.remove('cms-drag-active');
+    }
+  }
+
+  function clearDropTarget() {
+    if (dropTarget) {
+      dropTarget.classList.remove('cms-drop-target');
+      dropTarget = null;
+    }
+  }
+
+  function handleDragStart(event) {
+    if (!isWireframeEnabled()) return;
+    const target = getElementTarget(event.target);
+    if (!isValidDragElement(target)) return;
+    draggedElement = target;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', '');
+    draggedElement.classList.add('cms-dragging');
+    document.body.classList.add('cms-drag-active');
+  }
+
+  function handleDragOver(event) {
+    if (!draggedElement || !isWireframeEnabled()) return;
+    const target = getElementTarget(event.target);
+    if (!isValidDragElement(target) || target === draggedElement || target.contains(draggedElement)) {
+      clearDropTarget();
+      return;
+    }
+    event.preventDefault();
+    if (dropTarget !== target) {
+      clearDropTarget();
+      dropTarget = target;
+      dropTarget.classList.add('cms-drop-target');
+    }
+  }
+
+  function handleDrop(event) {
+    if (!draggedElement || !dropTarget || !isWireframeEnabled()) return;
+    event.preventDefault();
+    const parent = dropTarget.parentNode;
+    if (!parent) return;
+    const rect = dropTarget.getBoundingClientRect();
+    const insertAfter = event.clientY > rect.top + rect.height / 2;
+    const referenceNode = insertAfter ? dropTarget.nextSibling : dropTarget;
+    if (referenceNode !== draggedElement) {
+      parent.insertBefore(draggedElement, referenceNode);
+    }
+    clearDropTarget();
+  }
+
+  function handleDragEnd() {
+    if (draggedElement) {
+      draggedElement.classList.remove('cms-dragging');
+    }
+    draggedElement = null;
+    clearDropTarget();
+    document.body.classList.remove('cms-drag-active');
   }
 
   function getElementTarget(node) {
@@ -913,6 +1003,10 @@
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
   document.addEventListener('click', handleLinkNavigation);
+  document.addEventListener('dragstart', handleDragStart, true);
+  document.addEventListener('dragover', handleDragOver, true);
+  document.addEventListener('drop', handleDrop, true);
+  document.addEventListener('dragend', handleDragEnd, true);
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
