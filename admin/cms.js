@@ -129,10 +129,14 @@
   let siteName = '';
 
   function setWireframeState(enabled) {
+    if (enabled) {
+      setEditMode(false);
+    }
     document.body.classList.toggle('cms-wireframe', enabled);
     wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
+    toggleButton.disabled = enabled;
   }
 
   setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
@@ -251,7 +255,8 @@
   }
 
   function isCmsUi(element) {
-    return element.closest && element.closest('#cms-sidebar, #cms-toggle, .cms-outline');
+    return element.closest
+      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline');
   }
 
   function handleHover(e) {
@@ -264,8 +269,9 @@
     positionOutline(target);
   }
 
-  function toggleEdit() {
-    editMode = !editMode;
+  function setEditMode(enabled) {
+    if (editMode === enabled) return;
+    editMode = enabled;
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
@@ -275,6 +281,10 @@
       clearForm();
       removeOutlines();
     }
+  }
+
+  function toggleEdit() {
+    setEditMode(!editMode);
   }
 
   function getExistingKeys() {
