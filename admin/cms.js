@@ -14,6 +14,7 @@
   let editMode = false;
   let selectedElement = null;
   let selectedType = 'text';
+  let inlineInputHandler = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -92,6 +93,9 @@
       <div class="cms-field cms-field--image">
         <label for="cms-image-url">Image URL</label>
         <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+        <div class="cms-image-actions">
+          <button type="button" id="cms-open-gallery">Browse gallery</button>
+        </div>
         <div class="cms-upload">
           <label class="cms-upload__label" for="cms-image-file">Upload image</label>
           <input id="cms-image-file" type="file" accept="image/*" />
@@ -99,6 +103,7 @@
         <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
       <button id="cms-save">Save</button>
+      <button id="cms-delete" type="button">Delete element</button>
       <div id="cms-message"></div>
       <div class="cms-hint">Existing keys on the page</div>
       <h4 class="cms-sidebar__list-title">Discovered</h4>
@@ -108,6 +113,33 @@
   `;
   document.body.appendChild(sidebar);
 
+  const gallery = document.createElement('div');
+  gallery.id = 'cms-gallery';
+  gallery.innerHTML = `
+    <div class="cms-gallery__backdrop" data-gallery-close="true"></div>
+    <div class="cms-gallery__dialog" role="dialog" aria-modal="true" aria-labelledby="cms-gallery-title">
+      <div class="cms-gallery__header">
+        <div>
+          <h3 id="cms-gallery-title">Image gallery</h3>
+          <p class="cms-gallery__subtitle">Choose from uploaded images or saved remote URLs.</p>
+        </div>
+        <button type="button" class="cms-gallery__close" data-gallery-close="true">Close</button>
+      </div>
+      <div class="cms-gallery__body">
+        <div class="cms-gallery__section">
+          <h4>Uploaded images</h4>
+          <div class="cms-gallery__grid" data-gallery-section="uploads"></div>
+        </div>
+        <div class="cms-gallery__section">
+          <h4>Remote URLs</h4>
+          <div class="cms-gallery__grid" data-gallery-section="remote"></div>
+        </div>
+        <p class="cms-gallery__empty">No images found yet.</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(gallery);
+
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
   const linkInput = sidebar.querySelector('#cms-link');
@@ -116,6 +148,7 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
+  const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
@@ -124,9 +157,15 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
+  const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
+  const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
+  const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
+  let galleryAssets = { uploads: [], remote: [] };
+  deleteButton.disabled = true;
 
   function setWireframeState(enabled) {
     if (enabled) {
@@ -161,6 +200,7 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    deleteButton.disabled = true;
   }
 
   function updateSiteName(value) {
@@ -181,6 +221,17 @@
       el.classList.remove('cms-outlined');
     });
     outline.style.display = 'none';
+  }
+
+  function clearInlineEditing() {
+    if (!selectedElement) return;
+    if (inlineInputHandler) {
+      selectedElement.removeEventListener('input', inlineInputHandler);
+      inlineInputHandler = null;
+    }
+    if (selectedElement.isContentEditable) {
+      selectedElement.contentEditable = 'false';
+    }
   }
 
   function buildApiUrl() {
@@ -256,12 +307,13 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline');
+      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
   }
 
   function handleHover(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) {
       outline.style.display = 'none';
       return;
@@ -276,11 +328,13 @@
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
     if (!editMode) {
+      clearInlineEditing();
       selectedElement = null;
       clearMessage();
       clearForm();
       removeOutlines();
     }
+    deleteButton.disabled = !editMode || !selectedElement;
   }
 
   function toggleEdit() {
@@ -323,6 +377,12 @@
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
     selectedType = type;
+    if (!selectedElement) return;
+    if (selectedType === 'text' && editMode) {
+      enableInlineEditing(selectedElement);
+    } else {
+      clearInlineEditing();
+    }
   }
 
   function determineElementType(el) {
@@ -347,6 +407,98 @@
     }
     imagePreview.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+  }
+
+  function toggleGallery(open) {
+    gallery.classList.toggle('open', open);
+    document.body.classList.toggle('cms-gallery-open', open);
+  }
+
+  function buildGalleryItem(src, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'cms-gallery__item';
+    button.style.backgroundImage = `url('${src}')`;
+    button.title = label || src;
+    const caption = document.createElement('span');
+    caption.textContent = label || src;
+    button.appendChild(caption);
+    button.addEventListener('click', () => {
+      imageUrlInput.value = src;
+      updateImagePreview(src);
+      toggleGallery(false);
+    });
+    return button;
+  }
+
+  function renderGallery() {
+    const uploads = galleryAssets.uploads || [];
+    const remote = galleryAssets.remote || [];
+    galleryUploads.innerHTML = '';
+    galleryRemote.innerHTML = '';
+    uploads.forEach((src) => {
+      galleryUploads.appendChild(buildGalleryItem(src, src.replace('/images/', '')));
+    });
+    remote.forEach((src) => {
+      galleryRemote.appendChild(buildGalleryItem(src, src));
+    });
+    const hasAny = uploads.length || remote.length;
+    galleryEmpty.style.display = hasAny ? 'none' : 'block';
+  }
+
+  function isRemoteImageUrl(value) {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    return /^(https?:)?\/\//i.test(trimmed);
+  }
+
+  async function loadGalleryAssets() {
+    try {
+      const res = await fetch(FILES_ENDPOINT);
+      if (!res.ok) throw new Error('Unable to fetch files');
+      const data = await res.json();
+      const files = Array.isArray(data.files) ? data.files : [];
+      if (!files.includes(currentFile)) files.push(currentFile);
+
+      const responses = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const contentRes = await fetch(`${API_ENDPOINT}?file=${encodeURIComponent(file)}`);
+            if (!contentRes.ok) return null;
+            const contentData = await contentRes.json();
+            return contentData.content || {};
+          } catch (err) {
+            return null;
+          }
+        })
+      );
+
+      const uploads = new Set();
+      const remote = new Set();
+      responses.forEach((content) => {
+        if (!content) return;
+        Object.values(content).forEach((value) => {
+          if (typeof value !== 'string') return;
+          const trimmed = value.trim();
+          if (!trimmed) return;
+          if (trimmed.startsWith('/images/')) {
+            uploads.add(trimmed);
+          } else if (isRemoteImageUrl(trimmed)) {
+            remote.add(trimmed);
+          }
+        });
+      });
+
+      galleryAssets = {
+        uploads: Array.from(uploads).sort(),
+        remote: Array.from(remote).sort(),
+      };
+      renderGallery();
+    } catch (err) {
+      galleryAssets = { uploads: [], remote: [] };
+      renderGallery();
+    }
   }
 
   function getImageValue(el, key, type = 'image') {
@@ -396,8 +548,21 @@
     el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
+  function enableInlineEditing(el) {
+    if (!editMode || selectedType !== 'text') return;
+    clearInlineEditing();
+    inlineInputHandler = () => {
+      valueInput.value = el.textContent;
+    };
+    el.contentEditable = 'true';
+    el.addEventListener('input', inlineInputHandler);
+  }
+
   function selectElement(el) {
     document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
+    if (selectedElement && selectedElement !== el) {
+      clearInlineEditing();
+    }
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
@@ -420,7 +585,10 @@
       updateImagePreview(displayValue);
     } else {
       valueInput.value = mergedContent[key] ?? value;
+      enableInlineEditing(el);
+      el.focus({ preventScroll: true });
     }
+    deleteButton.disabled = false;
   }
 
   function refreshList() {
@@ -462,6 +630,9 @@
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
       messageEl.style.color = '#ef4444';
       return;
+    }
+    if (selectedType === 'text') {
+      valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
     const value = selectedType === 'image' || selectedType === 'background'
@@ -556,6 +727,57 @@
     }
   }
 
+  async function deleteSelection() {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to delete.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const confirmDelete = window.confirm('Delete this element from the page?');
+    if (!confirmDelete) return;
+
+    const attributeName =
+      selectedType === 'image'
+        ? 'data-cms-image'
+        : selectedType === 'background'
+          ? 'data-cms-bg'
+          : 'data-cms-text';
+    const key = selectedElement.getAttribute(attributeName);
+    const path = buildElementPath(selectedElement);
+
+    try {
+      const res = await fetch(buildApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delete: true,
+          key,
+          path,
+          file: currentFile,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('Delete failed');
+      }
+      const data = await res.json();
+      mergedContent = data.content || mergedContent;
+      storedTags = data.tags || storedTags;
+      clearInlineEditing();
+      selectedElement.remove();
+      selectedElement = null;
+      clearForm();
+      removeOutlines();
+      applyStoredTags(storedTags);
+      applyContent();
+      refreshList();
+      messageEl.textContent = 'Element deleted.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to delete element.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
   async function publishStaticSite() {
     if (!siteName) {
       messageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
@@ -588,8 +810,12 @@
 
   function handleClick(e) {
     if (!editMode) return;
-    const target = e.target;
+    const target = getElementTarget(e.target);
+    if (!target) return;
     if (isCmsUi(target)) return;
+    if (selectedElement === target && target.isContentEditable) {
+      return;
+    }
     const hasText = target.textContent && target.textContent.trim();
     const type = determineElementType(target);
     if (!hasText && type === 'text') {
@@ -681,7 +907,12 @@
   document.addEventListener('click', handleClick, true);
   document.addEventListener('click', handleLinkNavigation);
   saveButton.addEventListener('click', saveSelection);
+  deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  valueInput.addEventListener('input', (e) => {
+    if (!editMode || !selectedElement || selectedType !== 'text') return;
+    selectedElement.textContent = e.target.value;
+  });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
@@ -697,6 +928,17 @@
       updateImagePreview(fileUrl);
     } else {
       updateImagePreview('');
+    }
+  });
+  galleryOpenButton.addEventListener('click', async () => {
+    await loadGalleryAssets();
+    toggleGallery(true);
+  });
+
+  gallery.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target && target.dataset && target.dataset.galleryClose) {
+      toggleGallery(false);
     }
   });
 
