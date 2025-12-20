@@ -15,6 +15,7 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
+  let selectionObserver = null;
   let history = [];
   let historyIndex = -1;
   let historyLocked = false;
@@ -215,19 +216,25 @@
     }
   }
 
-  function getCurrentState() {
-    if (!selectedElement) return null;
-    return {
-      key: keyInput.value.trim(),
-      type: selectedType,
-      value: selectedType === 'text' ? valueInput.value : imageUrlInput.value.trim(),
-      link: linkInput.value,
-    };
+  function stopObservingSelection() {
+    if (selectionObserver) {
+      selectionObserver.disconnect();
+      selectionObserver = null;
+    }
   }
 
-  function statesMatch(a, b) {
-    if (!a || !b) return false;
-    return a.key === b.key && a.type === b.type && a.value === b.value && a.link === b.link;
+  function observeSelection(el) {
+    stopObservingSelection();
+    if (!el) return;
+    selectionObserver = new MutationObserver(() => {
+      pushHistorySnapshot();
+    });
+    selectionObserver.observe(el, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
   }
 
   function updateHistoryButtons() {
@@ -236,14 +243,21 @@
     redoButton.disabled = historyIndex === -1 || historyIndex >= history.length - 1;
   }
 
-  function pushHistoryState() {
+  function createSnapshot() {
+    if (!selectedElement) return null;
+    const path = buildElementPath(selectedElement);
+    if (!path) return null;
+    return { path, html: selectedElement.outerHTML };
+  }
+
+  function pushHistorySnapshot() {
     if (historyLocked || !editMode) return;
-    const state = getCurrentState();
-    if (!state) return;
+    const snapshot = createSnapshot();
+    if (!snapshot) return;
     const last = history[historyIndex];
-    if (statesMatch(last, state)) return;
+    if (last && last.path === snapshot.path && last.html === snapshot.html) return;
     history = history.slice(0, historyIndex + 1);
-    history.push(state);
+    history.push(snapshot);
     historyIndex = history.length - 1;
     updateHistoryButtons();
   }
@@ -251,42 +265,72 @@
   function resetHistory() {
     history = [];
     historyIndex = -1;
-    pushHistoryState();
+    pushHistorySnapshot();
   }
 
-  function applyState(state) {
-    if (!state || !selectedElement) return;
-    historyLocked = true;
-    setTypeSelection(state.type);
-    keyInput.value = state.key;
-    linkInput.value = state.link || '';
-    if (state.type === 'text') {
-      valueInput.value = state.value;
-      selectedElement.textContent = state.value;
+  function replaceElementFromSnapshot(snapshot) {
+    const target = document.querySelector(snapshot.path);
+    if (!target) return null;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = snapshot.html.trim();
+    const replacement = wrapper.firstElementChild;
+    if (!replacement) return null;
+    target.replaceWith(replacement);
+    return replacement;
+  }
+
+  function syncInputsForSelection(el) {
+    const attributeName =
+      selectedType === 'image'
+        ? 'data-cms-image'
+        : selectedType === 'background'
+          ? 'data-cms-bg'
+          : 'data-cms-text';
+    const key = el.getAttribute(attributeName);
+    const value = selectedType === 'image' || selectedType === 'background'
+      ? getImageValue(el, key, selectedType)
+      : el.textContent.trim();
+    linkInput.value = el.getAttribute('data-link') || '';
+    keyInput.value = key || generateKeySuggestion(el);
+    if (selectedType === 'image' || selectedType === 'background') {
+      const displayValue = mergedContent[key] ?? value;
+      imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
+      updateImagePreview(displayValue);
     } else {
-      imageUrlInput.value = state.value;
-      updateImagePreview(state.value);
-      applyImageToElement(
-        selectedElement,
-        state.value,
-        state.type === 'background' ? 'background' : 'image'
-      );
+      valueInput.value = mergedContent[key] ?? value;
+      enableInlineEditing(el);
+      el.focus({ preventScroll: true });
+    }
+  }
+
+  function applySnapshot(index) {
+    const snapshot = history[index];
+    if (!snapshot) return;
+    historyLocked = true;
+    const replacement = replaceElementFromSnapshot(snapshot);
+    if (replacement) {
+      document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
+      selectedElement = replacement;
+      selectedElement.classList.add('cms-outlined');
+      selectedType = determineElementType(replacement);
+      setTypeSelection(selectedType);
+      observeSelection(replacement);
+      syncInputsForSelection(replacement);
     }
     historyLocked = false;
+    updateHistoryButtons();
   }
 
   function undoEdit() {
     if (historyIndex <= 0) return;
     historyIndex -= 1;
-    applyState(history[historyIndex]);
-    updateHistoryButtons();
+    applySnapshot(historyIndex);
   }
 
   function redoEdit() {
     if (historyIndex === -1 || historyIndex >= history.length - 1) return;
     historyIndex += 1;
-    applyState(history[historyIndex]);
-    updateHistoryButtons();
+    applySnapshot(historyIndex);
   }
 
   function buildApiUrl() {
@@ -385,6 +429,7 @@
     outline.style.display = editMode ? 'block' : 'none';
     if (!editMode) {
       clearInlineEditing();
+      stopObservingSelection();
       selectedElement = null;
       clearMessage();
       clearForm();
@@ -463,6 +508,27 @@
     imagePreview.style.backgroundImage = `url('${src}')`;
   }
 
+  function applyLinkChange(value) {
+    if (!selectedElement) return;
+    if (value) {
+      selectedElement.setAttribute('data-link', value);
+    } else {
+      selectedElement.removeAttribute('data-link');
+    }
+    pushHistorySnapshot();
+  }
+
+  function applyImageUrlChange(value) {
+    if (!selectedElement || selectedType === 'text') return;
+    updateImagePreview(value);
+    applyImageToElement(
+      selectedElement,
+      value,
+      selectedType === 'background' ? 'background' : 'image'
+    );
+    pushHistorySnapshot();
+  }
+
   function toggleGallery(open) {
     gallery.classList.toggle('open', open);
     document.body.classList.toggle('cms-gallery-open', open);
@@ -479,7 +545,7 @@
     button.appendChild(caption);
     button.addEventListener('click', () => {
       imageUrlInput.value = src;
-      updateImagePreview(src);
+      applyImageUrlChange(src);
       toggleGallery(false);
     });
     return button;
@@ -607,7 +673,7 @@
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
-      pushHistoryState();
+      pushHistorySnapshot();
     };
     el.contentEditable = 'true';
     el.addEventListener('input', inlineInputHandler);
@@ -622,27 +688,8 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
-    const attributeName =
-      selectedType === 'image'
-        ? 'data-cms-image'
-        : selectedType === 'background'
-          ? 'data-cms-bg'
-          : 'data-cms-text';
-    const key = el.getAttribute(attributeName);
-    const value = selectedType === 'image' || selectedType === 'background'
-      ? getImageValue(el, key, selectedType)
-      : el.textContent.trim();
-    linkInput.value = el.getAttribute('data-link') || '';
-    keyInput.value = key || generateKeySuggestion(el);
-    if (selectedType === 'image' || selectedType === 'background') {
-      const displayValue = mergedContent[key] ?? value;
-      imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
-      updateImagePreview(displayValue);
-    } else {
-      valueInput.value = mergedContent[key] ?? value;
-      enableInlineEditing(el);
-      el.focus({ preventScroll: true });
-    }
+    observeSelection(el);
+    syncInputsForSelection(el);
     resetHistory();
   }
 
@@ -917,32 +964,19 @@
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
-    pushHistoryState();
-  });
-  keyInput.addEventListener('input', () => {
-    if (!editMode || !selectedElement) return;
-    pushHistoryState();
+    pushHistorySnapshot();
   });
   linkInput.addEventListener('input', () => {
     if (!editMode || !selectedElement) return;
-    pushHistoryState();
+    applyLinkChange(linkInput.value.trim());
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
-    input.addEventListener('change', (e) => {
-      setTypeSelection(e.target.value);
-      pushHistoryState();
-    });
+    input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
   imageUrlInput.addEventListener('input', () => {
     if (!editMode || !selectedElement || selectedType === 'text') return;
-    updateImagePreview(imageUrlInput.value.trim());
-    applyImageToElement(
-      selectedElement,
-      imageUrlInput.value.trim(),
-      selectedType === 'background' ? 'background' : 'image'
-    );
-    pushHistoryState();
+    applyImageUrlChange(imageUrlInput.value.trim());
   });
   document.addEventListener('keydown', (e) => {
     if (!editMode || !selectedElement) return;
@@ -966,6 +1000,14 @@
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
       updateImagePreview(fileUrl);
+      if (editMode && selectedElement && selectedType !== 'text') {
+        applyImageToElement(
+          selectedElement,
+          fileUrl,
+          selectedType === 'background' ? 'background' : 'image'
+        );
+        pushHistorySnapshot();
+      }
     } else {
       updateImagePreview('');
     }
