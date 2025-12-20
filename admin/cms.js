@@ -310,6 +310,13 @@
       && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
   }
 
+  function getElementTarget(node) {
+    if (node && node.nodeType === Node.TEXT_NODE) {
+      return node.parentElement;
+    }
+    return node;
+  }
+
   function handleHover(e) {
     if (!editMode) return;
     const target = getElementTarget(e.target);
