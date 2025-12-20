@@ -238,6 +238,31 @@
   transition: opacity 150ms ease;
 }
 
+#cms-delete {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: #fff5f5;
+  color: #b91c1c;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+#cms-delete:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+#cms-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .cms-type {
   display: flex;
   gap: 12px;
