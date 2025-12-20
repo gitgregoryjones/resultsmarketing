@@ -23,24 +23,21 @@
 }
 
 #cms-wireframe-toggle {
-  position: fixed;
-  bottom: 78px;
-  right: 20px;
-  padding: 10px 14px;
+  width: 100%;
+  padding: 10px 12px;
   background: white;
   color: var(--cms-dark);
   border: 1px solid var(--cms-border);
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 700;
   cursor: pointer;
-  z-index: 9999;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
 }
 
 #cms-wireframe-toggle:hover {
-  transform: translateY(-1px);
   border-color: var(--cms-red);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
 
 #cms-toggle:hover {
@@ -180,6 +177,45 @@
   flex: 1;
 }
 
+.cms-accordion {
+  border: 1px solid var(--cms-border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  background: white;
+}
+
+.cms-accordion__header {
+  width: 100%;
+  border: none;
+  background: var(--cms-bg);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.cms-accordion__icon {
+  font-size: 18px;
+  transition: transform 150ms ease;
+}
+
+.cms-accordion__panel {
+  padding: 14px;
+  display: none;
+}
+
+.cms-accordion.open .cms-accordion__panel {
+  display: block;
+}
+
+.cms-accordion.open .cms-accordion__icon {
+  transform: rotate(45deg);
+}
+
 .cms-field {
   display: flex;
   flex-direction: column;
@@ -206,6 +242,23 @@
 .cms-field textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.cms-field input[type='color'] {
+  height: 40px;
+  padding: 4px;
+}
+
+.cms-field--inline {
+  margin-bottom: 10px;
+}
+
+.cms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--cms-gray);
 }
 
 .cms-wireframe {

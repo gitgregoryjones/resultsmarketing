@@ -152,6 +152,45 @@
   flex: 1;
 }
 
+.cms-accordion {
+  border: 1px solid var(--cms-border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  background: white;
+}
+
+.cms-accordion__header {
+  width: 100%;
+  border: none;
+  background: var(--cms-bg);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.cms-accordion__icon {
+  font-size: 18px;
+  transition: transform 150ms ease;
+}
+
+.cms-accordion__panel {
+  padding: 14px;
+  display: none;
+}
+
+.cms-accordion.open .cms-accordion__panel {
+  display: block;
+}
+
+.cms-accordion.open .cms-accordion__icon {
+  transform: rotate(45deg);
+}
+
 .cms-field {
   display: flex;
   flex-direction: column;
@@ -178,6 +217,23 @@
 .cms-field textarea {
   min-height: 120px;
   resize: vertical;
+}
+
+.cms-field input[type='color'] {
+  height: 40px;
+  padding: 4px;
+}
+
+.cms-field--inline {
+  margin-bottom: 10px;
+}
+
+.cms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--cms-gray);
 }
 
 .cms-field--file select {

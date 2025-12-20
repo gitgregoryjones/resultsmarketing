@@ -51,38 +51,88 @@
       <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
-      <div class="cms-field">
-        <label>Content type</label>
-        <div class="cms-type">
-          <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+      <div class="cms-accordion open" data-accordion="content">
+        <button class="cms-accordion__header" type="button" aria-expanded="true">
+          Content
+          <span class="cms-accordion__icon">+</span>
+        </button>
+        <div class="cms-accordion__panel">
+          <div class="cms-field">
+            <label>Content type</label>
+            <div class="cms-type">
+              <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
+              <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
+              <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+            </div>
+          </div>
+          <div class="cms-field">
+            <label for="cms-key">Field key</label>
+            <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+          </div>
+          <div class="cms-field cms-field--text">
+            <label for="cms-value">Content</label>
+            <textarea id="cms-value" placeholder="Type content here..."></textarea>
+          </div>
+          <div class="cms-field cms-field--image">
+            <label for="cms-image-url">Image URL</label>
+            <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+            <div class="cms-upload">
+              <label class="cms-upload__label" for="cms-image-file">Upload image</label>
+              <input id="cms-image-file" type="file" accept="image/*" />
+            </div>
+            <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+          </div>
+          <button id="cms-save">Save</button>
+          <button id="cms-delete" type="button">Delete element</button>
+          <div id="cms-message"></div>
         </div>
       </div>
-      <div class="cms-field">
-        <label for="cms-key">Field key</label>
-        <input id="cms-key" type="text" placeholder="auto.tag.hash" />
-      </div>
-      <div class="cms-field cms-field--text">
-        <label for="cms-value">Content</label>
-        <textarea id="cms-value" placeholder="Type content here..."></textarea>
-      </div>
-      <div class="cms-field cms-field--image">
-        <label for="cms-image-url">Image URL</label>
-        <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-        <div class="cms-upload">
-          <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-          <input id="cms-image-file" type="file" accept="image/*" />
+      <div class="cms-accordion" data-accordion="styles">
+        <button class="cms-accordion__header" type="button" aria-expanded="false">
+          Styles
+          <span class="cms-accordion__icon">+</span>
+        </button>
+        <div class="cms-accordion__panel">
+          <div class="cms-field">
+            <label for="cms-text-color">Text color</label>
+            <input id="cms-text-color" type="color" value="#111827" />
+          </div>
+          <div class="cms-field">
+            <label for="cms-bg-color">Background color</label>
+            <input id="cms-bg-color" type="color" value="#ffffff" />
+          </div>
         </div>
-        <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
-      <button id="cms-save">Save</button>
-      <button id="cms-delete" type="button">Delete element</button>
-      <div id="cms-message"></div>
-      <div class="cms-hint">Existing keys on the page</div>
-      <h4 class="cms-sidebar__list-title">Discovered</h4>
-      <p id="cms-empty">No tagged elements yet.</p>
-      <ul class="cms-list" id="cms-list"></ul>
+      <div class="cms-accordion" data-accordion="effects">
+        <button class="cms-accordion__header" type="button" aria-expanded="false">
+          Effects
+          <span class="cms-accordion__icon">+</span>
+        </button>
+        <div class="cms-accordion__panel">
+          <div class="cms-field cms-field--inline">
+            <label class="cms-checkbox" for="cms-shadow-toggle">
+              <input type="checkbox" id="cms-shadow-toggle" />
+              Shadow
+            </label>
+          </div>
+          <div class="cms-field">
+            <label for="cms-opacity">Opacity</label>
+            <input id="cms-opacity" type="range" min="0" max="1" step="0.05" value="1" />
+          </div>
+        </div>
+      </div>
+      <div class="cms-accordion" data-accordion="discovered">
+        <button class="cms-accordion__header" type="button" aria-expanded="false">
+          Discovered
+          <span class="cms-accordion__icon">+</span>
+        </button>
+        <div class="cms-accordion__panel">
+          <div class="cms-hint">Existing keys on the page</div>
+          <h4 class="cms-sidebar__list-title">Discovered</h4>
+          <p id="cms-empty">No tagged elements yet.</p>
+          <ul class="cms-list" id="cms-list"></ul>
+        </div>
+      </div>
     </div>
   `;
   document.body.appendChild(sidebar);
@@ -93,6 +143,10 @@
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
+  const textColorInput = sidebar.querySelector('#cms-text-color');
+  const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
+  const shadowToggle = sidebar.querySelector('#cms-shadow-toggle');
+  const opacityInput = sidebar.querySelector('#cms-opacity');
   const saveButton = sidebar.querySelector('#cms-save');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
@@ -101,8 +155,12 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const accordionHeaders = sidebar.querySelectorAll('.cms-accordion__header');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
+  const DEFAULT_TEXT_COLOR = '#111827';
+  const DEFAULT_BG_COLOR = '#ffffff';
+  const DEFAULT_SHADOW = '0 20px 45px rgba(15, 23, 42, 0.25)';
   deleteButton.disabled = true;
 
   function applySidebarPosition() {
@@ -120,6 +178,10 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    textColorInput.value = DEFAULT_TEXT_COLOR;
+    backgroundColorInput.value = DEFAULT_BG_COLOR;
+    shadowToggle.checked = false;
+    opacityInput.value = '1';
     deleteButton.disabled = true;
   }
 
@@ -283,6 +345,25 @@
     return 'text';
   }
 
+  function rgbToHex(color) {
+    if (!color) return '';
+    if (color === 'transparent') return '';
+    if (color.startsWith('#')) return color;
+    const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if (!match) return '';
+    const [r, g, b] = match.slice(1, 4).map((value) => Number.parseInt(value, 10));
+    const toHex = (value) => value.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+  function updateStyleInputs(el) {
+    const style = window.getComputedStyle(el);
+    textColorInput.value = rgbToHex(style.color) || DEFAULT_TEXT_COLOR;
+    backgroundColorInput.value = rgbToHex(style.backgroundColor) || DEFAULT_BG_COLOR;
+    opacityInput.value = style.opacity ? Number(style.opacity).toFixed(2) : '1';
+    shadowToggle.checked = !!style.boxShadow && style.boxShadow !== 'none';
+  }
+
   function updateImagePreview(src) {
     if (!src) {
       imagePreview.textContent = 'No image selected';
@@ -359,6 +440,7 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
+    updateStyleInputs(el);
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
@@ -661,11 +743,36 @@
   }
 
   toggleButton.addEventListener('click', toggleEdit);
+  accordionHeaders.forEach((header) => {
+    header.addEventListener('click', () => {
+      const section = header.closest('.cms-accordion');
+      if (!section) return;
+      const isOpen = section.classList.contains('open');
+      section.classList.toggle('open');
+      header.setAttribute('aria-expanded', (!isOpen).toString());
+    });
+  });
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  textColorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.color = textColorInput.value;
+  });
+  backgroundColorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.backgroundColor = backgroundColorInput.value;
+  });
+  shadowToggle.addEventListener('change', () => {
+    if (!selectedElement) return;
+    selectedElement.style.boxShadow = shadowToggle.checked ? DEFAULT_SHADOW : '';
+  });
+  opacityInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.opacity = opacityInput.value;
+  });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
