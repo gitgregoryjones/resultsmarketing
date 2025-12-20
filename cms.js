@@ -18,15 +18,18 @@
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
+  outline.classList.add('cms-ui');
   document.body.appendChild(outline);
 
   const toggleButton = document.createElement('button');
   toggleButton.id = 'cms-toggle';
   toggleButton.textContent = 'Edit';
+  toggleButton.classList.add('cms-ui');
   document.body.appendChild(toggleButton);
 
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
+  sidebar.classList.add('cms-ui');
   const POSITION_STORAGE_KEY = 'cmsSidebarPosition';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
@@ -40,10 +43,6 @@
           <button type="button" data-pos="bottom">Bottom</button>
         </div>
       </div>
-      <div class="cms-field cms-field--file">
-        <label for="cms-file">HTML file</label>
-        <select id="cms-file"></select>
-      </div>
       <div class="cms-publish">
         <button type="button" id="cms-publish">Publish static site</button>
         <p class="cms-pill cms-pill--subtle">Merges all pages into /published without editor assets</p>
@@ -51,43 +50,116 @@
       <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
-      <div class="cms-field">
-        <label>Content type</label>
-        <div class="cms-type">
-          <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+      <div class="cms-accordion" data-accordion>
+        <div class="cms-accordion__item" data-accordion-item>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="false">
+            Settings
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel hidden>
+            <div class="cms-field cms-field--file">
+              <label for="cms-file">HTML files</label>
+              <select id="cms-file"></select>
+            </div>
+            <div class="cms-field">
+              <label for="cms-site-name">Site name</label>
+              <input id="cms-site-name" type="text" placeholder="Results Marketing" />
+            </div>
+          </div>
+        </div>
+        <div class="cms-accordion__item cms-accordion__item--open" data-accordion-item data-accordion-open>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="true">
+            Content Updates
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel>
+            <div class="cms-field">
+              <label>Content type</label>
+              <div class="cms-type">
+                <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
+                <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
+                <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+              </div>
+            </div>
+            <div class="cms-field">
+              <label for="cms-key">Field key</label>
+              <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+            </div>
+            <div class="cms-field">
+              <label for="cms-link">Link</label>
+              <input id="cms-link" type="url" placeholder="https://example.com" />
+            </div>
+            <div class="cms-field cms-field--text">
+              <label for="cms-value">Content</label>
+              <textarea id="cms-value" placeholder="Type content here..."></textarea>
+            </div>
+            <div class="cms-field cms-field--image">
+              <label for="cms-image-url">Image URL</label>
+              <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+              <div class="cms-upload">
+                <button class="cms-upload__button" type="button">Browse gallery</button>
+                <label class="cms-upload__label" for="cms-image-file">Choose file</label>
+                <input id="cms-image-file" type="file" accept="image/*" />
+              </div>
+              <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+            </div>
+            <button id="cms-save">Save</button>
+            <button id="cms-delete" type="button">Delete element</button>
+            <div id="cms-message"></div>
+          </div>
+        </div>
+        <div class="cms-accordion__item" data-accordion-item>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="false">
+            Discovered
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel hidden>
+            <div class="cms-hint">Existing keys on the page</div>
+            <p id="cms-empty">No tagged elements yet.</p>
+            <ul class="cms-list" id="cms-list"></ul>
+          </div>
+        </div>
+        <div class="cms-accordion__item" data-accordion-item>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="false">
+            Colors
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel hidden>
+            <div class="cms-field">
+              <label for="cms-color">Element color</label>
+              <input id="cms-color" type="color" value="#111827" />
+            </div>
+          </div>
+        </div>
+        <div class="cms-accordion__item" data-accordion-item>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="false">
+            Effects
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel hidden>
+            <div class="cms-field">
+              <label for="cms-effect">Effect</label>
+              <select id="cms-effect">
+                <option value="none">None</option>
+                <option value="shadow">Shadow</option>
+                <option value="zoom">Zoom</option>
+                <option value="fade">Fade In on Scroll Into View</option>
+                <option value="slide-left">Slide In From Left on Scroll Into View</option>
+                <option value="slide-right">Slide In From Right on Scroll Into View</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="cms-accordion__item" data-accordion-item>
+          <button class="cms-accordion__toggle" type="button" data-accordion-toggle aria-expanded="false">
+            Wireframe
+          </button>
+          <div class="cms-accordion__panel" data-accordion-panel hidden>
+            <button class="cms-button" id="cms-wireframe" type="button">Wireframe Off</button>
+          </div>
         </div>
       </div>
-      <div class="cms-field">
-        <label for="cms-key">Field key</label>
-        <input id="cms-key" type="text" placeholder="auto.tag.hash" />
-      </div>
-      <div class="cms-field cms-field--text">
-        <label for="cms-value">Content</label>
-        <textarea id="cms-value" placeholder="Type content here..."></textarea>
-      </div>
-      <div class="cms-field cms-field--image">
-        <label for="cms-image-url">Image URL</label>
-        <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-        <div class="cms-upload">
-          <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-          <input id="cms-image-file" type="file" accept="image/*" />
-        </div>
-        <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
-      </div>
-      <button id="cms-save">Save</button>
-      <button id="cms-delete" type="button">Delete element</button>
-      <div id="cms-message"></div>
-      <div class="cms-hint">Existing keys on the page</div>
-      <h4 class="cms-sidebar__list-title">Discovered</h4>
-      <p id="cms-empty">No tagged elements yet.</p>
-      <ul class="cms-list" id="cms-list"></ul>
     </div>
   `;
   document.body.appendChild(sidebar);
 
   const keyInput = sidebar.querySelector('#cms-key');
+  const linkInput = sidebar.querySelector('#cms-link');
   const valueInput = sidebar.querySelector('#cms-value');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
@@ -96,14 +168,24 @@
   const saveButton = sidebar.querySelector('#cms-save');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
+  const colorInput = sidebar.querySelector('#cms-color');
+  const effectSelect = sidebar.querySelector('#cms-effect');
+  const wireframeButton = sidebar.querySelector('#cms-wireframe');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
+  const siteNameInput = sidebar.querySelector('#cms-site-name');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const accordionToggles = sidebar.querySelectorAll('[data-accordion-toggle]');
+  const accordionItems = sidebar.querySelectorAll('[data-accordion-item]');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   deleteButton.disabled = true;
+  let wireframeEnabled = localStorage.getItem('cmsWireframeEnabled') === 'true';
+  let siteName = '';
+  let effectObserver = null;
+  const scrollEffects = new Set(['fade', 'slide-left', 'slide-right']);
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -111,15 +193,120 @@
     dockButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
   }
 
+  function setAccordionState(item, isOpen) {
+    const panel = item.querySelector('[data-accordion-panel]');
+    const toggle = item.querySelector('[data-accordion-toggle]');
+    item.classList.toggle('cms-accordion__item--open', isOpen);
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (panel) {
+      panel.hidden = !isOpen;
+    }
+  }
+
+  function handleAccordionToggle(targetItem) {
+    accordionItems.forEach((item) => {
+      setAccordionState(item, item === targetItem);
+    });
+  }
+
+  function initAccordion() {
+    let openItem = Array.from(accordionItems).find((item) => item.hasAttribute('data-accordion-open'));
+    if (!openItem) {
+      openItem = accordionItems[0];
+    }
+    accordionItems.forEach((item) => {
+      const shouldOpen = item === openItem;
+      setAccordionState(item, shouldOpen);
+    });
+    accordionToggles.forEach((toggle) => {
+      toggle.addEventListener('click', () => {
+        const item = toggle.closest('[data-accordion-item]');
+        if (item) handleAccordionToggle(item);
+      });
+    });
+  }
+
+  function setWireframeState(enabled) {
+    wireframeEnabled = enabled;
+    document.body.classList.toggle('cms-wireframe', enabled);
+    wireframeButton.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
+    localStorage.setItem('cmsWireframeEnabled', enabled ? 'true' : 'false');
+  }
+
+  function getEffectValue(el) {
+    return el?.dataset?.cmsEffect || 'none';
+  }
+
+  function clearEffects(el) {
+    if (!el) return;
+    el.classList.remove(
+      'cms-effect-shadow',
+      'cms-effect-zoom',
+      'cms-effect-scroll',
+      'cms-effect-active'
+    );
+    el.removeAttribute('data-cms-effect');
+    if (effectObserver) {
+      effectObserver.unobserve(el);
+    }
+  }
+
+  function applyEffect(el, effect) {
+    if (!el) return;
+    clearEffects(el);
+    if (!effect || effect === 'none') return;
+    el.dataset.cmsEffect = effect;
+    if (scrollEffects.has(effect)) {
+      el.classList.add('cms-effect-scroll');
+      if (!effectObserver) {
+        effectObserver = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('cms-effect-active');
+              }
+            });
+          },
+          { threshold: 0.2 }
+        );
+      }
+      effectObserver.observe(el);
+      return;
+    }
+    if (effect === 'shadow') {
+      el.classList.add('cms-effect-shadow');
+    }
+    if (effect === 'zoom') {
+      el.classList.add('cms-effect-zoom');
+    }
+  }
+
+  function updateColorPicker(el) {
+    if (!el) return;
+    const color = window.getComputedStyle(el).color;
+    if (!color) return;
+    const rgbMatch = color.match(/\d+/g);
+    if (rgbMatch && rgbMatch.length >= 3) {
+      const [r, g, b] = rgbMatch.map((value) => parseInt(value, 10));
+      const hex = `#${[r, g, b]
+        .map((channel) => channel.toString(16).padStart(2, '0'))
+        .join('')}`;
+      colorInput.value = hex;
+    }
+  }
+
   applySidebarPosition();
 
   function clearForm() {
     keyInput.value = '';
+    linkInput.value = '';
     valueInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    colorInput.value = '#111827';
+    effectSelect.value = 'none';
     deleteButton.disabled = true;
   }
 
@@ -150,6 +337,21 @@
     const query = new URLSearchParams();
     query.set('file', currentFile);
     return `${API_ENDPOINT}?${query.toString()}`;
+  }
+
+  function sanitizeSiteName(name = '') {
+    return String(name || '')
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .trim();
+  }
+
+  function updateSiteName(value = '') {
+    siteName = sanitizeSiteName(value);
+    siteNameInput.value = siteName;
+    if (!siteName) {
+      siteNameInput.placeholder = 'required for publishing';
+    }
   }
 
   async function loadFiles() {
@@ -359,6 +561,8 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
+    updateColorPicker(el);
+    effectSelect.value = getEffectValue(el);
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
@@ -379,6 +583,8 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
+    const linkValue = el.getAttribute('data-link') || (el.tagName === 'A' ? el.getAttribute('href') : '');
+    linkInput.value = linkValue || '';
     deleteButton.disabled = false;
   }
 
@@ -426,6 +632,7 @@
       valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
+    const linkValue = linkInput.value.trim();
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
@@ -452,6 +659,15 @@
     }
 
     selectedElement.setAttribute(attributeName, uniqueKey);
+    if (linkValue) {
+      selectedElement.setAttribute('data-link', linkValue);
+    } else {
+      selectedElement.removeAttribute('data-link');
+    }
+    if (selectedElement.tagName !== 'IMG') {
+      selectedElement.style.color = colorInput.value;
+    }
+    applyEffect(selectedElement, effectSelect.value);
     let bodyValue = value;
     let imagePayload = null;
 
@@ -490,6 +706,7 @@
           path,
           type: selectedType,
           image: imagePayload,
+          link: linkValue,
           originalOuterHTML,
           updatedOuterHTML,
           file: currentFile,
@@ -506,6 +723,33 @@
       refreshList();
     } catch (err) {
       messageEl.textContent = 'Unable to save content to the server.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
+  async function persistSiteName() {
+    const desiredName = sanitizeSiteName(siteNameInput.value);
+    if (!desiredName) {
+      messageEl.textContent = 'Enter a site name (lowercase, no spaces) before saving.';
+      messageEl.style.color = '#ef4444';
+      siteNameInput.focus();
+      return;
+    }
+    try {
+      const res = await fetch(buildApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteName: desiredName, file: currentFile }),
+      });
+      if (!res.ok) {
+        throw new Error('Save failed');
+      }
+      const data = await res.json();
+      updateSiteName(data.siteName || desiredName);
+      messageEl.textContent = 'Site name saved.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to save site name.';
       messageEl.style.color = '#ef4444';
     }
   }
@@ -652,6 +896,7 @@
         const data = await res.json();
         mergedContent = data.content || {};
         storedTags = data.tags || {};
+        updateSiteName(data.siteName || '');
         applyStoredTags(storedTags);
       }
       applyContent();
@@ -666,6 +911,26 @@
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  siteNameInput.addEventListener('change', persistSiteName);
+  siteNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      persistSiteName();
+    }
+  });
+  colorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    if (selectedElement.tagName !== 'IMG') {
+      selectedElement.style.color = colorInput.value;
+    }
+  });
+  effectSelect.addEventListener('change', (e) => {
+    if (!selectedElement) return;
+    applyEffect(selectedElement, e.target.value);
+  });
+  wireframeButton.addEventListener('click', () => {
+    setWireframeState(!wireframeEnabled);
+  });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
@@ -690,6 +955,8 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
     applySidebarPosition();
+    initAccordion();
+    setWireframeState(wireframeEnabled);
     hydrate();
   });
 
