@@ -239,10 +239,15 @@
   const colorBorderValueInput = colorDialog.querySelector('#cms-color-border-value');
   const colorApplyButton = colorDialog.querySelector('#cms-color-apply');
   const colorClearButton = colorDialog.querySelector('#cms-color-clear');
+  const colorCloseButton = colorDialog.querySelector('#cms-color-close');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
+  let colorDialogState = {
+    applied: false,
+    originalStyles: null,
+  };
   deleteButton.disabled = true;
 
   function setWireframeState(enabled) {
@@ -337,6 +342,31 @@
     colorPreview.style.background = previewBg;
     colorPreview.style.color = previewText;
     colorPreview.textContent = 'Aa';
+  }
+
+  function applyLiveColors() {
+    if (!selectedElement) return;
+    selectedElement.style.color = colorTextInput.value;
+    selectedElement.style.backgroundColor = colorBgInput.value;
+    selectedElement.style.borderColor = colorBorderInput.value;
+    updateColorPreview(colorTextInput.value, colorBgInput.value);
+  }
+
+  function captureOriginalColors() {
+    if (!selectedElement) return null;
+    return {
+      color: selectedElement.style.color,
+      backgroundColor: selectedElement.style.backgroundColor,
+      borderColor: selectedElement.style.borderColor,
+    };
+  }
+
+  function restoreOriginalColors() {
+    if (!selectedElement || !colorDialogState.originalStyles) return;
+    selectedElement.style.color = colorDialogState.originalStyles.color;
+    selectedElement.style.backgroundColor = colorDialogState.originalStyles.backgroundColor;
+    selectedElement.style.borderColor = colorDialogState.originalStyles.borderColor;
+    updateEffectsControls(selectedElement);
   }
 
   function removeOutlines() {
@@ -1203,6 +1233,10 @@
   colorDialogOpenButton.addEventListener('click', () => {
     if (!ensureElementSelected('colors')) return;
     updateEffectsControls(selectedElement);
+    colorDialogState = {
+      applied: false,
+      originalStyles: captureOriginalColors(),
+    };
     if (typeof colorDialog.showModal === 'function') {
       colorDialog.showModal();
     } else {
@@ -1219,26 +1253,42 @@
 
   colorTextInput.addEventListener('input', () => {
     colorTextValueInput.value = colorTextInput.value;
+    applyLiveColors();
   });
   colorBgInput.addEventListener('input', () => {
     colorBgValueInput.value = colorBgInput.value;
+    applyLiveColors();
   });
   colorBorderInput.addEventListener('input', () => {
     colorBorderValueInput.value = colorBorderInput.value;
+    applyLiveColors();
   });
-  colorTextValueInput.addEventListener('input', () => syncColorField(colorTextInput, colorTextValueInput));
-  colorBgValueInput.addEventListener('input', () => syncColorField(colorBgInput, colorBgValueInput));
-  colorBorderValueInput.addEventListener('input', () => syncColorField(colorBorderInput, colorBorderValueInput));
+  colorTextValueInput.addEventListener('input', () => {
+    syncColorField(colorTextInput, colorTextValueInput);
+    applyLiveColors();
+  });
+  colorBgValueInput.addEventListener('input', () => {
+    syncColorField(colorBgInput, colorBgValueInput);
+    applyLiveColors();
+  });
+  colorBorderValueInput.addEventListener('input', () => {
+    syncColorField(colorBorderInput, colorBorderValueInput);
+    applyLiveColors();
+  });
 
   colorApplyButton.addEventListener('click', async () => {
     if (!ensureElementSelected('colors')) return;
     const originalOuterHTML = selectedElement.outerHTML;
-    selectedElement.style.color = colorTextInput.value;
-    selectedElement.style.backgroundColor = colorBgInput.value;
-    selectedElement.style.borderColor = colorBorderInput.value;
+    applyLiveColors();
     updateEffectsControls(selectedElement);
     const updatedOuterHTML = selectedElement.outerHTML;
+    colorDialogState.applied = true;
     await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+    if (typeof colorDialog.close === 'function') {
+      colorDialog.close();
+    } else {
+      colorDialog.removeAttribute('open');
+    }
   });
 
   colorClearButton.addEventListener('click', async () => {
@@ -1249,7 +1299,22 @@
     selectedElement.style.borderColor = '';
     updateEffectsControls(selectedElement);
     const updatedOuterHTML = selectedElement.outerHTML;
+    colorDialogState.applied = true;
     await persistElementHtml(originalOuterHTML, updatedOuterHTML);
+  });
+
+  colorDialog.addEventListener('close', () => {
+    if (colorDialogState.applied) return;
+    restoreOriginalColors();
+  });
+
+  colorCloseButton.addEventListener('click', () => {
+    if (typeof colorDialog.close === 'function') {
+      colorDialog.close();
+    } else {
+      colorDialog.removeAttribute('open');
+      restoreOriginalColors();
+    }
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
