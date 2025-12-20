@@ -15,10 +15,10 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
-  let selectionObserver = null;
   let history = [];
   let historyIndex = -1;
   let historyLocked = false;
+  let historyObserver = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -162,6 +162,11 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
+  const cmsUiElements = [outline, toggleButton, sidebar, gallery];
+
+  cmsUiElements.forEach((el) => {
+    if (el) el.dataset.cmsUi = 'true';
+  });
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -216,25 +221,11 @@
     }
   }
 
-  function stopObservingSelection() {
-    if (selectionObserver) {
-      selectionObserver.disconnect();
-      selectionObserver = null;
+  function stopObservingHistory() {
+    if (historyObserver) {
+      historyObserver.disconnect();
+      historyObserver = null;
     }
-  }
-
-  function observeSelection(el) {
-    stopObservingSelection();
-    if (!el) return;
-    selectionObserver = new MutationObserver(() => {
-      pushHistorySnapshot();
-    });
-    selectionObserver.observe(el, {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
   }
 
   function updateHistoryButtons() {
@@ -243,11 +234,31 @@
     redoButton.disabled = historyIndex === -1 || historyIndex >= history.length - 1;
   }
 
+  function isCmsUiNode(node) {
+    if (!node) return false;
+    if (node.closest) {
+      return !!node.closest('[data-cms-ui="true"]');
+    }
+    if (node.parentElement && node.parentElement.closest) {
+      return !!node.parentElement.closest('[data-cms-ui="true"]');
+    }
+    return false;
+  }
+
+  function getEditableHtml() {
+    const clone = document.body.cloneNode(true);
+    clone.querySelectorAll('[data-cms-ui="true"]').forEach((node) => node.remove());
+    clone.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
+    clone.querySelectorAll('[contenteditable="true"]').forEach((node) => node.removeAttribute('contenteditable'));
+    return clone.innerHTML;
+  }
+
   function createSnapshot() {
-    if (!selectedElement) return null;
-    const path = buildElementPath(selectedElement);
-    if (!path) return null;
-    return { path, html: selectedElement.outerHTML };
+    return {
+      html: getEditableHtml(),
+      selectedPath: selectedElement ? buildElementPath(selectedElement) : '',
+      scrollY: window.scrollY,
+    };
   }
 
   function pushHistorySnapshot() {
@@ -255,7 +266,7 @@
     const snapshot = createSnapshot();
     if (!snapshot) return;
     const last = history[historyIndex];
-    if (last && last.path === snapshot.path && last.html === snapshot.html) return;
+    if (last && last.html === snapshot.html) return;
     history = history.slice(0, historyIndex + 1);
     history.push(snapshot);
     historyIndex = history.length - 1;
@@ -268,15 +279,16 @@
     pushHistorySnapshot();
   }
 
-  function replaceElementFromSnapshot(snapshot) {
-    const target = document.querySelector(snapshot.path);
-    if (!target) return null;
+  function restoreEditableHtml(snapshot) {
+    const cmsNodes = Array.from(document.body.children).filter((node) => node.dataset.cmsUi === 'true');
+    document.body.innerHTML = '';
     const wrapper = document.createElement('div');
-    wrapper.innerHTML = snapshot.html.trim();
-    const replacement = wrapper.firstElementChild;
-    if (!replacement) return null;
-    target.replaceWith(replacement);
-    return replacement;
+    wrapper.innerHTML = snapshot.html || '';
+    while (wrapper.firstChild) {
+      document.body.appendChild(wrapper.firstChild);
+    }
+    cmsNodes.forEach((node) => document.body.appendChild(node));
+    window.scrollTo(0, snapshot.scrollY || 0);
   }
 
   function syncInputsForSelection(el) {
@@ -307,17 +319,21 @@
     const snapshot = history[index];
     if (!snapshot) return;
     historyLocked = true;
-    const replacement = replaceElementFromSnapshot(snapshot);
-    if (replacement) {
+    stopObservingHistory();
+    restoreEditableHtml(snapshot);
+    const nextSelection = snapshot.selectedPath ? document.querySelector(snapshot.selectedPath) : null;
+    if (nextSelection) {
+      selectElement(nextSelection, { skipHistory: true });
+    } else {
       document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
-      selectedElement = replacement;
-      selectedElement.classList.add('cms-outlined');
-      selectedType = determineElementType(replacement);
-      setTypeSelection(selectedType);
-      observeSelection(replacement);
-      syncInputsForSelection(replacement);
+      clearInlineEditing();
+      selectedElement = null;
+      clearForm();
     }
     historyLocked = false;
+    if (editMode) {
+      startObservingHistory();
+    }
     updateHistoryButtons();
   }
 
@@ -427,16 +443,18 @@
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
-    if (!editMode) {
+    if (editMode) {
+      if (historyIndex === -1) {
+        resetHistory();
+      }
+      startObservingHistory();
+    } else {
       clearInlineEditing();
-      stopObservingSelection();
+      stopObservingHistory();
       selectedElement = null;
       clearMessage();
       clearForm();
       removeOutlines();
-      history = [];
-      historyIndex = -1;
-      updateHistoryButtons();
     }
   }
 
@@ -498,6 +516,49 @@
     return 'text';
   }
 
+  function startObservingHistory() {
+    if (historyObserver) return;
+    historyObserver = new MutationObserver((mutations) => {
+      if (historyLocked || !editMode) return;
+      const outlineClass = 'cms-outlined';
+      const isOutlineOnlyChange = (mutation) => {
+        if (mutation.attributeName !== 'class') return false;
+        if (!mutation.target || !mutation.target.classList) return false;
+        const current = new Set(mutation.target.className.split(/\s+/).filter(Boolean));
+        const previous = new Set((mutation.oldValue || '').split(/\s+/).filter(Boolean));
+        current.delete(outlineClass);
+        previous.delete(outlineClass);
+        if (current.size !== previous.size) return false;
+        return Array.from(current).every((item) => previous.has(item));
+      };
+      const hasContentChange = mutations.some((mutation) => {
+        if (mutation.type === 'attributes' || mutation.type === 'characterData') {
+          if (mutation.type === 'attributes') {
+            if (mutation.attributeName === 'contenteditable') return false;
+            if (isOutlineOnlyChange(mutation)) return false;
+          }
+          return !isCmsUiNode(mutation.target);
+        }
+        if (mutation.type === 'childList') {
+          const added = Array.from(mutation.addedNodes || []);
+          const removed = Array.from(mutation.removedNodes || []);
+          return [...added, ...removed].some((node) => !isCmsUiNode(node));
+        }
+        return false;
+      });
+      if (hasContentChange) {
+        pushHistorySnapshot();
+      }
+    });
+    historyObserver.observe(document.body, {
+      attributes: true,
+      attributeOldValue: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
+  }
+
   function updateImagePreview(src) {
     if (!src) {
       imagePreview.textContent = 'No image selected';
@@ -510,22 +571,26 @@
 
   function applyLinkChange(value) {
     if (!selectedElement) return;
+    historyLocked = true;
     if (value) {
       selectedElement.setAttribute('data-link', value);
     } else {
       selectedElement.removeAttribute('data-link');
     }
+    historyLocked = false;
     pushHistorySnapshot();
   }
 
   function applyImageUrlChange(value) {
     if (!selectedElement || selectedType === 'text') return;
+    historyLocked = true;
     updateImagePreview(value);
     applyImageToElement(
       selectedElement,
       value,
       selectedType === 'background' ? 'background' : 'image'
     );
+    historyLocked = false;
     pushHistorySnapshot();
   }
 
@@ -673,24 +738,23 @@
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
-      pushHistorySnapshot();
     };
     el.contentEditable = 'true';
     el.addEventListener('input', inlineInputHandler);
   }
 
-  function selectElement(el) {
+  function selectElement(el, options = {}) {
     document.querySelectorAll('.cms-outlined').forEach((node) => node.classList.remove('cms-outlined'));
     if (selectedElement && selectedElement !== el) {
       clearInlineEditing();
     }
     selectedElement = el;
     selectedType = determineElementType(el);
+    historyLocked = true;
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
-    observeSelection(el);
     syncInputsForSelection(el);
-    resetHistory();
+    historyLocked = false;
   }
 
   function refreshList() {
@@ -964,7 +1028,6 @@
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
-    pushHistorySnapshot();
   });
   linkInput.addEventListener('input', () => {
     if (!editMode || !selectedElement) return;
@@ -999,14 +1062,11 @@
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
-      updateImagePreview(fileUrl);
       if (editMode && selectedElement && selectedType !== 'text') {
-        applyImageToElement(
-          selectedElement,
-          fileUrl,
-          selectedType === 'background' ? 'background' : 'image'
-        );
-        pushHistorySnapshot();
+        imageUrlInput.value = fileUrl;
+        applyImageUrlChange(fileUrl);
+      } else {
+        updateImagePreview(fileUrl);
       }
     } else {
       updateImagePreview('');
