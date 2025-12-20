@@ -17,17 +17,28 @@
   let inlineInputHandler = null;
 
   const outline = document.createElement('div');
-  outline.className = 'cms-outline';
+  outline.className = 'cms-outline cms-ui';
   document.body.appendChild(outline);
 
   const toggleButton = document.createElement('button');
   toggleButton.id = 'cms-toggle';
+  toggleButton.classList.add('cms-ui');
   toggleButton.textContent = 'Edit';
   document.body.appendChild(toggleButton);
 
+  const wireframeToggle = document.createElement('button');
+  wireframeToggle.id = 'cms-wireframe-toggle';
+  wireframeToggle.classList.add('cms-ui');
+  wireframeToggle.setAttribute('type', 'button');
+  wireframeToggle.setAttribute('aria-pressed', 'false');
+  wireframeToggle.textContent = 'Wireframe Off';
+  document.body.appendChild(wireframeToggle);
+
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
+  sidebar.classList.add('cms-ui');
   const POSITION_STORAGE_KEY = 'cmsSidebarPosition';
+  const WIREFRAME_STORAGE_KEY = 'cmsWireframeEnabled';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
@@ -156,6 +167,19 @@
   let galleryAssets = { uploads: [], remote: [] };
   deleteButton.disabled = true;
 
+  function setWireframeState(enabled) {
+    if (enabled) {
+      setEditMode(false);
+    }
+    document.body.classList.toggle('cms-wireframe', enabled);
+    wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
+    localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
+    toggleButton.disabled = enabled;
+  }
+
+  setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
+
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
     sidebar.classList.add(`cms-pos-${sidebarPosition}`);
@@ -241,6 +265,10 @@
     }
   }
 
+  wireframeToggle.addEventListener('click', () => {
+    setWireframeState(!document.body.classList.contains('cms-wireframe'));
+  });
+
   async function loadFiles() {
     try {
       const res = await fetch(FILES_ENDPOINT);
@@ -278,14 +306,8 @@
   }
 
   function isCmsUi(element) {
-    return element.closest && element.closest('#cms-sidebar, #cms-toggle, .cms-outline, #cms-gallery');
-  }
-
-  function getElementTarget(node) {
-    if (node && node.nodeType === Node.TEXT_NODE) {
-      return node.parentElement;
-    }
-    return node;
+    return element.closest
+      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
   }
 
   function handleHover(e) {
@@ -299,8 +321,9 @@
     positionOutline(target);
   }
 
-  function toggleEdit() {
-    editMode = !editMode;
+  function setEditMode(enabled) {
+    if (editMode === enabled) return;
+    editMode = enabled;
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
@@ -312,6 +335,10 @@
       removeOutlines();
     }
     deleteButton.disabled = !editMode || !selectedElement;
+  }
+
+  function toggleEdit() {
+    setEditMode(!editMode);
   }
 
   function getExistingKeys() {
