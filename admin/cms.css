@@ -265,6 +265,35 @@
   transition: opacity 150ms ease;
 }
 
+.cms-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cms-actions button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cms-border);
+  background: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.cms-actions button:hover {
+  border-color: #6366f1;
+  color: #4338ca;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.cms-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
 .cms-type {
   display: flex;
   gap: 12px;

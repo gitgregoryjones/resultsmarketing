@@ -15,9 +15,6 @@
   let selectedElement = null;
   let selectedType = 'text';
   let inlineInputHandler = null;
-  let history = [];
-  let historyIndex = -1;
-  let historyLocked = false;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -79,10 +76,6 @@
         </div>
         <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
-      <div class="cms-actions">
-        <button type="button" id="cms-undo" disabled>Undo</button>
-        <button type="button" id="cms-redo" disabled>Redo</button>
-      </div>
       <button id="cms-save">Save</button>
       <div id="cms-message"></div>
       <div class="cms-hint">Existing keys on the page</div>
@@ -100,8 +93,6 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
-  const undoButton = sidebar.querySelector('#cms-undo');
-  const redoButton = sidebar.querySelector('#cms-redo');
   const publishButton = sidebar.querySelector('#cms-publish');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
@@ -149,78 +140,6 @@
     if (selectedElement.isContentEditable) {
       selectedElement.contentEditable = 'false';
     }
-  }
-
-  function getCurrentState() {
-    if (!selectedElement) return null;
-    return {
-      key: keyInput.value.trim(),
-      type: selectedType,
-      value: selectedType === 'text' ? valueInput.value : imageUrlInput.value.trim(),
-    };
-  }
-
-  function statesMatch(a, b) {
-    if (!a || !b) return false;
-    return a.key === b.key && a.type === b.type && a.value === b.value;
-  }
-
-  function updateHistoryButtons() {
-    if (!undoButton || !redoButton) return;
-    undoButton.disabled = historyIndex <= 0;
-    redoButton.disabled = historyIndex === -1 || historyIndex >= history.length - 1;
-  }
-
-  function pushHistoryState() {
-    if (historyLocked || !editMode) return;
-    const state = getCurrentState();
-    if (!state) return;
-    const last = history[historyIndex];
-    if (statesMatch(last, state)) return;
-    history = history.slice(0, historyIndex + 1);
-    history.push(state);
-    historyIndex = history.length - 1;
-    updateHistoryButtons();
-  }
-
-  function resetHistory() {
-    history = [];
-    historyIndex = -1;
-    pushHistoryState();
-  }
-
-  function applyState(state) {
-    if (!state || !selectedElement) return;
-    historyLocked = true;
-    setTypeSelection(state.type);
-    keyInput.value = state.key;
-    if (state.type === 'text') {
-      valueInput.value = state.value;
-      selectedElement.textContent = state.value;
-    } else {
-      imageUrlInput.value = state.value;
-      updateImagePreview(state.value);
-      applyImageToElement(
-        selectedElement,
-        state.value,
-        state.type === 'background' ? 'background' : 'image'
-      );
-    }
-    historyLocked = false;
-  }
-
-  function undoEdit() {
-    if (historyIndex <= 0) return;
-    historyIndex -= 1;
-    applyState(history[historyIndex]);
-    updateHistoryButtons();
-  }
-
-  function redoEdit() {
-    if (historyIndex === -1 || historyIndex >= history.length - 1) return;
-    historyIndex += 1;
-    applyState(history[historyIndex]);
-    updateHistoryButtons();
   }
 
   function buildApiUrl() {
@@ -298,9 +217,6 @@
       clearMessage();
       clearForm();
       removeOutlines();
-      history = [];
-      historyIndex = -1;
-      updateHistoryButtons();
     }
   }
 
@@ -424,7 +340,6 @@
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
-      pushHistoryState();
     };
     el.contentEditable = 'true';
     el.addEventListener('input', inlineInputHandler);
@@ -459,7 +374,6 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
-    resetHistory();
   }
 
   function refreshList() {
@@ -693,46 +607,13 @@
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
   saveButton.addEventListener('click', saveSelection);
-  undoButton.addEventListener('click', undoEdit);
-  redoButton.addEventListener('click', redoEdit);
   publishButton.addEventListener('click', publishStaticSite);
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
-    pushHistoryState();
-  });
-  keyInput.addEventListener('input', () => {
-    if (!editMode || !selectedElement) return;
-    pushHistoryState();
-  });
-  imageUrlInput.addEventListener('input', () => {
-    if (!editMode || !selectedElement || selectedType === 'text') return;
-    updateImagePreview(imageUrlInput.value.trim());
-    applyImageToElement(
-      selectedElement,
-      imageUrlInput.value.trim(),
-      selectedType === 'background' ? 'background' : 'image'
-    );
-    pushHistoryState();
   });
   typeInputs.forEach((input) => {
-    input.addEventListener('change', (e) => {
-      setTypeSelection(e.target.value);
-      pushHistoryState();
-    });
-  });
-  document.addEventListener('keydown', (e) => {
-    if (!editMode || !selectedElement) return;
-    const isModifier = e.metaKey || e.ctrlKey;
-    if (!isModifier) return;
-    const key = e.key.toLowerCase();
-    if (key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      undoEdit();
-    } else if (key === 'y' || (key === 'z' && e.shiftKey)) {
-      e.preventDefault();
-      redoEdit();
-    }
+    input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
   fileSelect.addEventListener('change', () => {
     const nextFile = fileSelect.value;
