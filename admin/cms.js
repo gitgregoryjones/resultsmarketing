@@ -170,7 +170,7 @@
       <div class="cms-color-actions">
         <button type="button" id="cms-color-clear">Clear</button>
         <div class="cms-color-actions__spacer"></div>
-        <button type="submit" id="cms-color-close">Close</button>
+        <button type="button" id="cms-color-cancel">Cancel</button>
         <button type="button" id="cms-color-apply">Apply</button>
       </div>
     </form>
@@ -239,7 +239,7 @@
   const colorBorderValueInput = colorDialog.querySelector('#cms-color-border-value');
   const colorApplyButton = colorDialog.querySelector('#cms-color-apply');
   const colorClearButton = colorDialog.querySelector('#cms-color-clear');
-  const colorCloseButton = colorDialog.querySelector('#cms-color-close');
+  const colorCancelButton = colorDialog.querySelector('#cms-color-cancel');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
@@ -367,6 +367,17 @@
     selectedElement.style.backgroundColor = colorDialogState.originalStyles.backgroundColor;
     selectedElement.style.borderColor = colorDialogState.originalStyles.borderColor;
     updateEffectsControls(selectedElement);
+  }
+
+  function closeColorDialog() {
+    if (typeof colorDialog.close === 'function') {
+      colorDialog.close();
+    } else {
+      colorDialog.removeAttribute('open');
+      if (!colorDialogState.applied) {
+        restoreOriginalColors();
+      }
+    }
   }
 
   function removeOutlines() {
@@ -1284,11 +1295,7 @@
     const updatedOuterHTML = selectedElement.outerHTML;
     colorDialogState.applied = true;
     await persistElementHtml(originalOuterHTML, updatedOuterHTML);
-    if (typeof colorDialog.close === 'function') {
-      colorDialog.close();
-    } else {
-      colorDialog.removeAttribute('open');
-    }
+    closeColorDialog();
   });
 
   colorClearButton.addEventListener('click', async () => {
@@ -1308,13 +1315,17 @@
     restoreOriginalColors();
   });
 
-  colorCloseButton.addEventListener('click', () => {
-    if (typeof colorDialog.close === 'function') {
-      colorDialog.close();
-    } else {
-      colorDialog.removeAttribute('open');
+  colorDialog.addEventListener('cancel', () => {
+    if (!colorDialogState.applied) {
       restoreOriginalColors();
     }
+  });
+
+  colorCancelButton.addEventListener('click', () => {
+    if (!colorDialogState.applied) {
+      restoreOriginalColors();
+    }
+    closeColorDialog();
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
