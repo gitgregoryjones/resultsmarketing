@@ -92,6 +92,7 @@
         <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
       </div>
       <button id="cms-save">Save</button>
+      <button id="cms-delete" type="button">Delete element</button>
       <div id="cms-message"></div>
       <div class="cms-hint">Existing keys on the page</div>
       <h4 class="cms-sidebar__list-title">Discovered</h4>
@@ -136,6 +137,7 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
+  const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
@@ -152,6 +154,7 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
+  deleteButton.disabled = true;
 
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
@@ -173,6 +176,7 @@
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
+    deleteButton.disabled = true;
   }
 
   function updateSiteName(value) {
@@ -307,6 +311,7 @@
       clearForm();
       removeOutlines();
     }
+    deleteButton.disabled = !editMode || !selectedElement;
   }
 
   function getExistingKeys() {
@@ -556,6 +561,7 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
+    deleteButton.disabled = false;
   }
 
   function refreshList() {
@@ -694,6 +700,57 @@
     }
   }
 
+  async function deleteSelection() {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to delete.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const confirmDelete = window.confirm('Delete this element from the page?');
+    if (!confirmDelete) return;
+
+    const attributeName =
+      selectedType === 'image'
+        ? 'data-cms-image'
+        : selectedType === 'background'
+          ? 'data-cms-bg'
+          : 'data-cms-text';
+    const key = selectedElement.getAttribute(attributeName);
+    const path = buildElementPath(selectedElement);
+
+    try {
+      const res = await fetch(buildApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          delete: true,
+          key,
+          path,
+          file: currentFile,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('Delete failed');
+      }
+      const data = await res.json();
+      mergedContent = data.content || mergedContent;
+      storedTags = data.tags || storedTags;
+      clearInlineEditing();
+      selectedElement.remove();
+      selectedElement = null;
+      clearForm();
+      removeOutlines();
+      applyStoredTags(storedTags);
+      applyContent();
+      refreshList();
+      messageEl.textContent = 'Element deleted.';
+      messageEl.style.color = '#16a34a';
+    } catch (err) {
+      messageEl.textContent = 'Unable to delete element.';
+      messageEl.style.color = '#ef4444';
+    }
+  }
+
   async function publishStaticSite() {
     if (!siteName) {
       messageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
@@ -823,6 +880,7 @@
   document.addEventListener('click', handleClick, true);
   document.addEventListener('click', handleLinkNavigation);
   saveButton.addEventListener('click', saveSelection);
+  deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;

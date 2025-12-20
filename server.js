@@ -255,6 +255,28 @@ function mergeContentIntoHtml(html, { key, type, value, elementPath, link, origi
   return nextHtml;
 }
 
+function removeElementFromHtml(html, { key, elementPath }) {
+  try {
+    const root = parse(html);
+    let target = null;
+    if (elementPath) {
+      target = root.querySelector(elementPath);
+    }
+    if (!target && key) {
+      target = root.querySelector(
+        `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"]`
+      );
+    }
+    if (target) {
+      target.remove();
+      return root.toString();
+    }
+  } catch (err) {
+    console.warn('Unable to remove CMS element', err);
+  }
+  return html;
+}
+
 function stripCmsAssets(html) {
   const withoutCss = html.replace(/<link[^>]+href=["']cms\.css["'][^>]*>\s*/gi, '');
   return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
@@ -502,10 +524,11 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           link,
           file,
           siteName,
+          delete: deleteElement,
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
         const linkValue = typeof link === 'string' ? link.trim() : '';
-        if (!key && sanitizedSiteName === undefined) {
+        if (!key && sanitizedSiteName === undefined && !deleteElement) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
@@ -515,6 +538,22 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         const htmlPath = htmlPathFor(targetFile);
         let currentHtml = await fs.readFile(htmlPath, 'utf8');
         const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
+
+        if (deleteElement) {
+          if (!elementPath && !key) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Path or key is required to delete' }));
+            return;
+          }
+          currentHtml = removeElementFromHtml(currentHtml, { key, elementPath });
+          await fs.writeFile(htmlPath, currentHtml);
+          const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(
+            JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || existingSiteName })
+          );
+          return;
+        }
         let storedValue = value ?? '';
         if (type === 'image' || type === 'background') {
           try {
