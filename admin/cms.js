@@ -351,6 +351,16 @@
     }
   }
 
+  function getElementArea(element) {
+    const rect = element.getBoundingClientRect();
+    return rect.width * rect.height;
+  }
+
+  function isLargerDropTarget(target) {
+    if (!draggedElement) return false;
+    return getElementArea(target) > getElementArea(draggedElement);
+  }
+
   function handleDragStart(event) {
     if (!isWireframeEnabled()) return;
     const target = getElementTarget(event.target);
@@ -369,6 +379,10 @@
       clearDropTarget();
       return;
     }
+    if (!isLargerDropTarget(target)) {
+      clearDropTarget();
+      return;
+    }
     event.preventDefault();
     if (dropTarget !== target) {
       clearDropTarget();
@@ -380,6 +394,10 @@
   function handleDrop(event) {
     if (!draggedElement || !dropTarget || !isWireframeEnabled()) return;
     event.preventDefault();
+    if (!isLargerDropTarget(dropTarget)) {
+      clearDropTarget();
+      return;
+    }
     const parent = dropTarget.parentNode;
     if (!parent) return;
     const rect = dropTarget.getBoundingClientRect();
