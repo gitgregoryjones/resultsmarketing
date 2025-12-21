@@ -59,6 +59,16 @@
           <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
         </div>
       </div>
+      <div class="cms-field cms-wireframe-tools">
+        <label>Wireframe elements</label>
+        <p class="cms-field__hint">Drag onto the page while wireframe mode is on.</p>
+        <div class="cms-wireframe-tools__list">
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">Square</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">Circle</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
+        </div>
+      </div>
       <div class="cms-field">
         <label for="cms-key">Field key</label>
         <input id="cms-key" type="text" placeholder="auto.tag.hash" />
@@ -101,6 +111,7 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const wireframeTools = sidebar.querySelectorAll('[data-wireframe-tool]');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   deleteButton.disabled = true;
@@ -197,6 +208,142 @@
       return node.parentElement;
     }
     return node;
+  }
+
+  function isWireframeEnabled() {
+    return document.body.classList.contains('wireframe');
+  }
+
+  function generateWireframeKey(base) {
+    return ensureUniqueKey(`wireframe.${base}`);
+  }
+
+  function buildWireframeSection() {
+    const section = document.createElement('section');
+    section.className = 'cms-wireframe-section';
+    section.setAttribute('data-wireframe-section', 'true');
+    section.setAttribute('draggable', 'true');
+    section.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const label = document.createElement('div');
+    label.className = 'cms-wireframe-section__label';
+    label.textContent = 'Section';
+
+    const content = document.createElement('div');
+    content.className = 'cms-wireframe-section__content';
+
+    section.appendChild(label);
+    section.appendChild(content);
+    return section;
+  }
+
+  function buildWireframeElement(type) {
+    if (type === 'section') {
+      return buildWireframeSection();
+    }
+    if (type === 'text') {
+      const textBlock = document.createElement('p');
+      textBlock.className = 'cms-wireframe-text';
+      textBlock.textContent = 'Text placeholder';
+      textBlock.setAttribute('data-cms-text', generateWireframeKey('text'));
+      return textBlock;
+    }
+    if (type === 'circle') {
+      const circle = document.createElement('div');
+      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle';
+      circle.textContent = 'Circle';
+      circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
+      return circle;
+    }
+    const square = document.createElement('div');
+    square.className = 'cms-wireframe-shape';
+    square.textContent = 'Square';
+    square.setAttribute('data-cms-text', generateWireframeKey('square'));
+    return square;
+  }
+
+  function resolveSectionContainer(target) {
+    if (!target) return null;
+    const section = target.closest('[data-wireframe-section="true"]');
+    if (!section) return null;
+    return section.querySelector('.cms-wireframe-section__content') || section;
+  }
+
+  function getDropContainer(target) {
+    if (!target) return document.body;
+    const sectionContent = resolveSectionContainer(target);
+    if (sectionContent) return sectionContent;
+    if (target === document.body || target === document.documentElement) return document.body;
+    return target;
+  }
+
+  function handleWireframeToolDragStart(e) {
+    const tool = e.currentTarget;
+    const type = tool.dataset.wireframeTool;
+    if (!type) return;
+    e.dataTransfer.setData('text/plain', type);
+    e.dataTransfer.setData('application/x-wireframe-tool', type);
+    e.dataTransfer.effectAllowed = 'copy';
+  }
+
+  function handleDocumentDragStart(e) {
+    const target = e.target;
+    if (!target || !(target instanceof HTMLElement)) return;
+    const section = target.closest('[data-wireframe-section="true"]');
+    if (!section) return;
+    e.dataTransfer.setData('application/x-wireframe-section', section.dataset.sectionId || '');
+    e.dataTransfer.effectAllowed = 'move';
+    section.classList.add('cms-wireframe-section--dragging');
+  }
+
+  function handleDocumentDragEnd(e) {
+    const target = e.target;
+    if (!target || !(target instanceof HTMLElement)) return;
+    const section = target.closest('[data-wireframe-section="true"]');
+    if (section) {
+      section.classList.remove('cms-wireframe-section--dragging');
+    }
+  }
+
+  function handleDocumentDragOver(e) {
+    if (!editMode || !isWireframeEnabled()) return;
+    const toolType = e.dataTransfer.getData('application/x-wireframe-tool');
+    const sectionId = e.dataTransfer.getData('application/x-wireframe-section');
+    if (!toolType && !sectionId) return;
+    const target = getElementTarget(e.target);
+    if (isCmsUi(target)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = toolType ? 'copy' : 'move';
+  }
+
+  function handleDocumentDrop(e) {
+    if (!editMode || !isWireframeEnabled()) return;
+    const toolType = e.dataTransfer.getData('application/x-wireframe-tool');
+    const sectionId = e.dataTransfer.getData('application/x-wireframe-section');
+    if (!toolType && !sectionId) return;
+    const target = getElementTarget(e.target);
+    if (isCmsUi(target)) return;
+    e.preventDefault();
+
+    if (toolType) {
+      const element = buildWireframeElement(toolType);
+      if (toolType === 'section') {
+        document.body.insertBefore(element, document.body.firstChild);
+      } else {
+        const container = getDropContainer(target);
+        container.appendChild(element);
+      }
+      return;
+    }
+
+    if (sectionId) {
+      const section = document.querySelector(`[data-wireframe-section="true"][data-section-id="${CSS.escape(sectionId)}"]`);
+      if (!section) return;
+      const targetSection = target && target.closest('[data-wireframe-section="true"]');
+      if (targetSection && targetSection !== section) {
+        targetSection.parentNode.insertBefore(section, targetSection);
+      }
+    }
   }
 
   function handleHover(e) {
@@ -700,4 +847,13 @@
       applySidebarPosition();
     });
   });
+
+  wireframeTools.forEach((tool) => {
+    tool.addEventListener('dragstart', handleWireframeToolDragStart);
+  });
+
+  document.addEventListener('dragstart', handleDocumentDragStart);
+  document.addEventListener('dragend', handleDocumentDragEnd);
+  document.addEventListener('dragover', handleDocumentDragOver);
+  document.addEventListener('drop', handleDocumentDrop);
 })();
