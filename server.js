@@ -521,6 +521,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           path: elementPath,
           type,
           image,
+          html: fullHtml,
           link,
           file,
           siteName,
@@ -528,7 +529,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
         const linkValue = typeof link === 'string' ? link.trim() : '';
-        if (!key && sanitizedSiteName === undefined && !deleteElement) {
+        if (!key && sanitizedSiteName === undefined && !deleteElement && !fullHtml) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
@@ -537,6 +538,9 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         const targetFile = sanitizeHtmlFile(file || fileName);
         const htmlPath = htmlPathFor(targetFile);
         let currentHtml = await fs.readFile(htmlPath, 'utf8');
+        if (typeof fullHtml === 'string' && fullHtml.trim()) {
+          currentHtml = fullHtml;
+        }
         const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
 
         if (deleteElement) {
@@ -605,7 +609,14 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           );
         }
 
-        if (key) {
+        if (typeof fullHtml === 'string' && fullHtml.trim()) {
+          if (key && (type === 'image' || type === 'background')) {
+            currentHtml =
+              type === 'background'
+                ? replaceDataBackground(currentHtml, key, storedValue)
+                : replaceDataImage(currentHtml, key, storedValue);
+          }
+        } else if (key) {
           currentHtml = mergeContentIntoHtml(currentHtml, {
             key,
             type: type || 'text',

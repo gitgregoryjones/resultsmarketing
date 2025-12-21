@@ -416,6 +416,35 @@
     return segments.length ? `body > ${segments.join(' > ')}` : '';
   }
 
+  function buildDoctype() {
+    if (!document.doctype) return '';
+    const { name, publicId, systemId } = document.doctype;
+    let doctype = `<!DOCTYPE ${name}`;
+    if (publicId) {
+      doctype += ` PUBLIC "${publicId}"`;
+    } else if (systemId) {
+      doctype += ' SYSTEM';
+    }
+    if (systemId) {
+      doctype += ` "${systemId}"`;
+    }
+    doctype += '>';
+    return doctype;
+  }
+
+  function buildCleanHtml() {
+    const clone = document.documentElement.cloneNode(true);
+    const selectorsToRemove = ['#cms-sidebar', '#cms-toggle', '.cms-outline', '.cms-ui'];
+    selectorsToRemove.forEach((selector) => {
+      clone.querySelectorAll(selector).forEach((el) => el.remove());
+    });
+    clone.querySelectorAll('.cms-outlined').forEach((el) => el.classList.remove('cms-outlined'));
+    clone.querySelectorAll('[contenteditable]').forEach((el) => el.removeAttribute('contenteditable'));
+    const html = clone.outerHTML;
+    const doctype = buildDoctype();
+    return doctype ? `${doctype}\n${html}` : html;
+  }
+
   async function saveSelection() {
     if (!selectedElement) {
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
@@ -477,8 +506,7 @@
       selectedElement.textContent = value;
     }
 
-    const path = buildElementPath(selectedElement);
-    const updatedOuterHTML = selectedElement.outerHTML;
+    const fullHtml = buildCleanHtml();
 
     try {
       const res = await fetch(buildApiUrl(), {
@@ -487,11 +515,9 @@
         body: JSON.stringify({
           key: uniqueKey,
           value: bodyValue,
-          path,
           type: selectedType,
           image: imagePayload,
-          originalOuterHTML,
-          updatedOuterHTML,
+          html: fullHtml,
           file: currentFile,
         }),
       });
