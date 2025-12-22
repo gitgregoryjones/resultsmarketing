@@ -18,6 +18,7 @@
   let draggedElement = null;
   let dropTarget = null;
   let activeWireframeTool = null;
+  let textValueDirty = false;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -265,6 +266,7 @@
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
+    textValueDirty = false;
   }
 
   function updateSiteName(value) {
@@ -895,6 +897,7 @@
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
+      textValueDirty = true;
     };
     el.contentEditable = 'true';
     el.addEventListener('input', inlineInputHandler);
@@ -909,6 +912,7 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
+    textValueDirty = false;
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
@@ -980,7 +984,7 @@
       messageEl.style.color = '#ef4444';
       return;
     }
-    if (selectedType === 'text') {
+    if (selectedType === 'text' && !textValueDirty) {
       valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
@@ -1037,8 +1041,11 @@
         value || (imagePayload && imagePayload.data),
         selectedType === 'background' ? 'background' : 'image'
       );
+    } else if (textValueDirty) {
+      selectedElement.textContent = valueInput.value;
+      bodyValue = valueInput.value;
     } else {
-      selectedElement.textContent = value;
+      bodyValue = null;
     }
 
     const path = buildElementPath(selectedElement);
@@ -1070,6 +1077,7 @@
       applyStoredTags(storedTags);
       applyContent();
       refreshList();
+      textValueDirty = false;
     } catch (err) {
       messageEl.textContent = 'Unable to save content to the server.';
       messageEl.style.color = '#ef4444';
@@ -1292,6 +1300,7 @@
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
+    textValueDirty = true;
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
