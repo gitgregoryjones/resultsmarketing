@@ -1012,6 +1012,17 @@
           ? 'data-cms-bg'
           : 'data-cms-text';
     const currentKey = selectedElement.getAttribute(attributeName);
+    const currentLink = selectedElement.getAttribute('data-link') || '';
+    if (
+      selectedType === 'text'
+      && !textValueDirty
+      && key === currentKey
+      && link === currentLink
+    ) {
+      messageEl.textContent = 'No content changes to save.';
+      messageEl.style.color = '#16a34a';
+      return;
+    }
     const uniqueKey = ensureUniqueKey(key, currentKey);
     const originalOuterHTML = selectedElement.outerHTML;
 
