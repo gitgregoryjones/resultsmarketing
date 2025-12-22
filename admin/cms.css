@@ -221,6 +221,13 @@
   cursor: grabbing;
 }
 
+.cms-wireframe-resizable {
+  resize: both;
+  overflow: auto;
+  min-width: 80px;
+  min-height: 60px;
+}
+
 .cms-wireframe-shape {
   width: 140px;
   height: 140px;
@@ -236,6 +243,10 @@
 
 .cms-wireframe-shape--circle {
   border-radius: 999px;
+}
+
+.cms-wireframe-shape.cms-wireframe-resizable {
+  aspect-ratio: 1 / 1;
 }
 
 .cms-wireframe-text {

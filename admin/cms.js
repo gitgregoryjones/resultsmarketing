@@ -335,7 +335,7 @@
 
   function buildWireframeSection() {
     const section = document.createElement('section');
-    section.className = 'cms-wireframe-section';
+    section.className = 'cms-wireframe-section cms-wireframe-resizable';
     section.setAttribute('data-wireframe-section', 'true');
     section.setAttribute('draggable', 'true');
     section.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -358,7 +358,7 @@
     }
     if (type === 'text') {
       const textBlock = document.createElement('p');
-      textBlock.className = 'cms-wireframe-text';
+      textBlock.className = 'cms-wireframe-text cms-wireframe-resizable';
       textBlock.textContent = 'Text placeholder';
       textBlock.setAttribute('data-cms-text', generateWireframeKey('text'));
       if (isWireframeEnabled()) {
@@ -368,7 +368,7 @@
     }
     if (type === 'circle') {
       const circle = document.createElement('div');
-      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle';
+      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable';
       circle.textContent = 'Circle';
       circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
       if (isWireframeEnabled()) {
@@ -377,7 +377,7 @@
       return circle;
     }
     const square = document.createElement('div');
-    square.className = 'cms-wireframe-shape';
+    square.className = 'cms-wireframe-shape cms-wireframe-resizable';
     square.textContent = 'Square';
     square.setAttribute('data-cms-text', generateWireframeKey('square'));
     if (isWireframeEnabled()) {
