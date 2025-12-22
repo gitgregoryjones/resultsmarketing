@@ -282,6 +282,22 @@ function stripCmsAssets(html) {
   return withoutCss.replace(/<script[^>]+src=["']cms\.js["'][^>]*>\s*<\/script>\s*/gi, '');
 }
 
+function stripCmsUi(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('.cms-ui, .cms-outline').forEach((el) => el.remove());
+    const body = root.querySelector('body');
+    if (body) {
+      body.classList.remove('cms-wireframe');
+      body.classList.remove('cms-drag-active');
+    }
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to strip CMS UI from HTML', err);
+  }
+  return html;
+}
+
 function ensureAnchorStyles(element) {
   const styleAttr = element.getAttribute('style') || '';
   const declarations = styleAttr
@@ -420,6 +436,7 @@ async function publishSite() {
         html = root.toString();
       }
       html = wrapDataLinks(html);
+      html = stripCmsUi(html);
       html = stripCmsAssets(html);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
@@ -672,8 +689,9 @@ const server = http.createServer(async (req, res) => {
         }
         const targetFile = sanitizeHtmlFile(file || DEFAULT_FILE);
         const htmlPath = htmlPathFor(targetFile);
-        await fs.writeFile(htmlPath, html);
-        const { values, siteName } = extractContentFromHtml(html);
+        const cleanedHtml = stripCmsUi(html);
+        await fs.writeFile(htmlPath, cleanedHtml);
+        const { values, siteName } = extractContentFromHtml(cleanedHtml);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName }));
       } catch (err) {
