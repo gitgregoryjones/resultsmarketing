@@ -168,6 +168,7 @@
 
   const gallery = document.createElement('div');
   gallery.id = 'cms-gallery';
+  gallery.classList.add('cms-ui');
   gallery.innerHTML = `
     <div class="cms-gallery__backdrop" data-gallery-close="true"></div>
     <div class="cms-gallery__dialog" role="dialog" aria-modal="true" aria-labelledby="cms-gallery-title">
