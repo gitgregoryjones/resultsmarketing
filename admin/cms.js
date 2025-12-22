@@ -80,6 +80,16 @@
           <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
         </div>
       </div>
+      <div class="cms-field cms-wireframe-tools">
+        <label>Wireframe elements</label>
+        <p class="cms-field__hint">Drag onto the page while wireframe mode is on.</p>
+        <div class="cms-wireframe-tools__list">
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">Square</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">Circle</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
+          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
+        </div>
+      </div>
       <div class="cms-field">
         <label for="cms-key">Field key</label>
         <input id="cms-key" type="text" placeholder="auto.tag.hash" />
@@ -159,6 +169,7 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const wireframeTools = sidebar.querySelectorAll('[data-wireframe-tool]');
   const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
@@ -317,6 +328,91 @@
     return document.body.classList.contains('cms-wireframe');
   }
 
+  function generateWireframeKey(base) {
+    return ensureUniqueKey(`wireframe.${base}`);
+  }
+
+  function buildWireframeSection() {
+    const section = document.createElement('section');
+    section.className = 'cms-wireframe-section';
+    section.setAttribute('data-wireframe-section', 'true');
+    section.setAttribute('draggable', 'true');
+    section.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    const label = document.createElement('div');
+    label.className = 'cms-wireframe-section__label';
+    label.textContent = 'Section';
+
+    const content = document.createElement('div');
+    content.className = 'cms-wireframe-section__content';
+
+    section.appendChild(label);
+    section.appendChild(content);
+    return section;
+  }
+
+  function buildWireframeElement(type) {
+    if (type === 'section') {
+      return buildWireframeSection();
+    }
+    if (type === 'text') {
+      const textBlock = document.createElement('p');
+      textBlock.className = 'cms-wireframe-text';
+      textBlock.textContent = 'Text placeholder';
+      textBlock.setAttribute('data-cms-text', generateWireframeKey('text'));
+      if (isWireframeEnabled()) {
+        textBlock.setAttribute('draggable', 'true');
+      }
+      return textBlock;
+    }
+    if (type === 'circle') {
+      const circle = document.createElement('div');
+      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle';
+      circle.textContent = 'Circle';
+      circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
+      if (isWireframeEnabled()) {
+        circle.setAttribute('draggable', 'true');
+      }
+      return circle;
+    }
+    const square = document.createElement('div');
+    square.className = 'cms-wireframe-shape';
+    square.textContent = 'Square';
+    square.setAttribute('data-cms-text', generateWireframeKey('square'));
+    if (isWireframeEnabled()) {
+      square.setAttribute('draggable', 'true');
+    }
+    return square;
+  }
+
+  function resolveSectionContainer(target) {
+    if (!target) return null;
+    const section = target.closest('[data-wireframe-section="true"]');
+    if (!section) return null;
+    return section.querySelector('.cms-wireframe-section__content') || section;
+  }
+
+  function getDropContainer(target) {
+    if (!target) return document.body;
+    const sectionContent = resolveSectionContainer(target);
+    if (sectionContent) return sectionContent;
+    if (target === document.body || target === document.documentElement) return document.body;
+    return target;
+  }
+
+  function isWireframeSection(element) {
+    return element && element.matches && element.matches('[data-wireframe-section="true"]');
+  }
+
+  function handleWireframeToolDragStart(event) {
+    const tool = event.currentTarget;
+    const type = tool.dataset.wireframeTool;
+    if (!type) return;
+    event.dataTransfer.setData('text/plain', type);
+    event.dataTransfer.setData('application/x-wireframe-tool', type);
+    event.dataTransfer.effectAllowed = 'copy';
+  }
+
   function isValidDragElement(element) {
     return element
       && element.nodeType === Node.ELEMENT_NODE
@@ -359,14 +455,41 @@
     event.dataTransfer.effectAllowed = 'move';
     event.dataTransfer.setData('text/plain', '');
     draggedElement.classList.add('cms-dragging');
+    if (isWireframeSection(draggedElement)) {
+      draggedElement.classList.add('cms-wireframe-section--dragging');
+    }
     document.body.classList.add('cms-drag-active');
   }
 
   function handleDragOver(event) {
-    if (!draggedElement || !isWireframeEnabled()) return;
+    if (!isWireframeEnabled()) return;
+    const toolType = event.dataTransfer.getData('application/x-wireframe-tool');
+    if (toolType) {
+      const target = getElementTarget(event.target);
+      if (!isCmsUi(target)) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+      }
+      return;
+    }
+    if (!draggedElement) return;
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target) || target === draggedElement || target.contains(draggedElement)) {
       clearDropTarget();
+      return;
+    }
+    if (isWireframeSection(draggedElement)) {
+      const targetSection = target.closest('[data-wireframe-section="true"]');
+      if (!targetSection || targetSection === draggedElement) {
+        clearDropTarget();
+        return;
+      }
+      event.preventDefault();
+      if (dropTarget !== targetSection) {
+        clearDropTarget();
+        dropTarget = targetSection;
+        dropTarget.classList.add('cms-drop-target');
+      }
       return;
     }
     event.preventDefault();
@@ -378,7 +501,22 @@
   }
 
   function handleDrop(event) {
-    if (!draggedElement || !dropTarget || !isWireframeEnabled()) return;
+    if (!isWireframeEnabled()) return;
+    const toolType = event.dataTransfer.getData('application/x-wireframe-tool');
+    if (toolType) {
+      const target = getElementTarget(event.target);
+      if (isCmsUi(target)) return;
+      event.preventDefault();
+      const element = buildWireframeElement(toolType);
+      if (toolType === 'section') {
+        document.body.insertBefore(element, document.body.firstChild);
+      } else {
+        const container = getDropContainer(target);
+        container.appendChild(element);
+      }
+      return;
+    }
+    if (!draggedElement || !dropTarget) return;
     event.preventDefault();
     const parent = dropTarget.parentNode;
     if (!parent) return;
@@ -394,6 +532,7 @@
   function handleDragEnd() {
     if (draggedElement) {
       draggedElement.classList.remove('cms-dragging');
+      draggedElement.classList.remove('cms-wireframe-section--dragging');
     }
     draggedElement = null;
     clearDropTarget();
@@ -1055,5 +1194,9 @@
       localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
       applySidebarPosition();
     });
+  });
+
+  wireframeTools.forEach((tool) => {
+    tool.addEventListener('dragstart', handleWireframeToolDragStart);
   });
 })();
