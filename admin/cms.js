@@ -181,8 +181,8 @@
   deleteButton.disabled = true;
 
   function setWireframeState(enabled) {
-    if (enabled) {
-      setEditMode(false);
+    if (enabled && !editMode) {
+      setEditMode(true);
     }
     document.body.classList.toggle('cms-wireframe', enabled);
     wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
