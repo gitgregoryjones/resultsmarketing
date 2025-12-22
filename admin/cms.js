@@ -18,6 +18,7 @@
   let draggedElement = null;
   let dropTarget = null;
   let activeWireframeTool = null;
+  let textValueDirty = false;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -109,8 +110,16 @@
       </div>
       <div class="cms-panel" data-panel="styles">
         <div class="cms-field">
-          <label for="cms-color">Color picker</label>
-          <input id="cms-color" type="color" value="#111827" />
+          <label for="cms-text-color">Text color</label>
+          <input id="cms-text-color" type="color" value="#111827" />
+        </div>
+        <div class="cms-field">
+          <label for="cms-bg-color">Background color</label>
+          <input id="cms-bg-color" type="color" value="#ffffff" />
+        </div>
+        <div class="cms-field cms-field--font-size">
+          <label for="cms-font-size">Font size (px)</label>
+          <input id="cms-font-size" type="number" min="8" max="120" step="1" value="16" />
         </div>
         <div class="cms-field cms-field--flex">
           <label for="cms-flex">Flex direction</label>
@@ -159,6 +168,7 @@
 
   const gallery = document.createElement('div');
   gallery.id = 'cms-gallery';
+  gallery.classList.add('cms-ui');
   gallery.innerHTML = `
     <div class="cms-gallery__backdrop" data-gallery-close="true"></div>
     <div class="cms-gallery__dialog" role="dialog" aria-modal="true" aria-labelledby="cms-gallery-title">
@@ -205,9 +215,12 @@
   const dockArrowButtons = sidebar.querySelectorAll('.cms-dock__arrows button');
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
-  const colorInput = sidebar.querySelector('#cms-color');
+  const textColorInput = sidebar.querySelector('#cms-text-color');
+  const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
+  const fontSizeInput = sidebar.querySelector('#cms-font-size');
   const flexSelect = sidebar.querySelector('#cms-flex');
   const flexField = sidebar.querySelector('.cms-field--flex');
+  const fontSizeField = sidebar.querySelector('.cms-field--font-size');
   const wireframeTools = sidebar.querySelectorAll('[data-wireframe-tool]');
   const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
@@ -217,6 +230,7 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
+  let layoutSaveTimer = null;
   deleteButton.disabled = true;
 
   function setWireframeState(enabled) {
@@ -253,6 +267,7 @@
     imagePreview.textContent = 'No image selected';
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
+    textValueDirty = false;
   }
 
   function updateSiteName(value) {
@@ -677,6 +692,7 @@
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
     flexField.style.display = type === 'text' ? 'none' : 'flex';
+    fontSizeField.style.display = type === 'text' ? 'flex' : 'none';
     selectedType = type;
     if (!selectedElement) return;
     if (selectedType === 'text' && editMode) {
@@ -710,6 +726,11 @@
     imagePreview.style.backgroundImage = `url('${src}')`;
   }
 
+  function applyImagePreviewToElement(src) {
+    if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
+    applyImageToElement(selectedElement, src, selectedType === 'background' ? 'background' : 'image');
+  }
+
   function rgbToHex(value) {
     if (!value) return '#111827';
     if (value.startsWith('#')) return value;
@@ -722,9 +743,20 @@
   function updateStyleInputs(el) {
     if (!el) return;
     const computed = window.getComputedStyle(el);
-    const sourceColor = selectedType === 'text' ? computed.color : computed.backgroundColor;
-    colorInput.value = rgbToHex(sourceColor);
+    textColorInput.value = rgbToHex(computed.color);
+    backgroundColorInput.value = rgbToHex(computed.backgroundColor);
+    fontSizeInput.value = Number.parseFloat(computed.fontSize) || 16;
     flexSelect.value = computed.flexDirection || 'row';
+  }
+
+  function scheduleLayoutPersist() {
+    if (layoutSaveTimer) {
+      clearTimeout(layoutSaveTimer);
+    }
+    layoutSaveTimer = setTimeout(() => {
+      persistLayout();
+      layoutSaveTimer = null;
+    }, 400);
   }
 
   function toggleGallery(open) {
@@ -744,6 +776,7 @@
     button.addEventListener('click', () => {
       imageUrlInput.value = src;
       updateImagePreview(src);
+      applyImagePreviewToElement(src);
       toggleGallery(false);
     });
     return button;
@@ -871,6 +904,7 @@
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
+      textValueDirty = true;
     };
     el.contentEditable = 'true';
     el.addEventListener('input', inlineInputHandler);
@@ -885,6 +919,7 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
+    textValueDirty = false;
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
@@ -956,7 +991,7 @@
       messageEl.style.color = '#ef4444';
       return;
     }
-    if (selectedType === 'text') {
+    if (selectedType === 'text' && !textValueDirty) {
       valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
@@ -977,6 +1012,17 @@
           ? 'data-cms-bg'
           : 'data-cms-text';
     const currentKey = selectedElement.getAttribute(attributeName);
+    const currentLink = selectedElement.getAttribute('data-link') || '';
+    if (
+      selectedType === 'text'
+      && !textValueDirty
+      && key === currentKey
+      && link === currentLink
+    ) {
+      messageEl.textContent = 'No content changes to save.';
+      messageEl.style.color = '#16a34a';
+      return;
+    }
     const uniqueKey = ensureUniqueKey(key, currentKey);
     const originalOuterHTML = selectedElement.outerHTML;
 
@@ -1013,8 +1059,17 @@
         value || (imagePayload && imagePayload.data),
         selectedType === 'background' ? 'background' : 'image'
       );
+    } else if (textValueDirty) {
+      const nextValue = valueInput.value;
+      const currentText = selectedElement.textContent || '';
+      if (nextValue.trim() === '' && currentText.trim() !== '') {
+        bodyValue = null;
+      } else {
+        selectedElement.textContent = nextValue;
+        bodyValue = nextValue;
+      }
     } else {
-      selectedElement.textContent = value;
+      //bodyValue = null;
     }
 
     const path = buildElementPath(selectedElement);
@@ -1046,6 +1101,7 @@
       applyStoredTags(storedTags);
       applyContent();
       refreshList();
+      textValueDirty = false;
     } catch (err) {
       messageEl.textContent = 'Unable to save content to the server.';
       messageEl.style.color = '#ef4444';
@@ -1241,22 +1297,34 @@
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
-  colorInput.addEventListener('input', () => {
+  textColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
-    if (selectedType === 'text') {
-      selectedElement.style.color = colorInput.value;
-    } else {
-      selectedElement.style.backgroundColor = colorInput.value;
+    selectedElement.style.color = textColorInput.value;
+    scheduleLayoutPersist();
+  });
+  backgroundColorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.backgroundColor = backgroundColorInput.value;
+    scheduleLayoutPersist();
+  });
+  fontSizeInput.addEventListener('input', () => {
+    if (!selectedElement || selectedType !== 'text') return;
+    const fontSize = Number.parseFloat(fontSizeInput.value);
+    if (!Number.isNaN(fontSize)) {
+      selectedElement.style.fontSize = `${fontSize}px`;
+      scheduleLayoutPersist();
     }
   });
   flexSelect.addEventListener('change', () => {
     if (!selectedElement || selectedType === 'text') return;
     selectedElement.style.display = 'flex';
     selectedElement.style.flexDirection = flexSelect.value;
+    scheduleLayoutPersist();
   });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
+    textValueDirty = true;
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
@@ -1271,9 +1339,16 @@
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
       updateImagePreview(fileUrl);
+      applyImagePreviewToElement(fileUrl);
     } else {
       updateImagePreview('');
     }
+  });
+  imageUrlInput.addEventListener('input', () => {
+    const nextUrl = imageUrlInput.value.trim();
+    if (!nextUrl) return;
+    updateImagePreview(nextUrl);
+    applyImagePreviewToElement(nextUrl);
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
@@ -1291,6 +1366,7 @@
     loadFiles();
     applySidebarPosition();
     flexField.style.display = 'none';
+    fontSizeField.style.display = 'flex';
     clearSettingsMessage();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {

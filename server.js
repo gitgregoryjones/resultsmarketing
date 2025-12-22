@@ -213,7 +213,8 @@ function setCmsAttributes(element, { key, type, link }) {
 }
 
 function mergeContentIntoHtml(html, { key, type, value, elementPath, link, originalOuterHTML, updatedOuterHTML }) {
-  const resolvedValue = value ?? '';
+  const hasValue = value !== undefined && value !== null;
+  const resolvedValue = hasValue ? value : '';
   let nextHtml = html;
   let didReplaceOuter = false;
   if (originalOuterHTML && updatedOuterHTML && nextHtml.includes(originalOuterHTML)) {
@@ -242,7 +243,7 @@ function mergeContentIntoHtml(html, { key, type, value, elementPath, link, origi
     }
   }
 
-  if (key) {
+  if (key && hasValue) {
     if (type === 'image') {
       nextHtml = replaceDataImage(nextHtml, key, resolvedValue);
     } else if (type === 'background') {
