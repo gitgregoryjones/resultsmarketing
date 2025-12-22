@@ -1049,8 +1049,14 @@
         selectedType === 'background' ? 'background' : 'image'
       );
     } else if (textValueDirty) {
-      selectedElement.textContent = valueInput.value;
-      bodyValue = valueInput.value;
+      const nextValue = valueInput.value;
+      const currentText = selectedElement.textContent || '';
+      if (nextValue.trim() === '' && currentText.trim() !== '') {
+        bodyValue = null;
+      } else {
+        selectedElement.textContent = nextValue;
+        bodyValue = nextValue;
+      }
     } else {
       bodyValue = null;
     }
