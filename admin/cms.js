@@ -934,8 +934,6 @@
 
     const path = buildElementPath(selectedElement);
     const updatedOuterHTML = selectedElement.outerHTML;
-    const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
-    const fullHtml = `${docType}${document.documentElement.outerHTML}`;
 
     try {
       const res = await fetch(buildApiUrl(), {
@@ -950,7 +948,6 @@
           link,
           originalOuterHTML,
           updatedOuterHTML,
-          html: fullHtml,
           file: currentFile,
         }),
       });
