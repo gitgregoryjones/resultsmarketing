@@ -656,6 +656,34 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/layout' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const { html, file } = payload;
+        if (!html) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'HTML is required' }));
+          return;
+        }
+        const targetFile = sanitizeHtmlFile(file || DEFAULT_FILE);
+        const htmlPath = htmlPathFor(targetFile);
+        await fs.writeFile(htmlPath, html);
+        const { values, siteName } = extractContentFromHtml(html);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ content: values, tags: {}, siteName }));
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+      }
+    });
+    return;
+  }
+
   if (pathname === '/api/files' && req.method === 'GET') {
     try {
       const files = await listHtmlFiles();

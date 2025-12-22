@@ -517,6 +517,7 @@
         container.appendChild(element);
       }
       activeWireframeTool = null;
+      persistLayout();
       return;
     }
     if (!draggedElement || !dropTarget) return;
@@ -530,6 +531,7 @@
       parent.insertBefore(draggedElement, referenceNode);
     }
     clearDropTarget();
+    persistLayout();
   }
 
   function handleDragEnd() {
@@ -548,6 +550,26 @@
       return node.parentElement;
     }
     return node;
+  }
+
+  function getFullHtmlPayload() {
+    const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
+    return `${docType}${document.documentElement.outerHTML}`;
+  }
+
+  async function persistLayout() {
+    try {
+      await fetch('/api/layout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file: currentFile,
+          html: getFullHtmlPayload(),
+        }),
+      });
+    } catch (err) {
+      console.warn('Unable to persist layout changes.', err);
+    }
   }
 
   function handleHover(e) {
