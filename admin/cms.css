@@ -110,10 +110,40 @@
   border-bottom: 1px solid var(--cms-border);
 }
 
+.cms-sidebar__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .cms-sidebar__title {
   margin: 0;
   font-size: 18px;
   font-weight: 700;
+}
+
+.cms-dock__arrows {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cms-dock-arrow {
+  border: 1px solid var(--cms-border);
+  background: white;
+  border-radius: 8px;
+  padding: 4px 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.cms-dock-arrow:hover,
+.cms-dock-arrow.active {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
 
 .cms-dock {

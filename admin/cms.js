@@ -36,7 +36,15 @@
   const WIREFRAME_STORAGE_KEY = 'cmsWireframeEnabled';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
-      <div class="cms-sidebar__title">Inline CMS</div>
+      <div class="cms-sidebar__header-row">
+        <div class="cms-sidebar__title">Inline CMS</div>
+        <div class="cms-dock__arrows" aria-label="Dock position">
+          <button type="button" class="cms-dock-arrow" data-pos="top" aria-label="Dock top">↑</button>
+          <button type="button" class="cms-dock-arrow" data-pos="right" aria-label="Dock right">→</button>
+          <button type="button" class="cms-dock-arrow" data-pos="bottom" aria-label="Dock bottom">↓</button>
+          <button type="button" class="cms-dock-arrow" data-pos="left" aria-label="Dock left">←</button>
+        </div>
+      </div>
     </div>
     <div class="cms-sidebar__body">
       <div class="cms-tabs">
@@ -194,6 +202,7 @@
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const dockArrowButtons = sidebar.querySelectorAll('.cms-dock__arrows button');
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
   const colorInput = sidebar.querySelector('#cms-color');
@@ -226,6 +235,7 @@
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
     sidebar.classList.add(`cms-pos-${sidebarPosition}`);
     dockButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
+    dockArrowButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
   }
 
   applySidebarPosition();
@@ -1289,6 +1299,14 @@
   });
 
   dockButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      sidebarPosition = button.dataset.pos;
+      localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
+      applySidebarPosition();
+    });
+  });
+
+  dockArrowButtons.forEach((button) => {
     button.addEventListener('click', () => {
       sidebarPosition = button.dataset.pos;
       localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
