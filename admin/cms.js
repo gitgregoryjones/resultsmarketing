@@ -1069,7 +1069,7 @@
         bodyValue = nextValue;
       }
     } else {
-      bodyValue = null;
+      //bodyValue = null;
     }
 
     const path = buildElementPath(selectedElement);
