@@ -524,6 +524,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           link,
           file,
           siteName,
+          html: htmlPayload,
           delete: deleteElement,
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
@@ -606,15 +607,22 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         }
 
         if (key) {
-          currentHtml = mergeContentIntoHtml(currentHtml, {
-            key,
-            type: type || 'text',
-            value: storedValue,
-            elementPath,
-            link: linkValue,
-            originalOuterHTML,
-            updatedOuterHTML,
-          });
+          if (htmlPayload) {
+            currentHtml = htmlPayload;
+            if (finalSiteName) {
+              currentHtml = updateSiteNameInHtml(currentHtml, finalSiteName);
+            }
+          } else {
+            currentHtml = mergeContentIntoHtml(currentHtml, {
+              key,
+              type: type || 'text',
+              value: storedValue,
+              elementPath,
+              link: linkValue,
+              originalOuterHTML,
+              updatedOuterHTML,
+            });
+          }
         }
 
         await fs.writeFile(htmlPath, currentHtml);
