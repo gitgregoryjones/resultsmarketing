@@ -17,6 +17,7 @@
   let inlineInputHandler = null;
   let draggedElement = null;
   let dropTarget = null;
+  let activeWireframeTool = null;
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -408,6 +409,7 @@
     const tool = event.currentTarget;
     const type = tool.dataset.wireframeTool;
     if (!type) return;
+    activeWireframeTool = type;
     event.dataTransfer.setData('text/plain', type);
     event.dataTransfer.setData('application/x-wireframe-tool', type);
     event.dataTransfer.effectAllowed = 'copy';
@@ -463,7 +465,7 @@
 
   function handleDragOver(event) {
     if (!isWireframeEnabled()) return;
-    const toolType = event.dataTransfer.getData('application/x-wireframe-tool');
+    const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       const target = getElementTarget(event.target);
       if (!isCmsUi(target)) {
@@ -502,7 +504,7 @@
 
   function handleDrop(event) {
     if (!isWireframeEnabled()) return;
-    const toolType = event.dataTransfer.getData('application/x-wireframe-tool');
+    const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       const target = getElementTarget(event.target);
       if (isCmsUi(target)) return;
@@ -514,6 +516,7 @@
         const container = getDropContainer(target);
         container.appendChild(element);
       }
+      activeWireframeTool = null;
       return;
     }
     if (!draggedElement || !dropTarget) return;
@@ -535,6 +538,7 @@
       draggedElement.classList.remove('cms-wireframe-section--dragging');
     }
     draggedElement = null;
+    activeWireframeTool = null;
     clearDropTarget();
     document.body.classList.remove('cms-drag-active');
   }
