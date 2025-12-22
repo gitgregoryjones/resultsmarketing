@@ -31,76 +31,130 @@
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__title">Inline CMS</div>
-      <div class="cms-dock">
-        <span>Dock</span>
-        <div class="cms-dock__buttons">
-          <button type="button" data-pos="left">Left</button>
-          <button type="button" data-pos="top">Top</button>
-          <button type="button" data-pos="right" class="active">Right</button>
-          <button type="button" data-pos="bottom">Bottom</button>
-        </div>
-      </div>
-      <div class="cms-field cms-field--file">
-        <label for="cms-file">HTML file</label>
-        <select id="cms-file"></select>
-      </div>
-      <div class="cms-publish">
-        <button type="button" id="cms-publish">Publish static site</button>
-        <p class="cms-pill cms-pill--subtle">Merges all pages into /published without editor assets</p>
-      </div>
-      <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
-      <div class="cms-field">
-        <label>Content type</label>
-        <div class="cms-type">
-          <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+      <div class="cms-tabs">
+        <button type="button" data-tab="wireframe">Wireframe</button>
+        <button type="button" class="active" data-tab="content">Content</button>
+        <button type="button" data-tab="styles">Styles</button>
+        <button type="button" data-tab="effects">Effect</button>
+        <button type="button" data-tab="settings">Settings</button>
+      </div>
+      <div class="cms-panel" data-panel="wireframe">
+        <p class="cms-pill">Click text or images while editing</p>
+        <div class="cms-hint">Existing keys on the page</div>
+        <h4 class="cms-sidebar__list-title">Discovered</h4>
+        <p id="cms-empty">No tagged elements yet.</p>
+        <ul class="cms-list" id="cms-list"></ul>
+      </div>
+      <div class="cms-panel active" data-panel="content">
+        <div class="cms-field">
+          <label>Content type</label>
+          <div class="cms-type">
+            <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
+            <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
+            <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+          </div>
+        </div>
+        <div class="cms-field">
+          <label for="cms-key">Field key</label>
+          <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+        </div>
+        <div class="cms-field">
+          <label for="cms-link">Link (optional)</label>
+          <input id="cms-link" type="url" placeholder="https://example.com" />
+        </div>
+        <div class="cms-field cms-field--text">
+          <label for="cms-value">Content</label>
+          <textarea id="cms-value" placeholder="Type content here..."></textarea>
+        </div>
+        <div class="cms-field cms-field--image">
+          <label for="cms-image-url">Image URL</label>
+          <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+          <div class="cms-action-row">
+            <button type="button" id="cms-gallery">Browse gallery</button>
+            <div class="cms-upload">
+              <label class="cms-upload__label" for="cms-image-file">Upload image</label>
+              <input id="cms-image-file" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+        </div>
+        <button id="cms-save">Save</button>
+        <button id="cms-delete" type="button">Delete element</button>
+        <div id="cms-message"></div>
+      </div>
+      <div class="cms-panel" data-panel="styles">
+        <div class="cms-field">
+          <label for="cms-color">Color picker</label>
+          <input id="cms-color" type="color" value="#111827" />
+        </div>
+        <div class="cms-field cms-field--flex">
+          <label for="cms-flex">Flex direction</label>
+          <select id="cms-flex">
+            <option value="row">Row</option>
+            <option value="column">Column</option>
+            <option value="row-reverse">Row reverse</option>
+            <option value="column-reverse">Column reverse</option>
+          </select>
         </div>
       </div>
-      <div class="cms-field">
-        <label for="cms-key">Field key</label>
-        <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+      <div class="cms-panel" data-panel="effects">
+        <p class="cms-empty-state">TBD</p>
       </div>
-      <div class="cms-field cms-field--text">
-        <label for="cms-value">Content</label>
-        <textarea id="cms-value" placeholder="Type content here..."></textarea>
-      </div>
-      <div class="cms-field cms-field--image">
-        <label for="cms-image-url">Image URL</label>
-        <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-        <div class="cms-upload">
-          <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-          <input id="cms-image-file" type="file" accept="image/*" />
+      <div class="cms-panel" data-panel="settings">
+        <div class="cms-dock">
+          <span>Dock</span>
+          <div class="cms-dock__buttons">
+            <button type="button" data-pos="left">Left</button>
+            <button type="button" data-pos="top">Top</button>
+            <button type="button" data-pos="right" class="active">Right</button>
+            <button type="button" data-pos="bottom">Bottom</button>
+          </div>
         </div>
-        <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+        <div class="cms-field cms-field--file">
+          <label for="cms-file">HTML file</label>
+          <select id="cms-file"></select>
+        </div>
+        <div class="cms-field">
+          <label for="cms-site-name">Site name (used when publishing)</label>
+          <input id="cms-site-name" type="text" placeholder="Results Marketing" />
+        </div>
+        <button id="cms-settings-save" type="button">Save</button>
+        <div id="cms-settings-message"></div>
+        <div class="cms-publish">
+          <button type="button" id="cms-publish">Publish static site</button>
+          <p class="cms-pill cms-pill--subtle">Merges all pages into /published without editor assets</p>
+        </div>
       </div>
-      <button id="cms-save">Save</button>
-      <button id="cms-delete" type="button">Delete element</button>
-      <div id="cms-message"></div>
-      <div class="cms-hint">Existing keys on the page</div>
-      <h4 class="cms-sidebar__list-title">Discovered</h4>
-      <p id="cms-empty">No tagged elements yet.</p>
-      <ul class="cms-list" id="cms-list"></ul>
     </div>
   `;
   document.body.appendChild(sidebar);
 
   const keyInput = sidebar.querySelector('#cms-key');
   const valueInput = sidebar.querySelector('#cms-value');
+  const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
+  const galleryButton = sidebar.querySelector('#cms-gallery');
   const saveButton = sidebar.querySelector('#cms-save');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const messageEl = sidebar.querySelector('#cms-message');
+  const settingsSaveButton = sidebar.querySelector('#cms-settings-save');
+  const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const tabs = sidebar.querySelectorAll('.cms-tabs button');
+  const panels = sidebar.querySelectorAll('.cms-panel');
+  const colorInput = sidebar.querySelector('#cms-color');
+  const flexSelect = sidebar.querySelector('#cms-flex');
+  const flexField = sidebar.querySelector('.cms-field--flex');
+  const siteNameInput = sidebar.querySelector('#cms-site-name');
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   deleteButton.disabled = true;
@@ -116,6 +170,7 @@
   function clearForm() {
     keyInput.value = '';
     valueInput.value = '';
+    linkInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
     imagePreview.textContent = 'No image selected';
@@ -260,6 +315,7 @@
       input.checked = input.value === type;
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
+    flexField.style.display = type === 'text' ? 'none' : 'flex';
     selectedType = type;
     if (!selectedElement) return;
     if (selectedType === 'text' && editMode) {
@@ -291,6 +347,23 @@
     }
     imagePreview.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+  }
+
+  function rgbToHex(value) {
+    if (!value) return '#111827';
+    if (value.startsWith('#')) return value;
+    const match = value.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);
+    if (!match) return '#111827';
+    const toHex = (num) => Number(num).toString(16).padStart(2, '0');
+    return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
+  }
+
+  function updateStyleInputs(el) {
+    if (!el) return;
+    const computed = window.getComputedStyle(el);
+    const sourceColor = selectedType === 'text' ? computed.color : computed.backgroundColor;
+    colorInput.value = rgbToHex(sourceColor);
+    flexSelect.value = computed.flexDirection || 'row';
   }
 
   function getImageValue(el, key, type = 'image') {
@@ -366,6 +439,7 @@
           ? 'data-cms-bg'
           : 'data-cms-text';
     const key = el.getAttribute(attributeName);
+    linkInput.value = el.getAttribute('data-link') || '';
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
@@ -379,7 +453,13 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
+    updateStyleInputs(el);
     deleteButton.disabled = false;
+  }
+
+  function activateTab(tabName) {
+    tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
+    panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName));
   }
 
   function refreshList() {
@@ -429,6 +509,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
+    const linkValue = linkInput.value.trim();
     if (!key) {
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
@@ -490,6 +571,7 @@
           path,
           type: selectedType,
           image: imagePayload,
+          link: linkValue,
           originalOuterHTML,
           updatedOuterHTML,
           file: currentFile,
@@ -652,6 +734,7 @@
         const data = await res.json();
         mergedContent = data.content || {};
         storedTags = data.tags || {};
+        siteNameInput.value = data.siteName || '';
         applyStoredTags(storedTags);
       }
       applyContent();
@@ -666,6 +749,50 @@
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  if (galleryButton) {
+    galleryButton.addEventListener('click', () => {
+      messageEl.textContent = 'Gallery browser coming soon.';
+      messageEl.style.color = '#111827';
+    });
+  }
+  if (settingsSaveButton) {
+    settingsSaveButton.addEventListener('click', async () => {
+      const siteName = siteNameInput.value.trim();
+      settingsMessageEl.textContent = 'Saving settings...';
+      settingsMessageEl.style.color = '#111827';
+      try {
+        const res = await fetch(buildApiUrl(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siteName, file: currentFile }),
+        });
+        if (!res.ok) throw new Error('Save failed');
+        const data = await res.json();
+        siteNameInput.value = data.siteName || siteName;
+        settingsMessageEl.textContent = 'Settings saved.';
+        settingsMessageEl.style.color = '#16a34a';
+      } catch (err) {
+        settingsMessageEl.textContent = 'Unable to save settings.';
+        settingsMessageEl.style.color = '#ef4444';
+      }
+    });
+  }
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activateTab(tab.dataset.tab));
+  });
+  colorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    if (selectedType === 'text') {
+      selectedElement.style.color = colorInput.value;
+    } else {
+      selectedElement.style.backgroundColor = colorInput.value;
+    }
+  });
+  flexSelect.addEventListener('change', () => {
+    if (!selectedElement || selectedType === 'text') return;
+    selectedElement.style.display = 'flex';
+    selectedElement.style.flexDirection = flexSelect.value;
+  });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
@@ -690,6 +817,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
     applySidebarPosition();
+    flexField.style.display = 'none';
     hydrate();
   });
 

@@ -152,6 +152,40 @@
   flex: 1;
 }
 
+.cms-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.cms-tabs button {
+  border: 1px solid var(--cms-border);
+  background: white;
+  color: var(--cms-gray);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.cms-tabs button.active,
+.cms-tabs button:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
+.cms-panel {
+  display: none;
+}
+
+.cms-panel.active {
+  display: block;
+}
+
 .cms-field {
   display: flex;
   flex-direction: column;
@@ -166,7 +200,8 @@
 }
 
 .cms-field input,
-.cms-field textarea {
+.cms-field textarea,
+.cms-field select {
   border: 1px solid var(--cms-border);
   border-radius: 10px;
   padding: 10px 12px;
@@ -190,7 +225,8 @@
 }
 
 .cms-field input:focus,
-.cms-field textarea:focus {
+.cms-field textarea:focus,
+.cms-field select:focus {
   outline: none;
   border-color: var(--cms-red);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
@@ -201,6 +237,24 @@
   flex-direction: column;
   gap: 6px;
   margin: 6px 0 10px;
+}
+
+#cms-settings-save {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--cms-border);
+  background: white;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 120ms ease;
+  margin-bottom: 8px;
+}
+
+#cms-settings-save:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
 }
 
 #cms-publish {
@@ -295,6 +349,29 @@
   gap: 10px;
 }
 
+.cms-action-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#cms-gallery {
+  border: 1px solid var(--cms-border);
+  background: white;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+#cms-gallery:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+}
+
 .cms-upload__label {
   background: #eef2ff;
   border: 1px dashed #c7d2fe;
@@ -383,6 +460,15 @@
   color: var(--cms-gray);
 }
 
+.cms-empty-state {
+  border: 1px dashed var(--cms-border);
+  border-radius: 10px;
+  padding: 16px;
+  color: var(--cms-gray);
+  font-size: 13px;
+  text-align: center;
+}
+
 .cms-outline {
   position: absolute;
   pointer-events: none;
@@ -410,6 +496,13 @@
   font-size: 13px;
   color: #16a34a;
   margin: 8px 0 0;
+  min-height: 18px;
+}
+
+#cms-settings-message {
+  font-size: 13px;
+  color: #16a34a;
+  margin: 0 0 8px;
   min-height: 18px;
 }
 
