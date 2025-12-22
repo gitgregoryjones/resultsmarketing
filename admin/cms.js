@@ -29,14 +29,6 @@
   toggleButton.textContent = 'Edit';
   document.body.appendChild(toggleButton);
 
-  const wireframeToggle = document.createElement('button');
-  wireframeToggle.id = 'cms-wireframe-toggle';
-  wireframeToggle.classList.add('cms-ui');
-  wireframeToggle.setAttribute('type', 'button');
-  wireframeToggle.setAttribute('aria-pressed', 'false');
-  wireframeToggle.textContent = 'Wireframe Off';
-  document.body.appendChild(wireframeToggle);
-
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
   sidebar.classList.add('cms-ui');
@@ -223,8 +215,6 @@
       setEditMode(true);
     }
     document.body.classList.toggle('cms-wireframe', enabled);
-    wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-    wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
@@ -322,10 +312,6 @@
     }
   }
 
-  wireframeToggle.addEventListener('click', () => {
-    setWireframeState(!document.body.classList.contains('cms-wireframe'));
-  });
-
   async function loadFiles() {
     try {
       const res = await fetch(FILES_ENDPOINT);
@@ -364,7 +350,7 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
+      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline,#cms-gallery');
   }
 
   function isWireframeEnabled() {
@@ -917,6 +903,7 @@
   function activateTab(tabName) {
     tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
     panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName));
+    setWireframeState(tabName === 'wireframe');
   }
 
   function refreshList() {
@@ -1296,6 +1283,9 @@
     flexField.style.display = 'none';
     clearSettingsMessage();
     hydrate();
+    if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
+      setWireframeState(false);
+    }
   });
 
   dockButtons.forEach((button) => {

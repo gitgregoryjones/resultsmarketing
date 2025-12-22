@@ -22,27 +22,6 @@
   transition: transform 150ms ease, box-shadow 150ms ease;
 }
 
-#cms-wireframe-toggle {
-  position: fixed;
-  bottom: 78px;
-  right: 20px;
-  padding: 10px 14px;
-  background: white;
-  color: var(--cms-dark);
-  border: 1px solid var(--cms-border);
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  z-index: 9999;
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-}
-
-#cms-wireframe-toggle:hover {
-  transform: translateY(-1px);
-  border-color: var(--cms-red);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-}
-
 #cms-toggle:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.16);
