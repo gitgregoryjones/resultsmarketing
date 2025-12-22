@@ -725,6 +725,11 @@
     imagePreview.style.backgroundImage = `url('${src}')`;
   }
 
+  function applyImagePreviewToElement(src) {
+    if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
+    applyImageToElement(selectedElement, src, selectedType === 'background' ? 'background' : 'image');
+  }
+
   function rgbToHex(value) {
     if (!value) return '#111827';
     if (value.startsWith('#')) return value;
@@ -770,6 +775,7 @@
     button.addEventListener('click', () => {
       imageUrlInput.value = src;
       updateImagePreview(src);
+      applyImagePreviewToElement(src);
       toggleGallery(false);
     });
     return button;
@@ -1315,9 +1321,16 @@
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
       updateImagePreview(fileUrl);
+      applyImagePreviewToElement(fileUrl);
     } else {
       updateImagePreview('');
     }
+  });
+  imageUrlInput.addEventListener('input', () => {
+    const nextUrl = imageUrlInput.value.trim();
+    if (!nextUrl) return;
+    updateImagePreview(nextUrl);
+    applyImagePreviewToElement(nextUrl);
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
