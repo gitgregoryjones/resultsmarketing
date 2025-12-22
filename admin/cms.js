@@ -29,14 +29,6 @@
   toggleButton.textContent = 'Edit';
   document.body.appendChild(toggleButton);
 
-  const wireframeToggle = document.createElement('button');
-  wireframeToggle.id = 'cms-wireframe-toggle';
-  wireframeToggle.classList.add('cms-ui');
-  wireframeToggle.setAttribute('type', 'button');
-  wireframeToggle.setAttribute('aria-pressed', 'false');
-  wireframeToggle.textContent = 'Wireframe Off';
-  document.body.appendChild(wireframeToggle);
-
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
   sidebar.classList.add('cms-ui');
@@ -44,84 +36,131 @@
   const WIREFRAME_STORAGE_KEY = 'cmsWireframeEnabled';
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
-      <div class="cms-sidebar__title">Inline CMS</div>
-      <div class="cms-dock">
-        <span>Dock</span>
-        <div class="cms-dock__buttons">
-          <button type="button" data-pos="left">Left</button>
-          <button type="button" data-pos="top">Top</button>
-          <button type="button" data-pos="right" class="active">Right</button>
-          <button type="button" data-pos="bottom">Bottom</button>
+      <div class="cms-sidebar__header-row">
+        <div class="cms-sidebar__title">Inline CMS</div>
+        <div class="cms-dock__arrows" aria-label="Dock position">
+          <button type="button" class="cms-dock-arrow" data-pos="top" aria-label="Dock top">↑</button>
+          <button type="button" class="cms-dock-arrow" data-pos="right" aria-label="Dock right">→</button>
+          <button type="button" class="cms-dock-arrow" data-pos="bottom" aria-label="Dock bottom">↓</button>
+          <button type="button" class="cms-dock-arrow" data-pos="left" aria-label="Dock left">←</button>
         </div>
       </div>
-      <div class="cms-field cms-field--file">
-        <label for="cms-file">HTML file</label>
-        <select id="cms-file"></select>
-      </div>
-      <div class="cms-field cms-field--site">
-        <label for="cms-sitename">Site name (used when publishing)</label>
-        <div class="cms-site-input">
-          <input id="cms-sitename" type="text" placeholder="enter-site-name" />
-          <button type="button" id="cms-save-sitename">Save</button>
-        </div>
-        <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
-      </div>
-      <div class="cms-publish">
-        <button type="button" id="cms-publish">Publish static site</button>
-        <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
-      </div>
-      <p class="cms-pill">Click text or images while editing</p>
     </div>
     <div class="cms-sidebar__body">
-      <div class="cms-field">
-        <label>Content type</label>
-        <div class="cms-type">
-          <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
-          <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+      <div class="cms-tabs">
+        <button type="button" data-tab="wireframe">Wireframe</button>
+        <button type="button" class="active" data-tab="content">Content</button>
+        <button type="button" data-tab="styles">Styles</button>
+        <button type="button" data-tab="effects">Effect</button>
+        <button type="button" data-tab="settings">Settings</button>
+      </div>
+      <div class="cms-panel" data-panel="wireframe">
+        <div class="cms-field cms-wireframe-tools">
+          <label>Wireframe elements</label>
+          <p class="cms-field__hint">Drag onto the page while wireframe mode is on.</p>
+          <div class="cms-wireframe-tools__list">
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">Square</div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">Circle</div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
+          </div>
         </div>
       </div>
-      <div class="cms-field cms-wireframe-tools">
-        <label>Wireframe elements</label>
-        <p class="cms-field__hint">Drag onto the page while wireframe mode is on.</p>
-        <div class="cms-wireframe-tools__list">
-          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">Square</div>
-          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">Circle</div>
-          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
-          <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
+      <div class="cms-panel active" data-panel="content">
+        <div class="cms-field">
+          <label>Content type</label>
+          <div class="cms-type">
+            <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
+            <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
+            <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+          </div>
+        </div>
+        <div class="cms-field">
+          <label for="cms-key">Field key</label>
+          <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+        </div>
+        <div class="cms-field">
+          <label for="cms-link">Link (optional)</label>
+          <input id="cms-link" type="text" placeholder="https://example.com or #section" />
+        </div>
+        <div class="cms-field cms-field--text">
+          <label for="cms-value">Content</label>
+          <textarea id="cms-value" placeholder="Type content here..."></textarea>
+        </div>
+        <div class="cms-field cms-field--image">
+          <label for="cms-image-url">Image URL</label>
+          <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+          <div class="cms-action-row">
+            <button type="button" id="cms-open-gallery">Browse gallery</button>
+            <div class="cms-upload">
+              <label class="cms-upload__label" for="cms-image-file">Upload image</label>
+              <input id="cms-image-file" type="file" accept="image/*" />
+            </div>
+          </div>
+          <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+        </div>
+        <button id="cms-save">Save</button>
+        <button id="cms-delete" type="button">Delete element</button>
+        <div id="cms-message"></div>
+        <div class="cms-hint">Existing keys on the page</div>
+        <h4 class="cms-sidebar__list-title">Discovered</h4>
+        <p id="cms-empty">No tagged elements yet.</p>
+        <ul class="cms-list" id="cms-list"></ul>
+      </div>
+      <div class="cms-panel" data-panel="styles">
+        <div class="cms-field">
+          <label for="cms-text-color">Text color</label>
+          <input id="cms-text-color" type="color" value="#111827" />
+        </div>
+        <div class="cms-field">
+          <label for="cms-bg-color">Background color</label>
+          <input id="cms-bg-color" type="color" value="#ffffff" />
+        </div>
+        <div class="cms-field cms-field--font-size">
+          <label for="cms-font-size">Font size (px)</label>
+          <input id="cms-font-size" type="number" min="8" max="120" step="1" value="16" />
+        </div>
+        <div class="cms-field cms-field--flex">
+          <label for="cms-flex">Flex direction</label>
+          <select id="cms-flex">
+            <option value="row">Row</option>
+            <option value="column">Column</option>
+            <option value="row-reverse">Row reverse</option>
+            <option value="column-reverse">Column reverse</option>
+          </select>
         </div>
       </div>
-      <div class="cms-field">
-        <label for="cms-key">Field key</label>
-        <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+      <div class="cms-panel" data-panel="effects">
+        <p class="cms-empty-state">TBD</p>
       </div>
-      <div class="cms-field">
-        <label for="cms-link">Link (optional)</label>
-        <input id="cms-link" type="text" placeholder="https://example.com or #section" />
-      </div>
-      <div class="cms-field cms-field--text">
-        <label for="cms-value">Content</label>
-        <textarea id="cms-value" placeholder="Type content here..."></textarea>
-      </div>
-      <div class="cms-field cms-field--image">
-        <label for="cms-image-url">Image URL</label>
-        <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-        <div class="cms-image-actions">
-          <button type="button" id="cms-open-gallery">Browse gallery</button>
+      <div class="cms-panel" data-panel="settings">
+        <div class="cms-dock">
+          <span>Dock</span>
+          <div class="cms-dock__buttons">
+            <button type="button" data-pos="left">Left</button>
+            <button type="button" data-pos="top">Top</button>
+            <button type="button" data-pos="right" class="active">Right</button>
+            <button type="button" data-pos="bottom">Bottom</button>
+          </div>
         </div>
-        <div class="cms-upload">
-          <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-          <input id="cms-image-file" type="file" accept="image/*" />
+        <div class="cms-field cms-field--file">
+          <label for="cms-file">HTML file</label>
+          <select id="cms-file"></select>
         </div>
-        <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+        <div class="cms-field cms-field--site">
+          <label for="cms-sitename">Site name (used when publishing)</label>
+          <div class="cms-site-input">
+            <input id="cms-sitename" type="text" placeholder="enter-site-name" />
+            <button type="button" id="cms-save-sitename">Save</button>
+          </div>
+          <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
+        </div>
+        <div id="cms-settings-message"></div>
+        <div class="cms-publish">
+          <button type="button" id="cms-publish">Publish static site</button>
+          <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
+        </div>
       </div>
-      <button id="cms-save">Save</button>
-      <button id="cms-delete" type="button">Delete element</button>
-      <div id="cms-message"></div>
-      <div class="cms-hint">Existing keys on the page</div>
-      <h4 class="cms-sidebar__list-title">Discovered</h4>
-      <p id="cms-empty">No tagged elements yet.</p>
-      <ul class="cms-list" id="cms-list"></ul>
     </div>
   `;
   document.body.appendChild(sidebar);
@@ -165,11 +204,21 @@
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
+  const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
   const dockButtons = sidebar.querySelectorAll('.cms-dock__buttons button');
+  const dockArrowButtons = sidebar.querySelectorAll('.cms-dock__arrows button');
+  const tabs = sidebar.querySelectorAll('.cms-tabs button');
+  const panels = sidebar.querySelectorAll('.cms-panel');
+  const textColorInput = sidebar.querySelector('#cms-text-color');
+  const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
+  const fontSizeInput = sidebar.querySelector('#cms-font-size');
+  const flexSelect = sidebar.querySelector('#cms-flex');
+  const flexField = sidebar.querySelector('.cms-field--flex');
+  const fontSizeField = sidebar.querySelector('.cms-field--font-size');
   const wireframeTools = sidebar.querySelectorAll('[data-wireframe-tool]');
   const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
@@ -179,6 +228,7 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
+  let layoutSaveTimer = null;
   deleteButton.disabled = true;
 
   function setWireframeState(enabled) {
@@ -186,8 +236,6 @@
       setEditMode(true);
     }
     document.body.classList.toggle('cms-wireframe', enabled);
-    wireframeToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-    wireframeToggle.textContent = `Wireframe ${enabled ? 'On' : 'Off'}`;
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
@@ -199,6 +247,7 @@
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
     sidebar.classList.add(`cms-pos-${sidebarPosition}`);
     dockButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
+    dockArrowButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.pos === sidebarPosition));
   }
 
   applySidebarPosition();
@@ -231,6 +280,11 @@
     messageEl.style.color = '#16a34a';
   }
 
+  function clearSettingsMessage() {
+    settingsMessageEl.textContent = '';
+    settingsMessageEl.style.color = '#16a34a';
+  }
+
   function removeOutlines() {
     document.querySelectorAll('.cms-outlined').forEach((el) => {
       el.classList.remove('cms-outlined');
@@ -258,8 +312,8 @@
   async function persistSiteName() {
     const desiredName = sanitizeSiteName(siteNameInput.value);
     if (!desiredName) {
-      messageEl.textContent = 'Enter a site name (lowercase, no spaces) before saving.';
-      messageEl.style.color = '#ef4444';
+      settingsMessageEl.textContent = 'Enter a site name (lowercase, no spaces) before saving.';
+      settingsMessageEl.style.color = '#ef4444';
       return;
     }
 
@@ -272,17 +326,13 @@
       if (!res.ok) throw new Error('Site name save failed');
       const data = await res.json();
       updateSiteName(data.siteName || desiredName);
-      messageEl.textContent = 'Site name saved for publishing.';
-      messageEl.style.color = '#16a34a';
+      settingsMessageEl.textContent = 'Site name saved for publishing.';
+      settingsMessageEl.style.color = '#16a34a';
     } catch (err) {
-      messageEl.textContent = 'Unable to save site name. Please try again.';
-      messageEl.style.color = '#ef4444';
+      settingsMessageEl.textContent = 'Unable to save site name. Please try again.';
+      settingsMessageEl.style.color = '#ef4444';
     }
   }
-
-  wireframeToggle.addEventListener('click', () => {
-    setWireframeState(!document.body.classList.contains('cms-wireframe'));
-  });
 
   async function loadFiles() {
     try {
@@ -322,7 +372,7 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, #cms-wireframe-toggle, .cms-outline,#cms-gallery');
+      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline,#cms-gallery');
   }
 
   function isWireframeEnabled() {
@@ -638,6 +688,8 @@
       input.checked = input.value === type;
     });
     sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
+    flexField.style.display = type === 'text' ? 'none' : 'flex';
+    fontSizeField.style.display = type === 'text' ? 'flex' : 'none';
     selectedType = type;
     if (!selectedElement) return;
     if (selectedType === 'text' && editMode) {
@@ -669,6 +721,34 @@
     }
     imagePreview.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+  }
+
+  function rgbToHex(value) {
+    if (!value) return '#111827';
+    if (value.startsWith('#')) return value;
+    const match = value.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if (!match) return '#111827';
+    const toHex = (num) => Number(num).toString(16).padStart(2, '0');
+    return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
+  }
+
+  function updateStyleInputs(el) {
+    if (!el) return;
+    const computed = window.getComputedStyle(el);
+    textColorInput.value = rgbToHex(computed.color);
+    backgroundColorInput.value = rgbToHex(computed.backgroundColor);
+    fontSizeInput.value = Number.parseFloat(computed.fontSize) || 16;
+    flexSelect.value = computed.flexDirection || 'row';
+  }
+
+  function scheduleLayoutPersist() {
+    if (layoutSaveTimer) {
+      clearTimeout(layoutSaveTimer);
+    }
+    layoutSaveTimer = setTimeout(() => {
+      persistLayout();
+      layoutSaveTimer = null;
+    }, 400);
   }
 
   function toggleGallery(open) {
@@ -850,7 +930,14 @@
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
     }
+    updateStyleInputs(el);
     deleteButton.disabled = false;
+  }
+
+  function activateTab(tabName) {
+    tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
+    panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName));
+    setWireframeState(tabName === 'wireframe');
   }
 
   function refreshList() {
@@ -1042,8 +1129,8 @@
 
   async function publishStaticSite() {
     if (!siteName) {
-      messageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
-      messageEl.style.color = '#ef4444';
+      settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
+      settingsMessageEl.style.color = '#ef4444';
       siteNameInput.focus();
       return;
     }
@@ -1051,19 +1138,19 @@
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
-    messageEl.textContent = 'Publishing merged HTML to the site root...';
-    messageEl.style.color = '#111827';
+    settingsMessageEl.textContent = 'Publishing merged HTML to the site root...';
+    settingsMessageEl.style.color = '#111827';
 
     try {
       const res = await fetch('/api/publish', { method: 'POST' });
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
-      messageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
-      messageEl.style.color = '#16a34a';
+      settingsMessageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      settingsMessageEl.style.color = '#16a34a';
     } catch (err) {
-      messageEl.textContent = 'Unable to publish static pages.';
-      messageEl.style.color = '#ef4444';
+      settingsMessageEl.textContent = 'Unable to publish static pages.';
+      settingsMessageEl.style.color = '#ef4444';
     } finally {
       publishButton.disabled = false;
       publishButton.textContent = originalLabel;
@@ -1175,6 +1262,33 @@
   saveButton.addEventListener('click', saveSelection);
   deleteButton.addEventListener('click', deleteSelection);
   publishButton.addEventListener('click', publishStaticSite);
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => activateTab(tab.dataset.tab));
+  });
+  textColorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.color = textColorInput.value;
+    scheduleLayoutPersist();
+  });
+  backgroundColorInput.addEventListener('input', () => {
+    if (!selectedElement) return;
+    selectedElement.style.backgroundColor = backgroundColorInput.value;
+    scheduleLayoutPersist();
+  });
+  fontSizeInput.addEventListener('input', () => {
+    if (!selectedElement || selectedType !== 'text') return;
+    const fontSize = Number.parseFloat(fontSizeInput.value);
+    if (!Number.isNaN(fontSize)) {
+      selectedElement.style.fontSize = `${fontSize}px`;
+      scheduleLayoutPersist();
+    }
+  });
+  flexSelect.addEventListener('change', () => {
+    if (!selectedElement || selectedType === 'text') return;
+    selectedElement.style.display = 'flex';
+    selectedElement.style.flexDirection = flexSelect.value;
+    scheduleLayoutPersist();
+  });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text') return;
     selectedElement.textContent = e.target.value;
@@ -1211,10 +1325,24 @@
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
     applySidebarPosition();
+    flexField.style.display = 'none';
+    fontSizeField.style.display = 'flex';
+    clearSettingsMessage();
     hydrate();
+    if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
+      setWireframeState(false);
+    }
   });
 
   dockButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      sidebarPosition = button.dataset.pos;
+      localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
+      applySidebarPosition();
+    });
+  });
+
+  dockArrowButtons.forEach((button) => {
     button.addEventListener('click', () => {
       sidebarPosition = button.dataset.pos;
       localStorage.setItem(POSITION_STORAGE_KEY, sidebarPosition);
