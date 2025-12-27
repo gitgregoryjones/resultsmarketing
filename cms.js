@@ -592,6 +592,31 @@
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
+    const backendValue =
+      el.getAttribute('data-server-text')
+      || el.getAttribute('data-server-image')
+      || el.getAttribute('data-server-bg');
+    const backendSource = el.parentElement?.getAttribute('data-json-source') || '';
+    const shouldUseBackend = Boolean(backendValue) && Boolean(backendSource);
+    if (backendToggle.checked !== shouldUseBackend) {
+      backendToggle.checked = shouldUseBackend;
+      setBackendMode(shouldUseBackend);
+    }
+    if (shouldUseBackend) {
+      backendServiceAlias = backendSource;
+      if (!backendServices.length) {
+        backendServices = getMetaServices();
+      }
+      populateServiceSelect();
+      if (backendServices.some((service) => service.alias === backendServiceAlias)) {
+        serviceSelect.value = backendServiceAlias;
+        serviceSelect.dispatchEvent(new Event('change'));
+      } else {
+        serviceSelect.value = '';
+        backendKeySelect.disabled = true;
+      }
+      serviceForm.classList.remove('is-visible');
+    }
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
