@@ -230,6 +230,76 @@
   margin-bottom: 14px;
 }
 
+.cms-discovered {
+  display: none;
+}
+
+.cms-backend-only {
+  display: none;
+}
+
+.cms-backend-enabled .cms-backend-only {
+  display: flex;
+}
+
+.cms-backend-enabled .cms-standard-only {
+  display: none;
+}
+
+.cms-service-form {
+  display: none;
+}
+
+.cms-backend-enabled .cms-service-form.is-visible {
+  display: flex;
+}
+
+.cms-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cms-gray);
+}
+
+.cms-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cms-toggle__control {
+  width: 36px;
+  height: 20px;
+  background: var(--cms-border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 150ms ease;
+}
+
+.cms-toggle__control::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: white;
+  top: 2px;
+  left: 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 150ms ease;
+}
+
+.cms-toggle input:checked + .cms-toggle__control {
+  background: var(--cms-red);
+}
+
+.cms-toggle input:checked + .cms-toggle__control::after {
+  transform: translateX(16px);
+}
+
 .cms-field label {
   font-size: 13px;
   font-weight: 600;
