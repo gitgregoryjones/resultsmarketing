@@ -871,6 +871,13 @@
     valueInput.value = formatted;
     imageUrlInput.value = formatted;
     updateImagePreview(formatted);
+    if (selectedElement) {
+      if (selectedType === 'image' || selectedType === 'background') {
+        applyImageToElement(selectedElement, formatted, selectedType === 'background' ? 'background' : 'image');
+      } else {
+        selectedElement.textContent = formatted;
+      }
+    }
   }
 
   async function fetchServiceData(serviceUrl) {
