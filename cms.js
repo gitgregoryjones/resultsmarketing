@@ -981,6 +981,7 @@
   saveButton.addEventListener('click', (event) => {
     event.preventDefault();
     saveSelection();
+    persistLayout();
   });
   deleteButton.addEventListener('click', (event) => {
     event.preventDefault();
