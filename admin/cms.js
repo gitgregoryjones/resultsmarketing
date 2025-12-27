@@ -1526,8 +1526,14 @@
   document.addEventListener('dragover', handleDragOver, true);
   document.addEventListener('drop', handleDrop, true);
   document.addEventListener('dragend', handleDragEnd, true);
-  saveButton.addEventListener('click', saveSelection);
-  deleteButton.addEventListener('click', deleteSelection);
+  saveButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveSelection();
+  });
+  deleteButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    deleteSelection();
+  });
   publishButton.addEventListener('click', publishStaticSite);
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));

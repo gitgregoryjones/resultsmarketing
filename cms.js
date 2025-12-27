@@ -978,8 +978,14 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
-  saveButton.addEventListener('click', saveSelection);
-  deleteButton.addEventListener('click', deleteSelection);
+  saveButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveSelection();
+  });
+  deleteButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    deleteSelection();
+  });
   publishButton.addEventListener('click', publishStaticSite);
   if (galleryButton) {
     galleryButton.addEventListener('click', () => {
