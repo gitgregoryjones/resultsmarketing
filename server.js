@@ -3,6 +3,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const url = require('node:url');
 const { parse } = require('node-html-parser');
+const { fetchServiceJson } = require('./services');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = __dirname;
@@ -1302,6 +1303,24 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to list files' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/services' && req.method === 'GET') {
+    const serviceUrl = parsedUrl.query.url;
+    if (!serviceUrl) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Service URL is required' }));
+      return;
+    }
+    try {
+      const data = await fetchServiceJson(serviceUrl);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ data }));
+    } catch (err) {
+      res.writeHead(502, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Unable to fetch service data' }));
     }
     return;
   }
