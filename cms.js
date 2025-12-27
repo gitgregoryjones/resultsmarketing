@@ -18,6 +18,7 @@
   let backendServices = [];
   let backendServiceData = null;
   let backendServiceAlias = '';
+  let backendPendingKey = '';
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline';
@@ -538,6 +539,11 @@
       backendKeySelect.appendChild(option);
     });
     backendKeySelect.disabled = !paths.length;
+    if (backendPendingKey && paths.includes(backendPendingKey)) {
+      backendKeySelect.value = backendPendingKey;
+      setBackendValueForKey(backendPendingKey);
+      backendPendingKey = '';
+    }
   }
 
   function setBackendValueForKey(path) {
@@ -610,7 +616,6 @@
       populateServiceSelect();
       if (backendServices.some((service) => service.alias === backendServiceAlias)) {
         serviceSelect.value = backendServiceAlias;
-        serviceSelect.dispatchEvent(new Event('change'));
       } else {
         serviceSelect.value = '';
         backendKeySelect.disabled = true;
@@ -637,6 +642,16 @@
       valueInput.value = mergedContent[key] ?? value;
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
+    }
+    if (shouldUseBackend) {
+      backendPendingKey = key || '';
+      const formattedBackendValue = formatBackendValue(backendValue);
+      valueInput.value = formattedBackendValue;
+      imageUrlInput.value = formattedBackendValue;
+      updateImagePreview(formattedBackendValue);
+      if (backendServices.some((service) => service.alias === backendServiceAlias)) {
+        serviceSelect.dispatchEvent(new Event('change'));
+      }
     }
     updateStyleInputs(el);
     deleteButton.disabled = false;
