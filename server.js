@@ -213,6 +213,7 @@ function setCmsAttributes(element, { key, type, link }) {
 }
 
 function mergeContentIntoHtml(html, { key, type, value, elementPath, link, originalOuterHTML, updatedOuterHTML }) {
+  
   const hasValue = value !== undefined && value !== null;
   const resolvedValue = hasValue ? value : '';
   let nextHtml = html;
@@ -468,11 +469,598 @@ async function publishSite() {
   return publishedFiles;
 }
 
+
+
+
+
 async function renderFile(fileName = DEFAULT_FILE) {
   const safeFile = sanitizeHtmlFile(fileName);
   const htmlPath = htmlPathFor(safeFile);
-  return fs.readFile(htmlPath, 'utf8');
+  let html = await fs.readFile(htmlPath, 'utf8');
+  
+  // Fetch and populate HTML with remote JSON data from meta tags
+  html = await populateHtmlFromMetaTags(html);
+
+  //write File back to disk for caching if needed   
+  fs.writeFile(htmlPath, html);
+  
+  return html;
 }
+
+// Parse meta tags to extract JSON data source configurations
+function parseJsonMetaTags(html) {
+  const root = parse(html);
+  const metaTags = root.querySelectorAll('meta[name][itemprop]');
+  const dataSources = [];
+  
+  metaTags.forEach(meta => {
+    const name = meta.getAttribute('name');
+    const contentType = meta.getAttribute('itemtype') || 'GET';
+    const content = meta.getAttribute('content');
+    const itemprop = meta.getAttribute('itemprop');
+    
+    if (!name || !itemprop) return;
+    
+    try {
+      // Check if content contains inline JSON
+      let inlineData = null;
+      if (content && content.trim().startsWith('{')) {
+        try {
+          inlineData = JSON.parse(content);
+        } catch (e) {
+          console.warn(`Failed to parse inline JSON in meta tag ${name}:`, e.message);
+        }
+      }
+      
+      dataSources.push({
+        name,
+        method: contentType,
+        url: itemprop, // URL from itemprop attribute
+        inlineData,
+        selector: `[data-json-source="${name}"]`
+      });
+    } catch (err) {
+      console.warn(`Error parsing meta tag ${name}:`, err.message);
+    }
+  });
+  
+  return dataSources;
+}
+
+// Main function to populate HTML from meta tag configurations
+async function populateHtmlFromMetaTags(html) {
+  try {
+    const dataSources = parseJsonMetaTags(html);
+    if (dataSources.length === 0) {
+      return html;
+    }
+    
+    const root = parse(html);
+    
+    // Process each data source
+    for (const source of dataSources) {
+      try {
+        let jsonData;
+        
+        // Use inline data if available
+        if (source.inlineData) {
+          jsonData = source.inlineData;
+        } else {
+          // Fetch from remote URL
+          jsonData = await fetchRemoteJsonDataWithCache(source.url);
+        }
+        console.log(`Processing data source: ${source.name} and data: ${JSON.stringify(jsonData)}`);  
+        
+        if (jsonData) {
+          await processDataSource(root, jsonData, source);
+          //write modified file back to disk for caching
+          
+        }
+      } catch (err) {
+        console.warn(`Failed to process data source ${source.name}:`, err.message);
+      }
+    }
+    
+    // Remove the meta tags after processing (optional)
+    // root.querySelectorAll('meta[name][itemprop]').forEach(meta => meta.remove());
+    
+    return root.toString();
+  } catch (err) {
+    console.warn(`Error populating HTML from meta tags:`, err.message);
+    return html;
+  }
+}
+
+// Process a single data source
+async function processDataSource(root, jsonData, source) {
+  if (!jsonData || !root || !source) return;
+  
+  // Find all elements that reference this data source
+  const targetElements = root.querySelectorAll(source.selector);
+  
+  if (targetElements.length === 0) {
+    // If no specific targets, apply to whole document
+    applyJsonDataToElement(root, jsonData, source.name);
+    return;
+  }
+  
+  // Process each target element
+  targetElements.forEach(targetElement => {
+    applyJsonDataToElement(targetElement, jsonData, source.name);
+  });
+}
+
+// Apply JSON data to a specific element
+function applyJsonDataToElement(element, jsonData, sourceName) {
+  if (!element || !jsonData) return;
+  
+  // Check if this is a template element
+  const isTemplate = element.hasAttribute('data-template-item');
+  
+  if (isTemplate && Array.isArray(jsonData)) {
+    // Handle array data with template
+    processTemplateWithArrayData(element, jsonData, sourceName);
+  } else if (Array.isArray(jsonData)) {
+    // Array data but no explicit template - find templates within
+    processArrayDataInElement(element, jsonData, sourceName);
+  } else if (typeof jsonData === 'object') {
+    // Object data - update directly
+    updateElementWithJsonData(element, jsonData, sourceName);
+  }
+}
+
+// Process array data within an element
+function processArrayDataInElement(container, dataArray, sourceName) {
+  if (!container || !Array.isArray(dataArray) || dataArray.length === 0) return;
+  
+  // Look for template items within the container
+  const templateElements = container.querySelectorAll('[data-template-item]');
+  
+  if (templateElements.length === 0) {
+    // If no templates, update the container with first item
+    updateElementWithJsonData(container, dataArray[0], sourceName);
+    return;
+  }
+  
+  // Process each template
+  templateElements.forEach(templateElement => {
+    const itemKey = templateElement.getAttribute('data-template-item');
+    const itemData = dataArray.filter(item => 
+      !itemKey || item._itemType === itemKey || item.itemType === itemKey
+    );
+    
+    if (itemData.length > 0) {
+      processTemplateWithArrayData(container, templateElement, itemData, sourceName);
+    }
+  });
+}
+
+// Process template with array data
+function processTemplateWithArrayData(container, templateElement, dataArray, sourceName) {
+  if (!container || !templateElement || !Array.isArray(dataArray) || dataArray.length === 0) return;
+  
+  // Determine if container is the template element itself
+  const isContainerTemplate = container === templateElement;
+  
+  // Store original template
+  const originalTemplate = templateElement.clone();
+  
+  // Clear existing siblings if specified
+  const clearExisting = container.hasAttribute('data-clear-existing') || 
+                       templateElement.hasAttribute('data-clear-existing');
+  
+  if (clearExisting && !isContainerTemplate) {
+    Array.from(container.children).forEach(child => {
+      if (child !== templateElement) {
+        child.remove();
+      }
+    });
+  }
+  
+  // Process each data item
+  dataArray.forEach((data, index) => {
+    let elementToUse;
+    
+    if (index === 0) {
+      // Use original template for first item
+      elementToUse = templateElement;
+    } else {
+      // Clone for subsequent items
+      elementToUse = originalTemplate.clone();
+      if (!isContainerTemplate) {
+        container.appendChild(elementToUse);
+      } else {
+        // If container is the template, we need a parent to append to
+        const parent = container.parentElement;
+        if (parent) {
+          parent.appendChild(elementToUse);
+        }
+      }
+    }
+    
+    // Update with data
+    updateElementWithJsonData(elementToUse, data, sourceName);
+    
+    // Clean up template attributes
+    elementToUse.removeAttribute('data-template-item');
+    elementToUse.removeAttribute('data-json-source');
+  });
+}
+
+// REMOVE the function at line ~1420 and KEEP this one at line ~1656
+function updateElementWithJsonData(element, jsonData, namespace = '') {
+  if (!element || !jsonData) return;
+  
+  // Build selector prefix if namespace is provided
+  const namespacePrefix = namespace ? `${namespace}.` : '';
+
+  console.log(`Updating element with namespace: "${namespace}" and prefix: "${namespacePrefix}"`);
+  
+  // Update data-cms-text elements
+  element.querySelectorAll('[data-server-text]').forEach(el => {
+    const key = el.getAttribute('data-server-text');
+    
+    // Try namespaced key first, then regular key
+    let value;
+    if (namespace) {
+      // Check for namespaced key (e.g., "hero.title" or "profiles.0.name")
+      console.log(`Looking for text key: "${namespacePrefix}${key}"`);
+      const namespacedKey = `${namespacePrefix}${key}`;
+      value = getValueByPath(jsonData, namespacedKey);
+      console.log(`Found value: "${value}" for key: "${key}"`); 
+      // Also check dot notation in the key itself
+      if (value === undefined && key.includes('.')) {
+        console.log(`Looking for text key by dot notation: "${key}" on data ${JSON.stringify(jsonData)}`);
+        value = getValueByPath(jsonData, key);
+      }
+    }
+    
+    // Fall back to direct key
+    if (value === undefined) {
+      value = jsonData[key];
+    }
+    
+    if (value !== undefined) {
+      // Find and replace the first text node
+      const textNodes = Array.from(el.childNodes)
+        .filter(node => node.nodeType === 3 && node.textContent.trim());
+      
+      if (textNodes.length > 0) {
+        textNodes[0].textContent = value;
+      } else {
+        el.textContent = value;
+      }
+    }
+  });
+  
+  // Update data-cms-bg elements
+  element.querySelectorAll('[data-server-bg]').forEach(el => {
+    const key = el.getAttribute('data-server-bg');
+    
+    let value;
+    if (namespace) {
+      const namespacedKey = `${namespacePrefix}${key}`;
+      value = getValueByPath(jsonData, namespacedKey);
+      console.log(`Looking for background key: "${namespacedKey}", found value: "${value}"`);
+      if (value === undefined && key.includes('.')) {
+        value = getValueByPath(jsonData, key);
+      }
+    }
+    
+    if (value === undefined) {
+      value = jsonData[key];
+    }
+    
+    if (value !== undefined) {
+      const style = el.getAttribute('style') || '';
+      const styleParts = style
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s && !s.toLowerCase().startsWith('background-image'))
+        .filter(Boolean);
+      
+      styleParts.push(`background-image:url('${escapeHtml(value)}')`);
+      el.setAttribute('style', styleParts.join('; '));
+    }
+  });
+  
+  // Update data-cms-image elements
+  element.querySelectorAll('[data-server-image]').forEach(el => {
+    const key = el.getAttribute('data-server-image');
+    
+    let value;
+    if (namespace) {
+      const namespacedKey = `${namespacePrefix}${key}`;
+      value = getValueByPath(jsonData, namespacedKey);
+      
+      if (value === undefined && key.includes('.')) {
+        value = getValueByPath(jsonData, key);
+      }
+    }
+    
+    if (value === undefined) {
+      value = jsonData[key];
+    }
+    
+    if (value !== undefined && el.tagName.toLowerCase() === 'img') {
+      el.setAttribute('src', value);
+    }
+  });
+  
+  // Recursively process child elements
+  Array.from(element.children || []).forEach(child => {
+    updateElementWithJsonData(child, jsonData, namespace);
+  });
+}
+
+// Helper function to get value by dot notation path
+function getValueByPath(obj, path) {
+  console.log(`Getting value by path: "${path}" from object.`);
+  if (!obj || !path) return undefined;
+  console.log(`Getting value by path: "${path}" from object. Object keys: ${Object.keys(obj).join(', ')}`);
+  return path.split('.').reduce((current, key) => {
+    if (current === null || current === undefined) return undefined;
+    
+    // Handle array indices
+    const numKey = parseInt(key, 10);
+    if (!isNaN(numKey) && Array.isArray(current)) {
+      return current[numKey];
+    }
+    
+    return current[key];
+  }, obj);
+}
+
+// Helper function to get value with namespace consideration
+function getNamespacedValue(jsonData, key, namespace) {
+  if (!key) return undefined;
+  
+  // Check for dot notation in key first (overrides namespace)
+  if (key.includes('.')) {
+    const value = getValueByPath(jsonData, key);
+    if (value !== undefined) return value;
+  }
+  
+  // Try with namespace prefix
+  if (namespace) {
+    const namespacedKey = `${namespace}.${key}`;
+    const value = getValueByPath(jsonData, namespacedKey);
+    if (value !== undefined) return value;
+  }
+  
+  // Fall back to direct key
+  return jsonData[key];
+}
+
+// Helper function to get value by dot notation path
+function getValueByPath(obj, path) {
+  if (!obj || !path) return undefined;
+  
+  return path.split('.').reduce((current, key) => {
+    if (current === null || current === undefined) return undefined;
+    
+    // Handle array indices
+    const numKey = parseInt(key, 10);
+    if (!isNaN(numKey) && Array.isArray(current)) {
+      return current[numKey];
+    }
+    
+    return current[key];
+  }, obj);
+}
+// New function to populate HTML with remote JSON data
+
+// Function to fetch JSON data from remote URL
+async function fetchRemoteJsonData(url) {
+  try {
+    // Using node's native http/https modules
+    const protocol = url.startsWith('https') ? require('https') : require('http');
+    
+    return new Promise((resolve, reject) => {
+      protocol.get(url, (response) => {
+        let data = '';
+        
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+        
+        response.on('end', () => {
+          try {
+            const parsedData = JSON.parse(data);
+            console.log(`Fetched JSON data from ${url}:`, parsedData);
+            resolve(parsedData);
+          } catch (parseError) {
+            console.warn(`Failed to parse JSON from ${url}:`, parseError.message);
+            reject(new Error(`Failed to parse JSON: ${parseError.message}`));
+          }
+        });
+      }).on('error', (error) => {
+        reject(new Error(`Failed to fetch JSON: ${error.message}`));
+      });
+    });
+  } catch (err) {
+    console.warn(`Failed to fetch JSON from ${url}: ${err.message}`);
+    return null;
+  }
+}
+
+// Process array data (for templates/repeating elements)
+async function processArrayData(root, dataArray) {
+  if (!Array.isArray(dataArray) || dataArray.length === 0) {
+    return;
+  }
+  
+  // Find all elements with data-array-template attribute
+  const templateContainers = root.querySelectorAll('[data-array-template]');
+  
+  if (templateContainers.length === 0) {
+    // No template containers found, update elements directly with first data item
+    updateElementWithJsonData(root, dataArray[0], '');
+    return;
+  }
+  
+  // Process each template container
+  templateContainers.forEach(container => {
+    const templateKey = container.getAttribute('data-array-template');
+    
+    // Filter data for this specific template (if key provided)
+    const relevantData = templateKey 
+      ? dataArray.filter(item => item._template === templateKey)
+      : dataArray;
+    
+    if (relevantData.length === 0) return;
+    
+    // Find template element(s) within container
+    // This could be the first child or elements with specific attributes
+    const templateElements = container.querySelectorAll('[data-template-item]');
+    
+    if (templateElements.length === 0) {
+      // If no explicit template items, use the first child element as template
+      const firstChild = container.firstElementChild;
+      if (!firstChild) return;
+      
+      processTemplateElement(container, firstChild, relevantData);
+    } else {
+      // Process each template element type
+      templateElements.forEach(templateElement => {
+        const itemKey = templateElement.getAttribute('data-template-item');
+        const itemData = relevantData.filter(item => 
+          !itemKey || item._itemType === itemKey
+        );
+        
+        if (itemData.length > 0) {
+          processTemplateElement(container, templateElement, itemData);
+        }
+      });
+    }
+  });
+}
+
+// Process a single template element with array data
+function processTemplateElement(container, templateElement, dataArray) {
+  // Store original template
+  const originalTemplate = templateElement.clone();
+  
+  // Remove all children from container (optional - depends on your needs)
+  // Or just remove the template element if it's marked for replacement
+  if (templateElement.hasAttribute('data-replace-template')) {
+    templateElement.remove();
+  }
+  
+  // Process each data item
+  dataArray.forEach((data, index) => {
+    let elementToUse;
+    
+    if (index === 0 && !templateElement.hasAttribute('data-replace-template')) {
+      // Use the original template for first item
+      elementToUse = templateElement;
+    } else {
+      // Clone template for subsequent items
+      elementToUse = originalTemplate.clone();
+      container.appendChild(elementToUse);
+    }
+    
+    // Update element with JSON data
+    updateElementWithJsonData(elementToUse, data, '');
+    
+    // Remove template attributes
+    elementToUse.removeAttribute('data-template-item');
+    elementToUse.removeAttribute('data-replace-template');
+  });
+}
+
+
+
+
+// Add caching functionality
+const jsonCache = new Map();
+const CACHE_TTL = 0; // 5 minutes cache TTL
+
+// Enhanced fetch function with caching
+async function fetchRemoteJsonDataWithCache(url) {
+  const now = Date.now();
+  const cached = jsonCache.get(url);
+  
+  if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    return cached.data;
+  }
+  
+  try {
+    const data = await fetchRemoteJsonData(url);
+    if (data) {
+      jsonCache.set(url, {
+        data: data,
+        timestamp: now
+      });
+    }
+    return data;
+  } catch (err) {
+    // Return cached data even if expired if fetch fails
+    if (cached) {
+      console.log(`Using expired cache for ${url} due to fetch error: ${err.message}`);
+      return cached.data;
+    }
+    throw err;
+  }
+}
+
+
+
+
+// Helper function to get value by dot notation path
+function getValueByPath(obj, path) {
+  if (!obj || !path) return undefined;
+  
+  return path.split('.').reduce((current, key) => {
+    if (current === null || current === undefined) return undefined;
+    
+    // Handle array indices
+    const numKey = parseInt(key, 10);
+    if (!isNaN(numKey) && Array.isArray(current)) {
+      return current[numKey];
+    }
+    
+    return current[key];
+  }, obj);
+}
+
+// Alternative: Data source configuration with more flexibility
+const FLEXIBLE_JSON_SOURCES = {
+  'index.html': [
+    { 
+      url: 'https://api.example.com/data/hero.json',
+      selector: '[data-source="hero"]',
+      namespace: 'hero'
+    },
+    { 
+      url: 'https://api.example.com/data/stats.json',
+      selector: '[data-source="stats"]',
+      namespace: 'stats'
+    },
+    { 
+      url: 'https://api.example.com/data/testimonials.json',
+      selector: '.testimonials-container',
+      namespace: 'testimonials'
+    }
+  ],
+  'about.html': [
+    { 
+      url: 'https://api.example.com/data/team.json',
+      selector: '[data-team-data]',
+      namespace: 'team'
+    },
+    { 
+      url: 'https://api.example.com/data/values.json',
+      selector: '.values-section',
+      namespace: 'values'
+    }
+  ]
+};
+
+
+
+
+
 
 function contentTypeFor(filePath) {
   const ext = path.extname(filePath).toLowerCase();
@@ -494,6 +1082,7 @@ function contentTypeFor(filePath) {
       return 'text/html';
   }
 }
+
 
 async function serveStatic(res, filePath) {
   const safePath = path.normalize(filePath).replace(/^\/+/, '');
@@ -653,6 +1242,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
   res.end('Method not allowed');
 }
 
+
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname || '/';
@@ -723,6 +1314,7 @@ const server = http.createServer(async (req, res) => {
     try {
       await fs.access(htmlPathFor(targetFile));
       const html = await renderFile(targetFile);
+      //read any json files needed here to populate the html before sending
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
     } catch (err) {

@@ -1275,9 +1275,9 @@
         mergedContent = data.content || {};
         storedTags = data.tags || {};
         updateSiteName(data.siteName || siteName);
-        applyStoredTags(storedTags);
+        //applyStoredTags(storedTags);
       }
-      applyContent();
+      //applyContent();
     } catch (err) {
       console.warn('Hydration failed', err);
     }
