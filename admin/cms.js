@@ -1346,7 +1346,7 @@
       storedTags = data.tags || storedTags;
       updateSiteName(data.siteName || siteName);
       applyStoredTags(storedTags);
-      applyContent();
+      //applyContent();
       refreshList();
       textValueDirty = false;
     } catch (err) {
@@ -1474,6 +1474,7 @@
   }
 
   function applyContent() {
+    return;
     document.querySelectorAll('[data-cms-text]').forEach((el) => {
       const key = el.getAttribute('data-cms-text');
       if (key && mergedContent[key] !== undefined) {
