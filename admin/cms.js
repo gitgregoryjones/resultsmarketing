@@ -19,6 +19,10 @@
   let dropTarget = null;
   let activeWireframeTool = null;
   let textValueDirty = false;
+  let backendServices = [];
+  let backendServiceData = null;
+  let backendServiceAlias = '';
+  let backendPendingKey = '';
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -76,7 +80,31 @@
             <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
           </div>
         </div>
-        <div class="cms-field">
+        <div class="cms-field cms-field--toggle">
+          <label class="cms-toggle">
+            <span>Use Backend Content</span>
+            <input id="cms-backend-toggle" type="checkbox" />
+            <span class="cms-toggle__control" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="cms-field cms-backend-only">
+          <label for="cms-service">Service</label>
+          <select id="cms-service"></select>
+        </div>
+        <div class="cms-field cms-backend-only cms-service-form" id="cms-service-form">
+          <label>New service call</label>
+          <input id="cms-service-alias" type="text" placeholder="Service alias" />
+          <input id="cms-service-url" type="url" placeholder="https://example.com/api" />
+          <div class="cms-action-row">
+            <button type="button" id="cms-service-ok">OK</button>
+            <button type="button" id="cms-service-cancel">Cancel</button>
+          </div>
+        </div>
+        <div class="cms-field cms-backend-only">
+          <label for="cms-backend-key">Field key</label>
+          <select id="cms-backend-key"></select>
+        </div>
+        <div class="cms-field cms-standard-only">
           <label for="cms-key">Field key</label>
           <input id="cms-key" type="text" placeholder="auto.tag.hash" />
         </div>
@@ -103,10 +131,12 @@
         <button id="cms-save">Save</button>
         <button id="cms-delete" type="button">Delete element</button>
         <div id="cms-message"></div>
-        <div class="cms-hint">Existing keys on the page</div>
-        <h4 class="cms-sidebar__list-title">Discovered</h4>
-        <p id="cms-empty">No tagged elements yet.</p>
-        <ul class="cms-list" id="cms-list"></ul>
+        <div class="cms-discovered">
+          <div class="cms-hint">Existing keys on the page</div>
+          <h4 class="cms-sidebar__list-title">Discovered</h4>
+          <p id="cms-empty">No tagged elements yet.</p>
+          <ul class="cms-list" id="cms-list"></ul>
+        </div>
       </div>
       <div class="cms-panel" data-panel="styles">
         <div class="cms-field">
@@ -195,6 +225,14 @@
   document.body.appendChild(gallery);
 
   const keyInput = sidebar.querySelector('#cms-key');
+  const backendToggle = sidebar.querySelector('#cms-backend-toggle');
+  const serviceSelect = sidebar.querySelector('#cms-service');
+  const backendKeySelect = sidebar.querySelector('#cms-backend-key');
+  const serviceForm = sidebar.querySelector('#cms-service-form');
+  const serviceAliasInput = sidebar.querySelector('#cms-service-alias');
+  const serviceUrlInput = sidebar.querySelector('#cms-service-url');
+  const serviceOkButton = sidebar.querySelector('#cms-service-ok');
+  const serviceCancelButton = sidebar.querySelector('#cms-service-cancel');
   const valueInput = sidebar.querySelector('#cms-value');
   const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
@@ -731,6 +769,141 @@
     applyImageToElement(selectedElement, src, selectedType === 'background' ? 'background' : 'image');
   }
 
+  function formatBackendValue(value) {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'string') return value;
+    return JSON.stringify(value);
+  }
+
+  function getValueByPath(data, path) {
+    if (!path) return undefined;
+    return path.split('.').reduce((acc, segment) => {
+      if (acc === null || acc === undefined) return undefined;
+      const key = /^\d+$/.test(segment) ? Number(segment) : segment;
+      return acc[key];
+    }, data);
+  }
+
+  function collectJsonPaths(data, prefix = '') {
+    const paths = [];
+    if (Array.isArray(data)) {
+      data.forEach((item, index) => {
+        const next = prefix ? `${prefix}.${index}` : `${index}`;
+        if (item && typeof item === 'object') {
+          paths.push(...collectJsonPaths(item, next));
+        } else {
+          paths.push(next);
+        }
+      });
+      return paths;
+    }
+    if (data && typeof data === 'object') {
+      Object.entries(data).forEach(([key, value]) => {
+        const next = prefix ? `${prefix}.${key}` : key;
+        if (value && typeof value === 'object') {
+          paths.push(...collectJsonPaths(value, next));
+        } else {
+          paths.push(next);
+        }
+      });
+      return paths;
+    }
+    if (prefix) return [prefix];
+    return paths;
+  }
+
+  function getMetaServices() {
+    return Array.from(document.querySelectorAll('meta[itemprop]'))
+      .map((meta) => {
+        const alias = meta.getAttribute('name') || meta.getAttribute('itemprop');
+        const urlValue = meta.getAttribute('itemprop');
+        if (!alias || !urlValue) return null;
+        return { alias: alias.trim(), url: urlValue.trim() };
+      })
+      .filter(Boolean);
+  }
+
+  function populateServiceSelect() {
+    if (!serviceSelect) return;
+    serviceSelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a service';
+    serviceSelect.appendChild(placeholder);
+    backendServices.forEach((service) => {
+      const option = document.createElement('option');
+      option.value = service.alias;
+      option.textContent = service.alias;
+      option.dataset.url = service.url;
+      serviceSelect.appendChild(option);
+    });
+    const newOption = document.createElement('option');
+    newOption.value = '__new__';
+    newOption.textContent = 'New service call...';
+    serviceSelect.appendChild(newOption);
+  }
+
+  function setBackendKeyOptions(paths) {
+    if (!backendKeySelect) return;
+    backendKeySelect.innerHTML = '';
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = paths.length ? 'Select a field key' : 'No keys found';
+    backendKeySelect.appendChild(placeholder);
+    paths.forEach((path) => {
+      const option = document.createElement('option');
+      option.value = path;
+      option.textContent = path;
+      backendKeySelect.appendChild(option);
+    });
+    backendKeySelect.disabled = !paths.length;
+    if (backendPendingKey && paths.includes(backendPendingKey)) {
+      backendKeySelect.value = backendPendingKey;
+      setBackendValueForKey(backendPendingKey);
+      backendPendingKey = '';
+    }
+  }
+
+  function setBackendValueForKey(path) {
+    const rawValue = getValueByPath(backendServiceData, path);
+    const formatted = formatBackendValue(rawValue);
+    keyInput.value = path || '';
+    valueInput.value = formatted;
+    imageUrlInput.value = formatted;
+    updateImagePreview(formatted);
+    if (selectedElement) {
+      if (selectedType === 'image' || selectedType === 'background') {
+        applyImageToElement(selectedElement, formatted, selectedType === 'background' ? 'background' : 'image');
+      } else {
+        selectedElement.textContent = formatted;
+      }
+    }
+  }
+
+  async function fetchServiceData(serviceUrl) {
+    const response = await fetch(`/api/services?url=${encodeURIComponent(serviceUrl)}`);
+    if (!response.ok) {
+      throw new Error('Service request failed');
+    }
+    const payload = await response.json();
+    return payload.data;
+  }
+
+  function setBackendMode(enabled) {
+    sidebar.classList.toggle('cms-backend-enabled', enabled);
+    valueInput.readOnly = enabled;
+    imageUrlInput.readOnly = enabled;
+    imageFileInput.disabled = enabled;
+    backendKeySelect.disabled = !enabled;
+    serviceForm.classList.remove('is-visible');
+    if (!enabled) {
+      backendServiceData = null;
+      backendServiceAlias = '';
+      setBackendKeyOptions([]);
+      serviceSelect.value = '';
+    }
+  }
+
   function rgbToHex(value) {
     if (!value) return '#111827';
     if (value.startsWith('#')) return value;
@@ -900,7 +1073,7 @@
   }
 
   function enableInlineEditing(el) {
-    if (!editMode || selectedType !== 'text') return;
+    if (!editMode || selectedType !== 'text' || backendToggle.checked) return;
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
@@ -920,6 +1093,30 @@
     setTypeSelection(selectedType);
     el.classList.add('cms-outlined');
     textValueDirty = false;
+    const backendValue =
+      el.getAttribute('data-server-text')
+      || el.getAttribute('data-server-image')
+      || el.getAttribute('data-server-bg');
+    const backendSource = el.parentElement?.getAttribute('data-json-source') || '';
+    const shouldUseBackend = Boolean(backendValue) && Boolean(backendSource);
+    if (backendToggle.checked !== shouldUseBackend) {
+      backendToggle.checked = shouldUseBackend;
+      setBackendMode(shouldUseBackend);
+    }
+    if (shouldUseBackend) {
+      backendServiceAlias = backendSource;
+      if (!backendServices.length) {
+        backendServices = getMetaServices();
+      }
+      populateServiceSelect();
+      if (backendServices.some((service) => service.alias === backendServiceAlias)) {
+        serviceSelect.value = backendServiceAlias;
+      } else {
+        serviceSelect.value = '';
+      }
+      serviceForm.classList.remove('is-visible');
+      backendKeySelect.disabled = true;
+    }
     const attributeName =
       selectedType === 'image'
         ? 'data-cms-image'
@@ -940,6 +1137,16 @@
       valueInput.value = mergedContent[key] ?? value;
       enableInlineEditing(el);
       el.focus({ preventScroll: true });
+    }
+    if (shouldUseBackend) {
+      backendPendingKey = key || '';
+      const formattedBackendValue = formatBackendValue(backendValue);
+      valueInput.value = formattedBackendValue;
+      imageUrlInput.value = formattedBackendValue;
+      updateImagePreview(formattedBackendValue);
+      if (backendServices.some((service) => service.alias === backendServiceAlias)) {
+        serviceSelect.dispatchEvent(new Event('change'));
+      }
     }
     updateStyleInputs(el);
     deleteButton.disabled = false;
@@ -991,11 +1198,17 @@
       messageEl.style.color = '#ef4444';
       return;
     }
+    if (selectedElement === document.body || selectedElement === document.documentElement) {
+      messageEl.textContent = 'Select a specific element instead of the page itself.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const useBackend = backendToggle.checked;
     if (selectedType === 'text' && !textValueDirty) {
       valueInput.value = selectedElement.textContent;
     }
     const key = keyInput.value.trim();
-    const value = selectedType === 'image' || selectedType === 'background'
+    let value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
     const link = linkInput.value.trim();
@@ -1003,6 +1216,24 @@
       messageEl.textContent = 'Key is required.';
       messageEl.style.color = '#ef4444';
       return;
+    }
+    if (useBackend && !backendServiceAlias) {
+      messageEl.textContent = 'Select a backend service before saving.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    if (useBackend && !backendServiceData) {
+      messageEl.textContent = 'Load a backend service before saving.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+
+    if (useBackend) {
+      value = formatBackendValue(getValueByPath(backendServiceData, key));
+      valueInput.value = value;
+      imageUrlInput.value = value;
+      updateImagePreview(value);
+      textValueDirty = true;
     }
 
     const attributeName =
@@ -1018,6 +1249,7 @@
       && !textValueDirty
       && key === currentKey
       && link === currentLink
+      && !useBackend
     ) {
       messageEl.textContent = 'No content changes to save.';
       messageEl.style.color = '#16a34a';
@@ -1038,21 +1270,36 @@
     } else {
       selectedElement.removeAttribute('data-link');
     }
+    if (useBackend) {
+      const serverAttr =
+        selectedType === 'image'
+          ? 'data-server-image'
+          : selectedType === 'background'
+            ? 'data-server-bg'
+            : 'data-server-text';
+      selectedElement.setAttribute(serverAttr, value || '');
+      const parent = selectedElement.parentElement;
+      if (parent) {
+        parent.setAttribute('data-json-source', backendServiceAlias);
+      }
+    }
     let bodyValue = value;
     let imagePayload = null;
 
     if (selectedType === 'image' || selectedType === 'background') {
-      try {
-        imagePayload = await buildImagePayload();
-      } catch (err) {
-        messageEl.textContent = 'Unable to read image file.';
-        messageEl.style.color = '#ef4444';
-        return;
-      }
-      if (!imagePayload && !value) {
-        messageEl.textContent = 'Provide an image URL or upload a file.';
-        messageEl.style.color = '#ef4444';
-        return;
+      if (!useBackend) {
+        try {
+          imagePayload = await buildImagePayload();
+        } catch (err) {
+          messageEl.textContent = 'Unable to read image file.';
+          messageEl.style.color = '#ef4444';
+          return;
+        }
+        if (!imagePayload && !value) {
+          messageEl.textContent = 'Provide an image URL or upload a file.';
+          messageEl.style.color = '#ef4444';
+          return;
+        }
       }
       applyImageToElement(
         selectedElement,
@@ -1099,7 +1346,7 @@
       storedTags = data.tags || storedTags;
       updateSiteName(data.siteName || siteName);
       applyStoredTags(storedTags);
-      applyContent();
+      //applyContent();
       refreshList();
       textValueDirty = false;
     } catch (err) {
@@ -1194,6 +1441,11 @@
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target)) return;
+    if (target === document.body || target === document.documentElement) {
+      messageEl.textContent = 'Select a specific element instead of the page itself.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
     if (selectedElement === target && target.isContentEditable) {
       return;
     }
@@ -1222,6 +1474,7 @@
   }
 
   function applyContent() {
+    return;
     document.querySelectorAll('[data-cms-text]').forEach((el) => {
       const key = el.getAttribute('data-cms-text');
       if (key && mergedContent[key] !== undefined) {
@@ -1291,8 +1544,14 @@
   document.addEventListener('dragover', handleDragOver, true);
   document.addEventListener('drop', handleDrop, true);
   document.addEventListener('dragend', handleDragEnd, true);
-  saveButton.addEventListener('click', saveSelection);
-  deleteButton.addEventListener('click', deleteSelection);
+  saveButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    saveSelection();
+  });
+  deleteButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    deleteSelection();
+  });
   publishButton.addEventListener('click', publishStaticSite);
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
@@ -1322,9 +1581,83 @@
     scheduleLayoutPersist();
   });
   valueInput.addEventListener('input', (e) => {
-    if (!editMode || !selectedElement || selectedType !== 'text') return;
+    if (!editMode || !selectedElement || selectedType !== 'text' || backendToggle.checked) return;
     selectedElement.textContent = e.target.value;
     textValueDirty = true;
+  });
+  backendToggle.addEventListener('change', () => {
+    const enabled = backendToggle.checked;
+    setBackendMode(enabled);
+    if (enabled && !backendServices.length) {
+      backendServices = getMetaServices();
+      populateServiceSelect();
+    }
+  });
+  serviceSelect.addEventListener('change', async () => {
+    const selected = serviceSelect.value;
+    messageEl.textContent = '';
+    if (selected === '__new__') {
+      serviceForm.classList.add('is-visible');
+      backendServiceData = null;
+      backendServiceAlias = '';
+      setBackendKeyOptions([]);
+      return;
+    }
+    serviceForm.classList.remove('is-visible');
+    if (!selected) {
+      backendServiceData = null;
+      backendServiceAlias = '';
+      setBackendKeyOptions([]);
+      return;
+    }
+    const service = backendServices.find((item) => item.alias === selected);
+    if (!service) return;
+    backendServiceAlias = service.alias;
+    try {
+      backendServiceData = await fetchServiceData(service.url);
+      const paths = Array.from(new Set(collectJsonPaths(backendServiceData)));
+      setBackendKeyOptions(paths);
+    } catch (err) {
+      backendServiceData = null;
+      setBackendKeyOptions([]);
+      messageEl.textContent = 'Unable to load backend service data.';
+      messageEl.style.color = '#ef4444';
+    }
+  });
+  backendKeySelect.addEventListener('change', (event) => {
+    const path = event.target.value;
+    if (!path) return;
+    setBackendValueForKey(path);
+  });
+  serviceOkButton.addEventListener('click', () => {
+    const alias = serviceAliasInput.value.trim();
+    const urlValue = serviceUrlInput.value.trim();
+    if (!alias || !urlValue) {
+      messageEl.textContent = 'Provide a service alias and URL.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const existingIndex = backendServices.findIndex((service) => service.alias === alias);
+    if (existingIndex >= 0) {
+      backendServices[existingIndex] = { alias, url: urlValue };
+    } else {
+      backendServices.push({ alias, url: urlValue });
+    }
+    populateServiceSelect();
+    serviceSelect.value = alias;
+    serviceAliasInput.value = '';
+    serviceUrlInput.value = '';
+    serviceForm.classList.remove('is-visible');
+    serviceSelect.dispatchEvent(new Event('change'));
+  });
+  serviceCancelButton.addEventListener('click', () => {
+    serviceAliasInput.value = '';
+    serviceUrlInput.value = '';
+    serviceSelect.value = '';
+    serviceForm.classList.remove('is-visible');
+    backendServiceAlias = '';
+    backendServiceData = null;
+    setBackendKeyOptions([]);
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
@@ -1345,6 +1678,7 @@
     }
   });
   imageUrlInput.addEventListener('input', () => {
+    if (backendToggle.checked) return;
     const nextUrl = imageUrlInput.value.trim();
     if (!nextUrl) return;
     updateImagePreview(nextUrl);
@@ -1368,6 +1702,9 @@
     flexField.style.display = 'none';
     fontSizeField.style.display = 'flex';
     clearSettingsMessage();
+    backendServices = getMetaServices();
+    populateServiceSelect();
+    setBackendMode(false);
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
