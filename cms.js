@@ -82,11 +82,7 @@
             <button type="button" id="cms-service-cancel">Cancel</button>
           </div>
         </div>
-        <div class="cms-field cms-backend-only">
-          <label for="cms-backend-key">Field key</label>
-          <select id="cms-backend-key"></select>
-        </div>
-        <div class="cms-field cms-standard-only">
+        <div class="cms-field" id="cms-key-field">
           <label for="cms-key">Field key</label>
           <input id="cms-key" type="text" placeholder="auto.tag.hash" />
         </div>
@@ -161,10 +157,10 @@
   `;
   document.body.appendChild(sidebar);
 
-  const keyInput = sidebar.querySelector('#cms-key');
+  const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
+  let keyField = sidebar.querySelector('#cms-key');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
-  const backendKeySelect = sidebar.querySelector('#cms-backend-key');
   const serviceForm = sidebar.querySelector('#cms-service-form');
   const serviceAliasInput = sidebar.querySelector('#cms-service-alias');
   const serviceUrlInput = sidebar.querySelector('#cms-service-url');
@@ -197,6 +193,33 @@
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   deleteButton.disabled = true;
 
+  function handleBackendKeyChange(event) {
+    if (!backendToggle.checked) return;
+    const path = event.target.value;
+    if (!path) return;
+    setBackendValueForKey(path);
+  }
+
+  function replaceKeyField(withSelect) {
+    if (!keyFieldWrapper) return;
+    const currentValue = keyField ? keyField.value : '';
+    if (withSelect && keyField?.tagName === 'SELECT') return;
+    if (!withSelect && keyField?.tagName === 'INPUT') return;
+    const nextField = document.createElement(withSelect ? 'select' : 'input');
+    nextField.id = 'cms-key';
+    if (withSelect) {
+      nextField.addEventListener('change', handleBackendKeyChange);
+    } else {
+      nextField.type = 'text';
+      nextField.placeholder = 'auto.tag.hash';
+    }
+    keyFieldWrapper.replaceChild(nextField, keyField);
+    keyField = nextField;
+    if (currentValue) {
+      keyField.value = currentValue;
+    }
+  }
+
   function applySidebarPosition() {
     sidebar.classList.remove('cms-pos-left', 'cms-pos-right', 'cms-pos-top', 'cms-pos-bottom');
     sidebar.classList.add(`cms-pos-${sidebarPosition}`);
@@ -206,7 +229,7 @@
   applySidebarPosition();
 
   function clearForm() {
-    keyInput.value = '';
+    keyField.value = '';
     valueInput.value = '';
     linkInput.value = '';
     imageUrlInput.value = '';
@@ -526,30 +549,35 @@
   }
 
   function setBackendKeyOptions(paths) {
-    if (!backendKeySelect) return;
-    backendKeySelect.innerHTML = '';
+    if (!keyField || keyField.tagName !== 'SELECT') return;
+    const previousValue = keyField.value;
+    keyField.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.textContent = paths.length ? 'Select a field key' : 'No keys found';
-    backendKeySelect.appendChild(placeholder);
+    keyField.appendChild(placeholder);
     paths.forEach((path) => {
       const option = document.createElement('option');
       option.value = path;
       option.textContent = path;
-      backendKeySelect.appendChild(option);
+      keyField.appendChild(option);
     });
-    backendKeySelect.disabled = !paths.length;
+    keyField.disabled = !paths.length;
     if (backendPendingKey && paths.includes(backendPendingKey)) {
-      backendKeySelect.value = backendPendingKey;
+      keyField.value = backendPendingKey;
       setBackendValueForKey(backendPendingKey);
       backendPendingKey = '';
+      return;
+    }
+    if (previousValue && paths.includes(previousValue)) {
+      keyField.value = previousValue;
     }
   }
 
   function setBackendValueForKey(path) {
     const rawValue = getValueByPath(backendServiceData, path);
     const formatted = formatBackendValue(rawValue);
-    keyInput.value = path || '';
+    keyField.value = path || '';
     valueInput.value = formatted;
     imageUrlInput.value = formatted;
     updateImagePreview(formatted);
@@ -576,7 +604,11 @@
     valueInput.readOnly = enabled;
     imageUrlInput.readOnly = enabled;
     imageFileInput.disabled = enabled;
-    backendKeySelect.disabled = !enabled;
+    replaceKeyField(enabled);
+    if (enabled && keyField.tagName === 'SELECT') {
+      keyField.disabled = true;
+      setBackendKeyOptions([]);
+    }
     serviceForm.classList.remove('is-visible');
     if (!enabled) {
       backendServiceData = null;
@@ -625,7 +657,9 @@
         serviceSelect.value = backendServiceAlias;
       } else {
         serviceSelect.value = '';
-        backendKeySelect.disabled = true;
+        if (keyField.tagName === 'SELECT') {
+          keyField.disabled = true;
+        }
       }
       serviceForm.classList.remove('is-visible');
     }
@@ -640,7 +674,7 @@
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
-    keyInput.value = key || generateKeySuggestion(el);
+    keyField.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
@@ -718,7 +752,7 @@
     if (selectedType === 'text' && !useBackend) {
       valueInput.value = selectedElement.textContent;
     }
-    const key = keyInput.value.trim();
+    const key = keyField.value.trim();
     let value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
@@ -1091,11 +1125,6 @@
       messageEl.textContent = 'Unable to load backend service data.';
       messageEl.style.color = '#ef4444';
     }
-  });
-  backendKeySelect.addEventListener('change', (event) => {
-    const path = event.target.value;
-    if (!path) return;
-    setBackendValueForKey(path);
   });
   serviceOkButton.addEventListener('click', () => {
     const alias = serviceAliasInput.value.trim();
