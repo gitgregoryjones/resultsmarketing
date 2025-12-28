@@ -737,6 +737,11 @@
     return segments.length ? `body > ${segments.join(' > ')}` : '';
   }
 
+  function getFullHtmlPayload() {
+    const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
+    return `${docType}${document.documentElement.outerHTML}`;
+  }
+
   async function saveSelection() {
     if (!selectedElement) {
       messageEl.textContent = 'Click a text, image, or background element to edit it.';
@@ -846,6 +851,7 @@
         body: JSON.stringify({
           key: uniqueKey,
           value: bodyValue,
+          html: getFullHtmlPayload(),
           path,
           type: selectedType,
           image: imagePayload,

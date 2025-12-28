@@ -1124,6 +1124,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         const {
           key,
           value,
+          html,
           originalOuterHTML,
           updatedOuterHTML,
           path: elementPath,
@@ -1136,7 +1137,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         } = payload;
         const sanitizedSiteName = siteName !== undefined ? sanitizeSiteName(siteName) : undefined;
         const linkValue = typeof link === 'string' ? link.trim() : '';
-        if (!key && sanitizedSiteName === undefined && !deleteElement) {
+        if (!key && !html && sanitizedSiteName === undefined && !deleteElement) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Key is required' }));
           return;
@@ -1146,6 +1147,9 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         const htmlPath = htmlPathFor(targetFile);
         let currentHtml = await fs.readFile(htmlPath, 'utf8');
         const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
+        if (html) {
+          currentHtml = stripCmsUi(html);
+        }
 
         if (deleteElement) {
           if (!elementPath && !key) {
@@ -1214,15 +1218,25 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         }
 
         if (key) {
-          currentHtml = mergeContentIntoHtml(currentHtml, {
-            key,
-            type: type || 'text',
-            value: storedValue,
-            elementPath,
-            link: linkValue,
-            originalOuterHTML,
-            updatedOuterHTML,
-          });
+          if (html) {
+            if ((type === 'image' || type === 'background') && storedValue !== value) {
+              currentHtml = mergeContentIntoHtml(currentHtml, {
+                key,
+                type: type || 'text',
+                value: storedValue,
+              });
+            }
+          } else {
+            currentHtml = mergeContentIntoHtml(currentHtml, {
+              key,
+              type: type || 'text',
+              value: storedValue,
+              elementPath,
+              link: linkValue,
+              originalOuterHTML,
+              updatedOuterHTML,
+            });
+          }
         }
 
         await fs.writeFile(htmlPath, currentHtml);

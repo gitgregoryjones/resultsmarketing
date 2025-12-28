@@ -1363,6 +1363,7 @@
         body: JSON.stringify({
           key: uniqueKey,
           value: bodyValue,
+          html: getFullHtmlPayload(),
           path,
           type: selectedType,
           image: imagePayload,
