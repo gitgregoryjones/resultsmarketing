@@ -709,6 +709,11 @@
       messageEl.style.color = '#ef4444';
       return;
     }
+    if (selectedElement === document.body || selectedElement === document.documentElement) {
+      messageEl.textContent = 'Select a specific element instead of the page itself.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
     const useBackend = backendToggle.checked;
     if (selectedType === 'text' && !useBackend) {
       valueInput.value = selectedElement.textContent;
@@ -910,6 +915,11 @@
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target)) return;
+    if (target === document.body || target === document.documentElement) {
+      messageEl.textContent = 'Select a specific element instead of the page itself.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
     if (selectedElement === target && target.isContentEditable) {
       return;
     }
