@@ -814,17 +814,23 @@
     }
 
     selectedElement.setAttribute(attributeName, uniqueKey);
+    const serverAttr =
+      selectedType === 'image'
+        ? 'data-server-image'
+        : selectedType === 'background'
+          ? 'data-server-bg'
+          : 'data-server-text';
     if (useBackend) {
-      const serverAttr =
-        selectedType === 'image'
-          ? 'data-server-image'
-          : selectedType === 'background'
-            ? 'data-server-bg'
-            : 'data-server-text';
       selectedElement.setAttribute(serverAttr, value || '');
       const parent = selectedElement.parentElement;
       if (parent) {
         parent.setAttribute('data-json-source', backendServiceAlias);
+      }
+    } else {
+      selectedElement.removeAttribute(serverAttr);
+      const parent = selectedElement.parentElement;
+      if (parent) {
+        parent.removeAttribute('data-json-source');
       }
     }
     let bodyValue = value;
