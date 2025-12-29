@@ -866,6 +866,19 @@
     serviceSelect.appendChild(newOption);
   }
 
+  function upsertServiceMeta(alias, urlValue) {
+    const escapedAlias = window.CSS && CSS.escape ? CSS.escape(alias) : alias;
+    let meta = document.querySelector(`meta[name="${escapedAlias}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('name', alias);
+    meta.setAttribute('itemtype', 'GET');
+    meta.setAttribute('content', '');
+    meta.setAttribute('itemprop', urlValue);
+  }
+
   function setBackendKeyOptions(paths) {
     if (!keyField || keyField.tagName !== 'SELECT') return;
     const previousValue = keyField.value;
@@ -1673,6 +1686,7 @@
     } else {
       backendServices.push({ alias, url: urlValue });
     }
+    upsertServiceMeta(alias, urlValue);
     populateServiceSelect();
     serviceSelect.value = alias;
     serviceAliasInput.value = '';
