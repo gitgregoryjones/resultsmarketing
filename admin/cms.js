@@ -70,6 +70,7 @@
             <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
           </div>
         </div>
+        <button id="cms-clone" type="button">Clone element</button>
       </div>
       <div class="cms-panel active" data-panel="content">
         <div class="cms-field">
@@ -125,7 +126,6 @@
           <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
         </div>
         <button id="cms-save">Save</button>
-        <button id="cms-clone" type="button">Clone element</button>
         <button id="cms-delete" type="button">Delete element</button>
         <div id="cms-message"></div>
         <div class="cms-discovered">
