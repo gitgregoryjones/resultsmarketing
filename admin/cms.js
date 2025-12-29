@@ -125,6 +125,7 @@
           <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
         </div>
         <button id="cms-save">Save</button>
+        <button id="cms-clone" type="button">Clone element</button>
         <button id="cms-delete" type="button">Delete element</button>
         <div id="cms-message"></div>
         <div class="cms-discovered">
@@ -236,6 +237,7 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
+  const cloneButton = sidebar.querySelector('#cms-clone');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
@@ -266,6 +268,7 @@
   let galleryAssets = { uploads: [], remote: [] };
   let layoutSaveTimer = null;
   deleteButton.disabled = true;
+  cloneButton.disabled = true;
 
   function handleBackendKeyChange(event) {
     if (!backendToggle.checked) return;
@@ -302,6 +305,7 @@
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
+    updateCloneState();
   }
 
   setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
@@ -329,6 +333,7 @@
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
     textValueDirty = false;
+    updateCloneState();
   }
 
   function updateSiteName(value) {
@@ -659,6 +664,65 @@
     document.body.classList.remove('cms-drag-active');
   }
 
+  function updateCloneState() {
+    cloneButton.disabled = !editMode || !selectedElement || !isWireframeEnabled();
+  }
+
+  function stripCloneUiState(el) {
+    el.classList.remove('cms-outlined', 'cms-dragging', 'cms-drop-target');
+  }
+
+  function remapCloneKeys(el) {
+    const nodes = [el, ...el.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg]')];
+    nodes.forEach((node) => {
+      if (node.hasAttribute('data-cms-text')) {
+        const key = node.getAttribute('data-cms-text');
+        if (key) node.setAttribute('data-cms-text', ensureUniqueKey(key));
+      }
+      if (node.hasAttribute('data-cms-image')) {
+        const key = node.getAttribute('data-cms-image');
+        if (key) node.setAttribute('data-cms-image', ensureUniqueKey(key));
+      }
+      if (node.hasAttribute('data-cms-bg')) {
+        const key = node.getAttribute('data-cms-bg');
+        if (key) node.setAttribute('data-cms-bg', ensureUniqueKey(key));
+      }
+      if (node.matches('[data-wireframe-section="true"]')) {
+        node.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+      stripCloneUiState(node);
+    });
+  }
+
+  function cloneSelection() {
+    if (!isWireframeEnabled()) {
+      messageEl.textContent = 'Enable wireframe mode to clone elements.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to clone.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const parent = selectedElement.parentElement;
+    if (!parent) {
+      messageEl.textContent = 'Unable to clone the selected element.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const clone = selectedElement.cloneNode(true);
+    remapCloneKeys(clone);
+    parent.appendChild(clone);
+    if (isWireframeEnabled()) {
+      setWireframeDragState(true);
+    }
+    selectElement(clone);
+    persistLayout();
+    messageEl.textContent = 'Element cloned.';
+    messageEl.style.color = '#16a34a';
+  }
+
   function getElementTarget(node) {
     if (node && node.nodeType === Node.TEXT_NODE) {
       return node.parentElement;
@@ -711,6 +775,7 @@
       removeOutlines();
     }
     deleteButton.disabled = !editMode || !selectedElement;
+    updateCloneState();
   }
 
   function toggleEdit() {
@@ -1197,6 +1262,7 @@
     }
     updateStyleInputs(el);
     deleteButton.disabled = false;
+    updateCloneState();
   }
 
   function activateTab(tabName) {
@@ -1605,6 +1671,10 @@
   deleteButton.addEventListener('click', (event) => {
     event.preventDefault();
     deleteSelection();
+  });
+  cloneButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    cloneSelection();
   });
   publishButton.addEventListener('click', publishStaticSite);
   tabs.forEach((tab) => {
