@@ -89,6 +89,13 @@
           </label>
         </div>
         <div class="cms-field cms-backend-only">
+          <label class="cms-toggle">
+            <span>Repeat items</span>
+            <input id="cms-repeat-toggle" type="checkbox" />
+            <span class="cms-toggle__control" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="cms-field cms-backend-only">
           <label for="cms-service">Service</label>
           <select id="cms-service"></select>
         </div>
@@ -224,6 +231,7 @@
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
+  const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
   const serviceForm = sidebar.querySelector('#cms-service-form');
   const serviceAliasInput = sidebar.querySelector('#cms-service-alias');
@@ -872,6 +880,45 @@
     }, data);
   }
 
+  function getBackendSourceContainer(el) {
+    if (!el || !el.closest) return null;
+    return el.closest('[data-json-source]');
+  }
+
+  function ensureTemplateWrapper(parent, alias) {
+    if (!parent) return null;
+    const existingWrapper = parent.parentElement;
+    if (existingWrapper && existingWrapper.hasAttribute('data-template-item')) {
+      existingWrapper.setAttribute('data-template-item', alias);
+      existingWrapper.setAttribute('data-json-source', alias);
+      return existingWrapper;
+    }
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('data-template-item', alias);
+    wrapper.setAttribute('data-json-source', alias);
+    const container = parent.parentElement;
+    if (container) {
+      container.insertBefore(wrapper, parent);
+    }
+    wrapper.appendChild(parent);
+    return wrapper;
+  }
+
+  function removeTemplateWrapper(parent) {
+    if (!parent) return;
+    const wrapper = parent.parentElement;
+    if (!wrapper || !wrapper.hasAttribute('data-template-item')) return;
+    if (wrapper.childElementCount === 1) {
+      const container = wrapper.parentElement;
+      if (container) {
+        container.insertBefore(parent, wrapper);
+      }
+      wrapper.remove();
+      return;
+    }
+    wrapper.removeAttribute('data-template-item');
+  }
+
   function collectJsonPaths(data, prefix = '') {
     const paths = [];
     if (Array.isArray(data)) {
@@ -879,8 +926,14 @@
         const next = prefix ? `${prefix}.${index}` : `${index}`;
         if (item && typeof item === 'object') {
           paths.push(...collectJsonPaths(item, next));
+          if (prefix) {
+            paths.push(...collectJsonPaths(item, prefix));
+          }
         } else {
           paths.push(next);
+          if (prefix) {
+            paths.push(prefix);
+          }
         }
       });
       return paths;
@@ -1001,6 +1054,9 @@
     imageUrlInput.readOnly = enabled;
     imageFileInput.disabled = enabled;
     replaceKeyField(enabled);
+    if (!enabled && repeatToggle) {
+      repeatToggle.checked = false;
+    }
     if (enabled && keyField.tagName === 'SELECT') {
       keyField.disabled = true;
       setBackendKeyOptions([]);
@@ -1207,11 +1263,15 @@
       el.getAttribute('data-server-text')
       || el.getAttribute('data-server-image')
       || el.getAttribute('data-server-bg');
-    const backendSource = el.parentElement?.getAttribute('data-json-source') || '';
+    const backendContainer = getBackendSourceContainer(el);
+    const backendSource = backendContainer?.getAttribute('data-json-source') || '';
     const shouldUseBackend = Boolean(backendValue) && Boolean(backendSource);
     if (backendToggle.checked !== shouldUseBackend) {
       backendToggle.checked = shouldUseBackend;
       setBackendMode(shouldUseBackend);
+    }
+    if (repeatToggle) {
+      repeatToggle.checked = Boolean(backendContainer && backendContainer.hasAttribute('data-template-item'));
     }
     if (shouldUseBackend) {
       backendServiceAlias = backendSource;
@@ -1392,13 +1452,20 @@
     if (useBackend) {
       selectedElement.setAttribute(serverAttr, value || '');
       const parent = selectedElement.parentElement;
-      if (parent) {
-        parent.setAttribute('data-json-source', backendServiceAlias);
+      let backendContainer = parent;
+      if (parent && repeatToggle && repeatToggle.checked) {
+        backendContainer = ensureTemplateWrapper(parent, backendServiceAlias);
+      } else if (parent) {
+        removeTemplateWrapper(parent);
+      }
+      if (backendContainer) {
+        backendContainer.setAttribute('data-json-source', backendServiceAlias);
       }
     } else {
       selectedElement.removeAttribute(serverAttr);
       const parent = selectedElement.parentElement;
       if (parent) {
+        removeTemplateWrapper(parent);
         parent.removeAttribute('data-json-source');
       }
     }

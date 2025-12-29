@@ -600,7 +600,7 @@ function applyJsonDataToElement(element, jsonData, sourceName) {
   
   if (isTemplate && Array.isArray(jsonData)) {
     // Handle array data with template
-    processTemplateWithArrayData(element, jsonData, sourceName);
+    processTemplateWithArrayData(element, element, jsonData, sourceName);
   } else if (Array.isArray(jsonData)) {
     // Array data but no explicit template - find templates within
     processArrayDataInElement(element, jsonData, sourceName);
