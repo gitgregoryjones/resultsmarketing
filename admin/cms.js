@@ -100,11 +100,7 @@
             <button type="button" id="cms-service-cancel">Cancel</button>
           </div>
         </div>
-        <div class="cms-field cms-backend-only">
-          <label for="cms-backend-key">Field key</label>
-          <select id="cms-backend-key"></select>
-        </div>
-        <div class="cms-field cms-standard-only">
+        <div class="cms-field" id="cms-key-field">
           <label for="cms-key">Field key</label>
           <input id="cms-key" type="text" placeholder="auto.tag.hash" />
         </div>
@@ -224,10 +220,10 @@
   `;
   document.body.appendChild(gallery);
 
-  const keyInput = sidebar.querySelector('#cms-key');
+  const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
+  let keyField = sidebar.querySelector('#cms-key');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
-  const backendKeySelect = sidebar.querySelector('#cms-backend-key');
   const serviceForm = sidebar.querySelector('#cms-service-form');
   const serviceAliasInput = sidebar.querySelector('#cms-service-alias');
   const serviceUrlInput = sidebar.querySelector('#cms-service-url');
@@ -271,6 +267,33 @@
   let layoutSaveTimer = null;
   deleteButton.disabled = true;
 
+  function handleBackendKeyChange(event) {
+    if (!backendToggle.checked) return;
+    const path = event.target.value;
+    if (!path) return;
+    setBackendValueForKey(path);
+  }
+
+  function replaceKeyField(withSelect) {
+    if (!keyFieldWrapper) return;
+    const currentValue = keyField ? keyField.value : '';
+    if (withSelect && keyField?.tagName === 'SELECT') return;
+    if (!withSelect && keyField?.tagName === 'INPUT') return;
+    const nextField = document.createElement(withSelect ? 'select' : 'input');
+    nextField.id = 'cms-key';
+    if (withSelect) {
+      nextField.addEventListener('change', handleBackendKeyChange);
+    } else {
+      nextField.type = 'text';
+      nextField.placeholder = 'auto.tag.hash';
+    }
+    keyFieldWrapper.replaceChild(nextField, keyField);
+    keyField = nextField;
+    if (currentValue) {
+      keyField.value = currentValue;
+    }
+  }
+
   function setWireframeState(enabled) {
     if (enabled && !editMode) {
       setEditMode(true);
@@ -297,7 +320,7 @@
   }
 
   function clearForm() {
-    keyInput.value = '';
+    keyField.value = '';
     valueInput.value = '';
     linkInput.value = '';
     imageUrlInput.value = '';
@@ -843,31 +866,49 @@
     serviceSelect.appendChild(newOption);
   }
 
+  function upsertServiceMeta(alias, urlValue) {
+    const escapedAlias = window.CSS && CSS.escape ? CSS.escape(alias) : alias;
+    let meta = document.querySelector(`meta[name="${escapedAlias}"]`);
+    if (!meta) {
+      meta = document.createElement('meta');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('name', alias);
+    meta.setAttribute('itemtype', 'GET');
+    meta.setAttribute('content', '');
+    meta.setAttribute('itemprop', urlValue);
+  }
+
   function setBackendKeyOptions(paths) {
-    if (!backendKeySelect) return;
-    backendKeySelect.innerHTML = '';
+    if (!keyField || keyField.tagName !== 'SELECT') return;
+    const previousValue = keyField.value;
+    keyField.innerHTML = '';
     const placeholder = document.createElement('option');
     placeholder.value = '';
     placeholder.textContent = paths.length ? 'Select a field key' : 'No keys found';
-    backendKeySelect.appendChild(placeholder);
+    keyField.appendChild(placeholder);
     paths.forEach((path) => {
       const option = document.createElement('option');
       option.value = path;
       option.textContent = path;
-      backendKeySelect.appendChild(option);
+      keyField.appendChild(option);
     });
-    backendKeySelect.disabled = !paths.length;
+    keyField.disabled = !paths.length;
     if (backendPendingKey && paths.includes(backendPendingKey)) {
-      backendKeySelect.value = backendPendingKey;
+      keyField.value = backendPendingKey;
       setBackendValueForKey(backendPendingKey);
       backendPendingKey = '';
+      return;
+    }
+    if (previousValue && paths.includes(previousValue)) {
+      keyField.value = previousValue;
     }
   }
 
   function setBackendValueForKey(path) {
     const rawValue = getValueByPath(backendServiceData, path);
     const formatted = formatBackendValue(rawValue);
-    keyInput.value = path || '';
+    keyField.value = path || '';
     valueInput.value = formatted;
     imageUrlInput.value = formatted;
     updateImagePreview(formatted);
@@ -894,7 +935,11 @@
     valueInput.readOnly = enabled;
     imageUrlInput.readOnly = enabled;
     imageFileInput.disabled = enabled;
-    backendKeySelect.disabled = !enabled;
+    replaceKeyField(enabled);
+    if (enabled && keyField.tagName === 'SELECT') {
+      keyField.disabled = true;
+      setBackendKeyOptions([]);
+    }
     serviceForm.classList.remove('is-visible');
     if (!enabled) {
       backendServiceData = null;
@@ -1115,7 +1160,9 @@
         serviceSelect.value = '';
       }
       serviceForm.classList.remove('is-visible');
-      backendKeySelect.disabled = true;
+      if (keyField.tagName === 'SELECT') {
+        keyField.disabled = true;
+      }
     }
     const attributeName =
       selectedType === 'image'
@@ -1128,7 +1175,7 @@
       ? getImageValue(el, key, selectedType)
       : el.textContent.trim();
     linkInput.value = el.getAttribute('data-link') || '';
-    keyInput.value = key || generateKeySuggestion(el);
+    keyField.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
@@ -1207,7 +1254,7 @@
     if (selectedType === 'text' && !textValueDirty) {
       valueInput.value = selectedElement.textContent;
     }
-    const key = keyInput.value.trim();
+    const key = keyField.value.trim();
     let value = selectedType === 'image' || selectedType === 'background'
       ? imageUrlInput.value.trim()
       : valueInput.value;
@@ -1270,17 +1317,23 @@
     } else {
       selectedElement.removeAttribute('data-link');
     }
+    const serverAttr =
+      selectedType === 'image'
+        ? 'data-server-image'
+        : selectedType === 'background'
+          ? 'data-server-bg'
+          : 'data-server-text';
     if (useBackend) {
-      const serverAttr =
-        selectedType === 'image'
-          ? 'data-server-image'
-          : selectedType === 'background'
-            ? 'data-server-bg'
-            : 'data-server-text';
       selectedElement.setAttribute(serverAttr, value || '');
       const parent = selectedElement.parentElement;
       if (parent) {
         parent.setAttribute('data-json-source', backendServiceAlias);
+      }
+    } else {
+      selectedElement.removeAttribute(serverAttr);
+      const parent = selectedElement.parentElement;
+      if (parent) {
+        parent.removeAttribute('data-json-source');
       }
     }
     let bodyValue = value;
@@ -1329,6 +1382,7 @@
         body: JSON.stringify({
           key: uniqueKey,
           value: bodyValue,
+          html: getFullHtmlPayload(),
           path,
           type: selectedType,
           image: imagePayload,
@@ -1624,11 +1678,6 @@
       messageEl.style.color = '#ef4444';
     }
   });
-  backendKeySelect.addEventListener('change', (event) => {
-    const path = event.target.value;
-    if (!path) return;
-    setBackendValueForKey(path);
-  });
   serviceOkButton.addEventListener('click', () => {
     const alias = serviceAliasInput.value.trim();
     const urlValue = serviceUrlInput.value.trim();
@@ -1643,6 +1692,7 @@
     } else {
       backendServices.push({ alias, url: urlValue });
     }
+    upsertServiceMeta(alias, urlValue);
     populateServiceSelect();
     serviceSelect.value = alias;
     serviceAliasInput.value = '';
