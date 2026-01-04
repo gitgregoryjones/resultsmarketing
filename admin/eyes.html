@@ -565,14 +565,25 @@
 
       /* ====== RESPONSIVE ====== */
       @media (max-width: 980px){
-        .nav__links{display:none;}
+        .nav__row{flex-wrap:wrap;}
+        .nav__links{
+          width:100%;
+          justify-content:center;
+          flex-wrap:wrap;
+          gap: 16px;
+          margin-top: 8px;
+        }
+        .nav__actions{
+          width:100%;
+          justify-content:center;
+        }
         .hero__grid{grid-template-columns: 1fr;}
         .hero__right{display:none;}
         .hero__bg{
           background-image:
             linear-gradient(180deg, rgba(18,22,28,.62) 0%, rgba(18,22,28,.48) 48%, rgba(18,22,28,.25) 100%),
-            url("hero.jpg");
-          background-position: center;
+            url("/images/camdoc-1767493585867.png");
+          background-position: right center;
         }
         .hero__content{padding: 42px 0 48px;}
       }
