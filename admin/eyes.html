@@ -275,9 +275,8 @@
       /* Grid layout */
       .ask-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 60px;
-        align-items: center;
+        grid-template-columns: 1fr;
+        gap: 40px;
       }
 
       /* Question card */
@@ -289,6 +288,15 @@
         box-shadow: var(--shadow);
         backdrop-filter: blur(10px);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 36px;
+        align-items: center;
+        grid-template-areas:
+          "tag image"
+          "title image"
+          "text image"
+          "answer image";
       }
 
       .question-card:hover {
@@ -306,6 +314,8 @@
         border-radius: 999px;
         margin-bottom: 20px;
         letter-spacing: 0.5px;
+        grid-area: tag;
+        width: fit-content;
       }
 
       .question-title {
@@ -314,6 +324,7 @@
         line-height: 1.3;
         margin: 0 0 20px;
         color: #fff;
+        grid-area: title;
       }
 
       .question-text {
@@ -321,6 +332,7 @@
         font-size: 16px;
         line-height: 1.7;
         margin-bottom: 24px;
+        grid-area: text;
       }
 
       .answer-text {
@@ -329,6 +341,7 @@
         padding: 20px;
         border-radius: 0 8px 8px 0;
         margin-top: 24px;
+        grid-area: answer;
       }
 
       .answer-text p {
@@ -346,11 +359,18 @@
         box-shadow: var(--shadow);
       }
 
-      .doctor-image {
+      .ask-section .doctor-image-container {
+        grid-area: image;
+        align-self: stretch;
+      }
+
+      .ask-section .doctor-image {
         width: 100%;
-        height: auto;
+        height: 360px;
         display: block;
         border-radius: var(--radius);
+        object-fit: cover;
+        object-position: center top;
       }
 
       .doctor-info {
@@ -381,6 +401,31 @@
         margin-top: 60px;
         padding-top: 40px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      @media (max-width: 900px) {
+        .question-card {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "tag"
+            "image"
+            "title"
+            "text"
+            "answer";
+          padding: 28px;
+        }
+
+        .ask-section .doctor-image {
+          height: 260px;
+        }
+
+        .doctor-info {
+          padding: 18px;
+        }
+
+        .question-title {
+          font-size: 24px;
+        }
       }
 
       .ask-cta p {
@@ -617,6 +662,15 @@
         <div class="ask-grid">
           <div class="question-card" style="transform: translateY(0px);">
             <div class="question-tag">EYE TIP QUESTION</div>
+            <div class="doctor-image-container" style="transform: perspective(1000px) rotateY(-5deg);">
+              <div class="image-overlay-container">
+                <img alt="Dr. Camilla Donald" class="doctor-image visually-hiddens" style="" data-cms-image="auto.img-2" src="/images/camdoc-1767497459501.png">
+              </div>
+              <div class="doctor-info">
+                <h3 class="doctor-name">Dr. Camilla Donald</h3>
+                <p class="doctor-credentials">O.D., F.A.A.O. • Over 20 Years of Experience</p>
+              </div>
+            </div>
             <h3 class="question-title">How often should I have my eyes examined?</h3>
             <div class="question-text">
               <p>Many patients ask about the recommended frequency for comprehensive eye exams. With so much conflicting information online, it's important to get advice from a qualified eye care professional.</p>
@@ -624,16 +678,6 @@
             
             <div class="answer-text">
               <p><strong>Dr. Donald's Answer:</strong> For most adults, I recommend a comprehensive eye exam every 1-2 years. However, this can vary based on age, risk factors, and existing conditions. Children should have their first eye exam at 6 months, again at age 3, and before starting school. After age 40, annual exams become more important to monitor for age-related changes. If you have diabetes, a family history of glaucoma, or other risk factors, more frequent exams may be necessary. Regular exams are crucial not just for vision correction, but for detecting serious conditions like glaucoma, macular degeneration, and even systemic health issues like diabetes and hypertension.</p>
-            </div>
-          </div>
-          
-          <div class="doctor-image-container " style="transform: perspective(1000px) rotateY(-5deg);">
-            <div class="image-overlay-container">
-            <img alt="Dr. Camilla Donald" class="doctor-image visually-hiddens" style="" data-cms-image="auto.img-2" src="/images/camdoc-1767497459501.png">
-            </div>
-            <div class="doctor-info">
-              <h3 class="doctor-name">Dr. Camilla Donald</h3>
-              <p class="doctor-credentials">O.D., F.A.A.O. • Over 20 Years of Experience</p>
             </div>
           </div>
         </div>
