@@ -1344,13 +1344,214 @@
           font-size: 32px;
         }
         
-        .section-subtitle {
-          font-size: 18px;
+      .section-subtitle {
+        font-size: 18px;
+      }
+    }
+
+      /* ====== FOOTER ====== */
+      .site-footer {
+        background: #5a3c2c;
+        color: #f6f1ec;
+      }
+
+      .footer-cta {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 40px 0;
+      }
+
+      .footer-cta__content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+      }
+
+      .footer-cta__title {
+        font-family: var(--serif);
+        font-size: 36px;
+        margin: 0 0 10px;
+      }
+
+      .footer-cta__text {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.75);
+        font-size: 18px;
+      }
+
+      .footer-cta__actions {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .footer-cta__actions .btn {
+        min-width: 190px;
+        border-radius: 14px;
+      }
+
+      .btn--light {
+        background: #ffffff;
+        color: #3a2a20;
+      }
+
+      .footer-main {
+        padding: 50px 0 30px;
+      }
+
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.6fr;
+        gap: 40px;
+      }
+
+      .footer-brand {
+        font-family: var(--serif);
+        font-size: 22px;
+        color: var(--brand);
+        margin-bottom: 16px;
+      }
+
+      .footer-description {
+        margin: 0 0 18px;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+      }
+
+      .footer-link {
+        color: rgba(255, 255, 255, 0.85);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .footer-link:hover {
+        color: #ffffff;
+      }
+
+      .footer-title {
+        font-family: var(--serif);
+        font-size: 18px;
+        margin: 0 0 12px;
+        color: #ffffff;
+      }
+
+      .footer-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .footer-links a {
+        color: rgba(255, 255, 255, 0.75);
+        text-decoration: none;
+      }
+
+      .footer-links a:hover {
+        color: #ffffff;
+      }
+
+      .footer-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 18px 0 28px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 14px;
+        flex-wrap: wrap;
+      }
+
+      .footer-bottom__content {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        width: 100%;
+      }
+
+      @media (max-width: 900px) {
+        .footer-cta__content {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .footer-cta__actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .footer-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .footer-cta__title {
+          font-size: 28px;
+        }
+
+        .footer-cta__actions .btn {
+          width: 100%;
         }
       }
     </style>
 
 
+  <footer class="site-footer">
+    <div class="footer-cta">
+      <div class="container">
+        <div class="footer-cta__content">
+          <div>
+            <h2 class="footer-cta__title">Ready to See Clearly?</h2>
+            <p class="footer-cta__text">Schedule your comprehensive eye exam with Dr. Donald today.</p>
+          </div>
+          <div class="footer-cta__actions">
+            <a class="btn btn--primary" href="mailto:drdonaldod@gmail.com?subject=Book%20Appointment">
+              <i class="fas fa-calendar-check"></i> Book Appointment
+            </a>
+            <a class="btn btn--light" href="mailto:drdonaldod@gmail.com?subject=General%20Inquiry">
+              <i class="fas fa-envelope"></i> Email Us
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-main">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <div class="footer-brand">Signature Eye Care</div>
+            <p class="footer-description">Dr. Camilla Donald, O.D., F.A.A.O., Diplomate ABO, providing comprehensive eye care with over 20 years of experience.</p>
+            <a class="footer-link" href="mailto:drdonaldod@gmail.com">
+              <i class="fas fa-envelope"></i> Email Us
+            </a>
+          </div>
+          <div>
+            <div class="footer-title">Quick Links</div>
+            <ul class="footer-links">
+              <li><a href="#about-dr-donald">About</a></li>
+              <li><a href="#ask-doctor-donald">Ask Dr. Donald</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="container">
+        <div class="footer-bottom__content">
+        <div>© 2026 Signature Eye Care. All rights reserved.</div>
+        <div>Do not send personal health information by email.</div>
+        </div>
+      </div>
+    </div>
+  </footer>
 
 <script src="cms.js"></script>
 </body></html>
