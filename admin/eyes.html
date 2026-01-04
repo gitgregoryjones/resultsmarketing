@@ -33,6 +33,7 @@
 
       *{box-sizing:border-box}
       html,body{height:100%}
+      html{scroll-behavior:smooth}
       body{
         margin:0;
         font-family:var(--sans);
@@ -576,6 +577,33 @@
         .hero__content{padding: 42px 0 48px;}
       }
 
+      @media (max-width: 768px){
+        .hero{
+          height: auto;
+          min-height: 520px;
+          padding-bottom: 32px;
+        }
+
+        .hero__content{
+          padding: 32px 0 36px;
+          text-align: left;
+        }
+
+        .pill{
+          font-size: 12px;
+          padding: 8px 14px;
+        }
+
+        .headline{
+          font-size: clamp(32px, 8vw, 44px);
+          line-height: 1.1;
+        }
+
+        .subcopy{
+          font-size: 16px;
+        }
+      }
+
       @media (max-width: 520px){
         .container{width: min(1160px, calc(100% - 28px));}
         .brand__name, .brand__accent{font-size: 22px;}
@@ -604,14 +632,14 @@
             </div>
 
             <ul class="nav__links">
-              <li><a href="#about">About</a></li>
+              <li><a href="#about-dr-donald">About</a></li>
               <li></li>
-              <li><a href="#tips" contenteditable="false" class="">Ask Dr. Donald</a></li>
+              <li><a href="#ask-doctor-donald" contenteditable="false" class="">Ask Dr. Donald</a></li>
               
             </ul>
 
             <div class="nav__actions">
-              <a class="phone" href="tel:7709143399" aria-label="Call 770-914-3399" contenteditable="true" style="background-color: rgb(27, 179, 167);">drdonaldod@gmail.com</a>
+              <a class="phone" href="mailto:drdonaldod@gmail.com" aria-label="Email drdonaldod@gmail.com" contenteditable="true" style="background-color: rgb(27, 179, 167);">drdonaldod@gmail.com</a>
 
               
             </div>
