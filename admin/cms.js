@@ -919,7 +919,12 @@
       event.preventDefault();
       const element = buildWireframeElement(toolType);
       if (toolType === 'section') {
-        document.body.appendChild(element);
+        const targetSection = target.closest('[data-wireframe-section="true"]');
+        if (targetSection && targetSection.parentElement) {
+          targetSection.parentElement.insertBefore(element, targetSection);
+        } else {
+          document.body.appendChild(element);
+        }
       } else {
         const container = getDropContainer(target);
         ensureGridLayout(container);
