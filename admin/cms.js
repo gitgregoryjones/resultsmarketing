@@ -271,10 +271,15 @@
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
   const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
 
+  const MAX_SECTION_COLUMNS = 12;
+  const MIN_RESIZE_WIDTH = 80;
+  const MIN_RESIZE_HEIGHT = 60;
+
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
   let layoutSaveTimer = null;
+  let resizeState = null;
   deleteButton.disabled = true;
   cloneButton.disabled = true;
 
@@ -313,6 +318,10 @@
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
+    if (enabled) {
+      ensureWireframeSectionGrids();
+      ensureWireframeResizeHandles();
+    }
     updateCloneState();
   }
 
@@ -473,9 +482,11 @@
 
     const content = document.createElement('div');
     content.className = 'cms-wireframe-section__content';
+    applySectionGrid(content, 1);
 
     section.appendChild(label);
     section.appendChild(content);
+    addResizeHandles(section);
     return section;
   }
 
@@ -491,6 +502,7 @@
       if (isWireframeEnabled()) {
         textBlock.setAttribute('draggable', 'true');
       }
+      addResizeHandles(textBlock);
       return textBlock;
     }
     if (type === 'circle') {
@@ -501,6 +513,7 @@
       if (isWireframeEnabled()) {
         circle.setAttribute('draggable', 'true');
       }
+      addResizeHandles(circle);
       return circle;
     }
     const square = document.createElement('div');
@@ -510,6 +523,7 @@
     if (isWireframeEnabled()) {
       square.setAttribute('draggable', 'true');
     }
+    addResizeHandles(square);
     return square;
   }
 
@@ -526,6 +540,137 @@
     if (sectionContent) return sectionContent;
     if (target === document.body || target === document.documentElement) return document.body;
     return target;
+  }
+
+  function getSectionColumnCount(sectionContent) {
+    if (!sectionContent) return 1;
+    const stored = Number.parseInt(sectionContent.dataset.columns || '', 10);
+    if (Number.isFinite(stored) && stored > 0) {
+      return stored;
+    }
+    return Math.max(1, sectionContent.children.length);
+  }
+
+  function applySectionGrid(sectionContent, columns) {
+    if (!sectionContent) return;
+    const clamped = Math.min(MAX_SECTION_COLUMNS, Math.max(1, columns));
+    sectionContent.dataset.columns = String(clamped);
+    sectionContent.style.display = 'grid';
+    sectionContent.style.gap = '1rem';
+    sectionContent.style.gridTemplateColumns = `repeat(${clamped}, minmax(0, 1fr))`;
+    sectionContent.style.alignItems = 'start';
+  }
+
+  function addColumnForSection(sectionContent) {
+    if (!sectionContent) return;
+    const current = getSectionColumnCount(sectionContent);
+    const nextNeeded = sectionContent.children.length;
+    if (nextNeeded > current && current < MAX_SECTION_COLUMNS) {
+      applySectionGrid(sectionContent, current + 1);
+      return;
+    }
+    applySectionGrid(sectionContent, current);
+  }
+
+  function ensureWireframeSectionGrids() {
+    document.querySelectorAll('.cms-wireframe-section__content').forEach((content) => {
+      applySectionGrid(content, getSectionColumnCount(content));
+    });
+  }
+
+  function addResizeHandles(element) {
+    if (!element || !element.classList.contains('cms-wireframe-resizable')) return;
+    if (element.querySelector('.cms-wireframe-resize-handle')) return;
+    ['n', 's', 'e', 'w'].forEach((direction) => {
+      const handle = document.createElement('div');
+      handle.className = `cms-wireframe-resize-handle cms-wireframe-resize-handle--${direction}`;
+      handle.dataset.resizeHandle = direction;
+      element.appendChild(handle);
+    });
+  }
+
+  function ensureWireframeResizeHandles() {
+    document.querySelectorAll('.cms-wireframe-resizable').forEach((element) => {
+      addResizeHandles(element);
+    });
+  }
+
+  function handleResizeStart(event) {
+    const handle = event.target.closest('[data-resize-handle]');
+    if (!handle || !isWireframeEnabled()) return;
+    const element = handle.parentElement;
+    if (!element || !element.classList.contains('cms-wireframe-resizable')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = element.getBoundingClientRect();
+    const computed = window.getComputedStyle(element);
+    const startTop = Number.parseFloat(computed.top) || 0;
+    const startLeft = Number.parseFloat(computed.left) || 0;
+    resizeState = {
+      element,
+      direction: handle.dataset.resizeHandle,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      startTop,
+      startLeft,
+    };
+    element.style.position = 'relative';
+    element.setPointerCapture?.(event.pointerId);
+  }
+
+  function handleResizeMove(event) {
+    if (!resizeState) return;
+    const {
+      element,
+      direction,
+      startX,
+      startY,
+      startWidth,
+      startHeight,
+      startTop,
+      startLeft,
+    } = resizeState;
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    let nextWidth = startWidth;
+    let nextHeight = startHeight;
+    let nextTop = startTop;
+    let nextLeft = startLeft;
+
+    if (direction === 'e') {
+      nextWidth = startWidth + deltaX;
+    }
+    if (direction === 'w') {
+      nextWidth = startWidth - deltaX;
+      nextLeft = startLeft + deltaX;
+    }
+    if (direction === 's') {
+      nextHeight = startHeight + deltaY;
+    }
+    if (direction === 'n') {
+      nextHeight = startHeight - deltaY;
+      nextTop = startTop + deltaY;
+    }
+
+    nextWidth = Math.max(MIN_RESIZE_WIDTH, nextWidth);
+    nextHeight = Math.max(MIN_RESIZE_HEIGHT, nextHeight);
+    element.style.width = `${nextWidth}px`;
+    element.style.height = `${nextHeight}px`;
+    if (direction === 'n') {
+      element.style.top = `${nextTop}px`;
+    }
+    if (direction === 'w') {
+      element.style.left = `${nextLeft}px`;
+    }
+  }
+
+  function handleResizeEnd(event) {
+    if (!resizeState) return;
+    resizeState.element?.releasePointerCapture?.(event.pointerId);
+    resizeState = null;
+    scheduleLayoutPersist();
   }
 
   function isWireframeSection(element) {
@@ -638,10 +783,13 @@
       event.preventDefault();
       const element = buildWireframeElement(toolType);
       if (toolType === 'section') {
-        document.body.insertBefore(element, document.body.firstChild);
+        document.body.appendChild(element);
       } else {
         const container = getDropContainer(target);
         container.appendChild(element);
+        if (container.classList.contains('cms-wireframe-section__content')) {
+          addColumnForSection(container);
+        }
       }
       activeWireframeTool = null;
       persistLayout();
@@ -651,11 +799,16 @@
     event.preventDefault();
     const parent = dropTarget.parentNode;
     if (!parent) return;
+    const isSectionContent = parent.classList.contains('cms-wireframe-section__content');
+    const movedIntoSection = isSectionContent && draggedElement.parentNode !== parent;
     const rect = dropTarget.getBoundingClientRect();
     const insertAfter = event.clientY > rect.top + rect.height / 2;
     const referenceNode = insertAfter ? dropTarget.nextSibling : dropTarget;
     if (referenceNode !== draggedElement) {
       parent.insertBefore(draggedElement, referenceNode);
+    }
+    if (movedIntoSection) {
+      addColumnForSection(parent);
     }
     clearDropTarget();
     persistLayout();
@@ -1731,6 +1884,9 @@
   document.addEventListener('dragover', handleDragOver, true);
   document.addEventListener('drop', handleDrop, true);
   document.addEventListener('dragend', handleDragEnd, true);
+  document.addEventListener('pointerdown', handleResizeStart, true);
+  document.addEventListener('pointermove', handleResizeMove, true);
+  document.addEventListener('pointerup', handleResizeEnd, true);
   saveButton.addEventListener('click', (event) => {
     event.preventDefault();
     saveSelection();

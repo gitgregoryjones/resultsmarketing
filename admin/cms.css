@@ -335,8 +335,9 @@
 }
 
 .cms-wireframe-resizable {
-  resize: both;
-  overflow: auto;
+  position: relative;
+  resize: none;
+  overflow: visible;
   min-width: 80px;
   min-height: 60px;
 }
@@ -389,13 +390,57 @@
 }
 
 .cms-wireframe-section__content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  grid-auto-flow: row;
+  gap: 1rem;
 }
 
 .cms-wireframe-section--dragging {
   opacity: 0.6;
+}
+
+.cms-wireframe-resize-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  border-radius: 999px;
+  display: none;
+  z-index: 5;
+}
+
+.cms-wireframe .cms-wireframe-resizable .cms-wireframe-resize-handle {
+  display: block;
+}
+
+.cms-wireframe-resize-handle--n {
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.cms-wireframe-resize-handle--s {
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.cms-wireframe-resize-handle--e {
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.cms-wireframe-resize-handle--w {
+  left: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
 }
 
 .cms-field input,
