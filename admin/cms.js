@@ -612,6 +612,11 @@
       && element.closest('#cms-sidebar, #cms-toggle, .cms-outline, #cms-gallery, .cms-ui');
   }
 
+  function isForbiddenElement(element) {
+    if (!element || !element.tagName) return false;
+    return ['SCRIPT', 'STYLE', 'META', 'LINK', 'HEAD'].includes(element.tagName);
+  }
+
   function isWireframeEnabled() {
     return document.body.classList.contains('cms-wireframe');
   }
@@ -703,7 +708,7 @@
   }
 
   function supportsGridLayout(element) {
-    if (!element || !element.matches || isCmsUi(element)) return false;
+    if (!element || !element.matches || isCmsUi(element) || isForbiddenElement(element)) return false;
     if (element === document.body || element === document.documentElement) return true;
     return !isTextElement(element) && !isImageElement(element);
   }
@@ -792,7 +797,8 @@
       && element.nodeType === Node.ELEMENT_NODE
       && element !== document.body
       && element !== document.documentElement
-      && !isCmsUi(element);
+      && !isCmsUi(element)
+      && !isForbiddenElement(element);
   }
 
   function setWireframeDragState(enabled) {
@@ -1060,7 +1066,7 @@
     if (!editMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
-    if (isCmsUi(target)) {
+    if (isCmsUi(target) || isForbiddenElement(target)) {
       outline.style.display = 'none';
       return;
     }
@@ -1539,7 +1545,7 @@
   }
 
   function enableInlineEditing(el) {
-    if (!editMode || selectedType !== 'text' || backendToggle.checked) return;
+    if (!editMode || selectedType !== 'text' || backendToggle.checked || isForbiddenElement(el)) return;
     clearInlineEditing();
     inlineInputHandler = () => {
       valueInput.value = el.textContent;
@@ -1933,7 +1939,7 @@
     if (!editMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
-    if (isCmsUi(target)) return;
+    if (isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) {
       messageEl.textContent = 'Select a specific element instead of the page itself.';
       messageEl.style.color = '#ef4444';
@@ -1957,7 +1963,7 @@
   function handleDoubleClick(e) {
     if (!editMode) return;
     const target = getElementTarget(e.target);
-    if (!target || isCmsUi(target)) return;
+    if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) return;
     e.preventDefault();
     e.stopPropagation();
