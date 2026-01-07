@@ -64,10 +64,26 @@
           <label>Wireframe elements</label>
           <p class="cms-field__hint">Drag onto the page while wireframe mode is on.</p>
           <div class="cms-wireframe-tools__list">
-            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">Square</div>
-            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">Circle</div>
-            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
-            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="square">
+              <span class="cms-wireframe-tool__handle" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__icon cms-wireframe-tool__icon--square" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__label">Square</span>
+            </div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="circle">
+              <span class="cms-wireframe-tool__handle" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__icon cms-wireframe-tool__icon--circle" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__label">Circle</span>
+            </div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">
+              <span class="cms-wireframe-tool__handle" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__icon cms-wireframe-tool__icon--text" aria-hidden="true">T</span>
+              <span class="cms-wireframe-tool__label">Text block</span>
+            </div>
+            <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">
+              <span class="cms-wireframe-tool__handle" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__icon cms-wireframe-tool__icon--section" aria-hidden="true"></span>
+              <span class="cms-wireframe-tool__label">Section</span>
+            </div>
           </div>
         </div>
         <button id="cms-clone" type="button">Clone element</button>
