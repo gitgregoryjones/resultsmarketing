@@ -17,8 +17,11 @@
   let inlineInputHandler = null;
   let draggedElement = null;
   let dropTarget = null;
+  let dropTargetPosition = null;
   let activeWireframeTool = null;
   let textValueDirty = false;
+  let reorderMode = false;
+  let resizeState = null;
   let backendServices = [];
   let backendServiceData = null;
   let backendServiceAlias = '';
@@ -69,6 +72,22 @@
             <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="text">Text block</div>
             <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
           </div>
+        </div>
+        <div class="cms-field cms-field--toggle">
+          <label class="cms-toggle">
+            <span>Reorder mode</span>
+            <input id="cms-reorder-toggle" type="checkbox" />
+            <span class="cms-toggle__control" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="cms-field cms-grid-controls">
+          <label>Grid columns</label>
+          <div class="cms-grid-controls__row">
+            <button type="button" id="cms-grid-decrease">-</button>
+            <span id="cms-grid-count">1</span>
+            <button type="button" id="cms-grid-increase">+</button>
+          </div>
+          <p class="cms-field__hint">Applies to non-text/image elements.</p>
         </div>
         <button id="cms-clone" type="button">Clone element</button>
       </div>
@@ -228,6 +247,31 @@
   `;
   document.body.appendChild(gallery);
 
+  const resizeOverlay = document.createElement('div');
+  resizeOverlay.className = 'cms-resize-overlay cms-ui';
+  resizeOverlay.innerHTML = `
+    <span class="cms-resize-handle cms-resize-handle--n" data-resize-handle="n"></span>
+    <span class="cms-resize-handle cms-resize-handle--s" data-resize-handle="s"></span>
+    <span class="cms-resize-handle cms-resize-handle--e" data-resize-handle="e"></span>
+    <span class="cms-resize-handle cms-resize-handle--w" data-resize-handle="w"></span>
+    <span class="cms-resize-handle cms-resize-handle--se" data-resize-handle="se"></span>
+  `;
+  document.body.appendChild(resizeOverlay);
+
+  const quickColorMenu = document.createElement('div');
+  quickColorMenu.className = 'cms-quick-colors cms-ui';
+  quickColorMenu.innerHTML = `
+    <label>
+      Text
+      <input type="color" data-quick-color="text" />
+    </label>
+    <label>
+      Background
+      <input type="color" data-quick-color="background" />
+    </label>
+  `;
+  document.body.appendChild(quickColorMenu);
+
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
@@ -246,6 +290,10 @@
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const saveButton = sidebar.querySelector('#cms-save');
   const cloneButton = sidebar.querySelector('#cms-clone');
+  const reorderToggle = sidebar.querySelector('#cms-reorder-toggle');
+  const gridDecreaseButton = sidebar.querySelector('#cms-grid-decrease');
+  const gridIncreaseButton = sidebar.querySelector('#cms-grid-increase');
+  const gridCountLabel = sidebar.querySelector('#cms-grid-count');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
@@ -314,6 +362,18 @@
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
     updateCloneState();
+    if (!enabled) {
+      reorderMode = false;
+      if (reorderToggle) {
+        reorderToggle.checked = false;
+      }
+      hideResizeOverlay();
+      hideQuickColorMenu();
+      clearReorderIndicator();
+    } else {
+      applyGridLayoutDefaults();
+      updateResizeOverlay(selectedElement);
+    }
   }
 
   setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
@@ -341,6 +401,7 @@
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
     textValueDirty = false;
+    updateGridControls(null);
     updateCloneState();
   }
 
@@ -378,6 +439,105 @@
     if (selectedElement.isContentEditable) {
       selectedElement.contentEditable = 'false';
     }
+  }
+
+  function updateResizeOverlay(target) {
+    if (!editMode || !isWireframeEnabled() || !target || isCmsUi(target)) {
+      hideResizeOverlay();
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    resizeOverlay.style.display = 'block';
+    resizeOverlay.style.width = `${rect.width}px`;
+    resizeOverlay.style.height = `${rect.height}px`;
+    resizeOverlay.style.left = `${rect.left + window.scrollX}px`;
+    resizeOverlay.style.top = `${rect.top + window.scrollY}px`;
+  }
+
+  function hideResizeOverlay() {
+    resizeOverlay.style.display = 'none';
+  }
+
+  function hideQuickColorMenu() {
+    quickColorMenu.classList.remove('is-visible');
+  }
+
+  function showQuickColorMenu(target) {
+    if (!target) return;
+    const computed = window.getComputedStyle(target);
+    const textInput = quickColorMenu.querySelector('[data-quick-color="text"]');
+    const bgInput = quickColorMenu.querySelector('[data-quick-color="background"]');
+    if (textInput) {
+      textInput.value = rgbToHex(computed.color);
+    }
+    if (bgInput) {
+      bgInput.value = rgbToHex(computed.backgroundColor);
+    }
+    const rect = target.getBoundingClientRect();
+    quickColorMenu.style.left = `${rect.left + window.scrollX}px`;
+    quickColorMenu.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    quickColorMenu.classList.add('is-visible');
+  }
+
+  function handleResizeStart(event) {
+    const handle = event.target.closest('[data-resize-handle]');
+    if (!handle || !selectedElement || !isWireframeEnabled()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = selectedElement.getBoundingClientRect();
+    const computed = window.getComputedStyle(selectedElement);
+    resizeState = {
+      handle: handle.dataset.resizeHandle,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      baseFontSize: Number.parseFloat(computed.fontSize) || 16,
+      baseHeight: rect.height,
+    };
+    document.body.classList.add('cms-resizing');
+    window.addEventListener('mousemove', handleResizeMove);
+    window.addEventListener('mouseup', handleResizeEnd);
+  }
+
+  function handleResizeMove(event) {
+    if (!resizeState || !selectedElement) return;
+    const dx = event.clientX - resizeState.startX;
+    const dy = event.clientY - resizeState.startY;
+    let nextWidth = resizeState.startWidth;
+    let nextHeight = resizeState.startHeight;
+    if (resizeState.handle.includes('e')) {
+      nextWidth = resizeState.startWidth + dx;
+    }
+    if (resizeState.handle.includes('w')) {
+      nextWidth = resizeState.startWidth - dx;
+    }
+    if (resizeState.handle.includes('s')) {
+      nextHeight = resizeState.startHeight + dy;
+    }
+    if (resizeState.handle.includes('n')) {
+      nextHeight = resizeState.startHeight - dy;
+    }
+    nextWidth = Math.max(40, nextWidth);
+    nextHeight = Math.max(30, nextHeight);
+    selectedElement.style.width = `${nextWidth}px`;
+    selectedElement.style.height = `${nextHeight}px`;
+    if (isTextElement(selectedElement)) {
+      const ratio = nextHeight / resizeState.baseHeight;
+      const nextFont = Math.max(8, Math.round(resizeState.baseFontSize * ratio));
+      selectedElement.style.fontSize = `${nextFont}px`;
+      fontSizeInput.value = String(nextFont);
+    }
+    updateResizeOverlay(selectedElement);
+  }
+
+  function handleResizeEnd() {
+    if (!resizeState) return;
+    resizeState = null;
+    document.body.classList.remove('cms-resizing');
+    window.removeEventListener('mousemove', handleResizeMove);
+    window.removeEventListener('mouseup', handleResizeEnd);
+    scheduleLayoutPersist();
   }
 
   function buildApiUrl() {
@@ -449,7 +609,7 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline,#cms-gallery');
+      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline, #cms-gallery, .cms-ui');
   }
 
   function isWireframeEnabled() {
@@ -472,7 +632,7 @@
     label.textContent = 'Section';
 
     const content = document.createElement('div');
-    content.className = 'cms-wireframe-section__content';
+    content.className = 'cms-wireframe-section__content grid grid-cols-1 gap-4';
 
     section.appendChild(label);
     section.appendChild(content);
@@ -495,7 +655,8 @@
     }
     if (type === 'circle') {
       const circle = document.createElement('div');
-      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable';
+      circle.className =
+        'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
       circle.textContent = 'Circle';
       circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
       if (isWireframeEnabled()) {
@@ -504,7 +665,8 @@
       return circle;
     }
     const square = document.createElement('div');
-    square.className = 'cms-wireframe-shape cms-wireframe-resizable';
+    square.className =
+      'cms-wireframe-shape cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
     square.textContent = 'Square';
     square.setAttribute('data-cms-text', generateWireframeKey('square'));
     if (isWireframeEnabled()) {
@@ -530,6 +692,89 @@
 
   function isWireframeSection(element) {
     return element && element.matches && element.matches('[data-wireframe-section="true"]');
+  }
+
+  function isTextElement(element) {
+    return element && element.matches && element.matches('[data-cms-text], .cms-wireframe-text');
+  }
+
+  function isImageElement(element) {
+    return element && (element.tagName === 'IMG' || element.hasAttribute?.('data-cms-image'));
+  }
+
+  function supportsGridLayout(element) {
+    if (!element || !element.matches || isCmsUi(element)) return false;
+    if (element === document.body || element === document.documentElement) return true;
+    return !isTextElement(element) && !isImageElement(element);
+  }
+
+  function getGridColumnCount(element) {
+    if (!element || !element.classList) return 0;
+    const match = Array.from(element.classList).find((name) => name.startsWith('grid-cols-'));
+    if (!match) return 0;
+    const value = Number.parseInt(match.replace('grid-cols-', ''), 10);
+    return Number.isNaN(value) ? 0 : value;
+  }
+
+  function ensureGridLayout(element, columns = 1) {
+    if (!supportsGridLayout(element)) return;
+    if (!element.classList.contains('grid')) {
+      element.classList.add('grid');
+    }
+    if (!Array.from(element.classList).some((name) => name.startsWith('gap-'))) {
+      element.classList.add('gap-4');
+    }
+    if (getGridColumnCount(element) === 0) {
+      element.classList.add(`grid-cols-${columns}`);
+    }
+  }
+
+  function setGridColumnCount(element, count) {
+    if (!element || !element.classList) return;
+    const nextCount = Math.max(1, Math.min(12, count));
+    Array.from(element.classList)
+      .filter((name) => name.startsWith('grid-cols-'))
+      .forEach((name) => element.classList.remove(name));
+    element.classList.add(`grid-cols-${nextCount}`);
+    ensureGridLayout(element, nextCount);
+    updateGridControls(element);
+    scheduleLayoutPersist();
+  }
+
+  function applyGridLayoutDefaults() {
+    document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
+      if (!supportsGridLayout(el)) return;
+      ensureGridLayout(el);
+    });
+  }
+
+  function updateGridControls(element) {
+    if (!gridCountLabel || !gridDecreaseButton || !gridIncreaseButton) return;
+    if (!element || !supportsGridLayout(element)) {
+      gridCountLabel.textContent = '-';
+      gridDecreaseButton.disabled = true;
+      gridIncreaseButton.disabled = true;
+      return;
+    }
+    const count = getGridColumnCount(element) || 1;
+    gridCountLabel.textContent = String(count);
+    gridDecreaseButton.disabled = count <= 1;
+    gridIncreaseButton.disabled = count >= 12;
+  }
+
+  function adjustSectionGridOnDrop(sectionContent) {
+    if (!sectionContent) return;
+    const count = getGridColumnCount(sectionContent) || 1;
+    if (count < 12) {
+      setGridColumnCount(sectionContent, count + 1);
+    }
+  }
+
+  function clearReorderIndicator() {
+    if (dropTarget) {
+      dropTarget.classList.remove('cms-reorder-before', 'cms-reorder-after');
+    }
+    dropTargetPosition = null;
   }
 
   function handleWireframeToolDragStart(event) {
@@ -565,6 +810,7 @@
         draggedElement.classList.remove('cms-dragging');
         draggedElement = null;
       }
+      clearReorderIndicator();
       document.body.classList.remove('cms-drag-active');
     }
   }
@@ -573,6 +819,7 @@
     if (dropTarget) {
       dropTarget.classList.remove('cms-drop-target');
       dropTarget = null;
+      dropTargetPosition = null;
     }
   }
 
@@ -605,6 +852,34 @@
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target) || target === draggedElement || target.contains(draggedElement)) {
       clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
+    if (reorderMode) {
+      const targetParent = target.parentElement;
+      if (!targetParent || targetParent !== draggedElement.parentElement) {
+        clearDropTarget();
+        clearReorderIndicator();
+        return;
+      }
+      const sectionContent = resolveSectionContainer(targetParent);
+      if (!sectionContent || sectionContent !== targetParent) {
+        clearDropTarget();
+        clearReorderIndicator();
+        return;
+      }
+      event.preventDefault();
+      if (dropTarget !== target) {
+        clearDropTarget();
+        clearReorderIndicator();
+        dropTarget = target;
+      }
+      const rect = target.getBoundingClientRect();
+      dropTargetPosition = event.clientX > rect.left + rect.width / 2 ? 'after' : 'before';
+      dropTarget.classList.remove('cms-reorder-before', 'cms-reorder-after');
+      dropTarget.classList.add(
+        dropTargetPosition === 'after' ? 'cms-reorder-after' : 'cms-reorder-before'
+      );
       return;
     }
     if (isWireframeSection(draggedElement)) {
@@ -638,10 +913,14 @@
       event.preventDefault();
       const element = buildWireframeElement(toolType);
       if (toolType === 'section') {
-        document.body.insertBefore(element, document.body.firstChild);
+        document.body.appendChild(element);
       } else {
         const container = getDropContainer(target);
+        ensureGridLayout(container);
         container.appendChild(element);
+        if (container.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(container);
+        }
       }
       activeWireframeTool = null;
       persistLayout();
@@ -649,15 +928,33 @@
     }
     if (!draggedElement || !dropTarget) return;
     event.preventDefault();
-    const parent = dropTarget.parentNode;
-    if (!parent) return;
-    const rect = dropTarget.getBoundingClientRect();
-    const insertAfter = event.clientY > rect.top + rect.height / 2;
-    const referenceNode = insertAfter ? dropTarget.nextSibling : dropTarget;
-    if (referenceNode !== draggedElement) {
-      parent.insertBefore(draggedElement, referenceNode);
+    if (reorderMode) {
+      const parent = dropTarget.parentNode;
+      if (!parent) return;
+      const referenceNode = dropTargetPosition === 'after' ? dropTarget.nextSibling : dropTarget;
+      if (referenceNode !== draggedElement) {
+        parent.insertBefore(draggedElement, referenceNode);
+      }
+    } else {
+      const dropContainer = resolveSectionContainer(dropTarget) || dropTarget;
+      const draggedRect = draggedElement.getBoundingClientRect();
+      const dropRect = dropTarget.getBoundingClientRect();
+      const isLarger = dropRect.width * dropRect.height > draggedRect.width * draggedRect.height;
+      if (supportsGridLayout(dropContainer) && isLarger) {
+        ensureGridLayout(dropContainer);
+        dropContainer.appendChild(draggedElement);
+        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(dropContainer);
+        }
+      } else if (dropContainer && dropContainer !== draggedElement.parentNode) {
+        dropContainer.appendChild(draggedElement);
+        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(dropContainer);
+        }
+      }
     }
     clearDropTarget();
+    clearReorderIndicator();
     persistLayout();
   }
 
@@ -669,6 +966,7 @@
     draggedElement = null;
     activeWireframeTool = null;
     clearDropTarget();
+    clearReorderIndicator();
     document.body.classList.remove('cms-drag-active');
   }
 
@@ -781,6 +1079,8 @@
       clearMessage();
       clearForm();
       removeOutlines();
+      hideResizeOverlay();
+      hideQuickColorMenu();
     }
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
@@ -1254,6 +1554,7 @@
     if (selectedElement && selectedElement !== el) {
       clearInlineEditing();
     }
+    hideQuickColorMenu();
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
@@ -1320,7 +1621,12 @@
         serviceSelect.dispatchEvent(new Event('change'));
       }
     }
+    if (supportsGridLayout(el)) {
+      ensureGridLayout(el);
+    }
     updateStyleInputs(el);
+    updateGridControls(el);
+    updateResizeOverlay(el);
     deleteButton.disabled = false;
     updateCloneState();
   }
@@ -1648,6 +1954,23 @@
     selectElement(target);
   }
 
+  function handleDoubleClick(e) {
+    if (!editMode) return;
+    const target = getElementTarget(e.target);
+    if (!target || isCmsUi(target)) return;
+    if (target === document.body || target === document.documentElement) return;
+    e.preventDefault();
+    e.stopPropagation();
+    selectElement(target);
+    showQuickColorMenu(target);
+  }
+
+  function handleQuickMenuDismiss(e) {
+    if (!quickColorMenu.classList.contains('is-visible')) return;
+    if (quickColorMenu.contains(e.target)) return;
+    hideQuickColorMenu();
+  }
+
   function handleLinkNavigation(e) {
     if (editMode) return;
     if (isCmsUi(e.target)) return;
@@ -1726,6 +2049,8 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
+  document.addEventListener('dblclick', handleDoubleClick, true);
+  document.addEventListener('click', handleQuickMenuDismiss, true);
   document.addEventListener('click', handleLinkNavigation);
   document.addEventListener('dragstart', handleDragStart, true);
   document.addEventListener('dragover', handleDragOver, true);
@@ -1747,6 +2072,28 @@
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
+  resizeOverlay.addEventListener('mousedown', handleResizeStart);
+  window.addEventListener('resize', () => updateResizeOverlay(selectedElement));
+  window.addEventListener('scroll', () => updateResizeOverlay(selectedElement), true);
+  if (reorderToggle) {
+    reorderToggle.addEventListener('change', () => {
+      reorderMode = reorderToggle.checked;
+    });
+  }
+  if (gridDecreaseButton) {
+    gridDecreaseButton.addEventListener('click', () => {
+      if (!selectedElement || !supportsGridLayout(selectedElement)) return;
+      const count = getGridColumnCount(selectedElement) || 1;
+      setGridColumnCount(selectedElement, count - 1);
+    });
+  }
+  if (gridIncreaseButton) {
+    gridIncreaseButton.addEventListener('click', () => {
+      if (!selectedElement || !supportsGridLayout(selectedElement)) return;
+      const count = getGridColumnCount(selectedElement) || 1;
+      setGridColumnCount(selectedElement, count + 1);
+    });
+  }
   textColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.color = textColorInput.value;
@@ -1756,6 +2103,19 @@
     if (!selectedElement) return;
     selectedElement.style.backgroundColor = backgroundColorInput.value;
     scheduleLayoutPersist();
+  });
+  quickColorMenu.querySelectorAll('[data-quick-color]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      if (!selectedElement) return;
+      const colorType = event.target.dataset.quickColor;
+      if (colorType === 'text') {
+        selectedElement.style.color = event.target.value;
+      } else {
+        selectedElement.style.backgroundColor = event.target.value;
+      }
+      updateStyleInputs(selectedElement);
+      scheduleLayoutPersist();
+    });
   });
   fontSizeInput.addEventListener('input', () => {
     if (!selectedElement || selectedType !== 'text') return;

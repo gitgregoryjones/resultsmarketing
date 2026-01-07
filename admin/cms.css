@@ -335,8 +335,7 @@
 }
 
 .cms-wireframe-resizable {
-  resize: both;
-  overflow: auto;
+  position: relative;
   min-width: 80px;
   min-height: 60px;
 }
@@ -345,9 +344,8 @@
   width: 140px;
   height: 140px;
   border: 1px dashed rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   text-transform: uppercase;
   font-size: 12px;
   letter-spacing: 0.08em;
@@ -375,8 +373,7 @@
   padding: 18px;
   margin: 12px 0;
   min-height: 120px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 12px;
   background: rgba(0, 0, 0, 0.02);
 }
@@ -389,13 +386,121 @@
 }
 
 .cms-wireframe-section__content {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: grid;
+  gap: 16px;
 }
 
 .cms-wireframe-section--dragging {
   opacity: 0.6;
+}
+
+.cms-grid-controls__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.cms-grid-controls__row button {
+  border: 1px solid var(--cms-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  background: var(--cms-bg);
+  cursor: pointer;
+}
+
+.cms-grid-controls__row span {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cms-gray);
+}
+
+.cms-resize-overlay {
+  position: absolute;
+  display: none;
+  border: 1px dashed #2563eb;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+.cms-resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #2563eb;
+  border-radius: 999px;
+  pointer-events: auto;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.cms-resize-handle--n {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cms-resize-handle--s {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.cms-resize-handle--e {
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.cms-resize-handle--w {
+  left: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.cms-resize-handle--se {
+  right: -6px;
+  bottom: -6px;
+}
+
+.cms-quick-colors {
+  position: absolute;
+  display: none;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+  z-index: 9999;
+}
+
+.cms-quick-colors.is-visible {
+  display: grid;
+}
+
+.cms-quick-colors label {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cms-gray);
+}
+
+.cms-quick-colors input[type='color'] {
+  width: 44px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.cms-wireframe .cms-reorder-before {
+  transform: translateX(-6px);
+}
+
+.cms-wireframe .cms-reorder-after {
+  transform: translateX(6px);
 }
 
 .cms-field input,
