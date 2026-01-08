@@ -1409,7 +1409,7 @@
       if (selectedType === 'image' || selectedType === 'background') {
         applyImageToElement(selectedElement, formatted, selectedType === 'background' ? 'background' : 'image');
       } else {
-        selectedElement.textContent = formatted;
+        setPrimaryTextValue(selectedElement, formatted);
       }
     }
   }
@@ -1789,11 +1789,38 @@
     el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
+  function getPrimaryTextTarget(el) {
+    if (!el) return null;
+    const child = el.firstChild;
+    if (!child) return null;
+    if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.ELEMENT_NODE) {
+      return child;
+    }
+    return null;
+  }
+
+  function getPrimaryTextValue(el) {
+    const target = getPrimaryTextTarget(el);
+    if (target) return target.textContent || '';
+    return el?.textContent || '';
+  }
+
+  function setPrimaryTextValue(el, value) {
+    const target = getPrimaryTextTarget(el);
+    if (target) {
+      target.textContent = value;
+      return;
+    }
+    if (el) {
+      el.textContent = value;
+    }
+  }
+
   function enableInlineEditing(el) {
     if (!editMode || selectedType !== 'text' || backendToggle.checked || isForbiddenElement(el)) return;
     clearInlineEditing();
     inlineInputHandler = () => {
-      valueInput.value = el.textContent;
+      valueInput.value = getPrimaryTextValue(el);
       textValueDirty = true;
     };
     el.contentEditable = 'true';
@@ -1850,7 +1877,7 @@
     const key = el.getAttribute(attributeName);
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
-      : el.textContent.trim();
+      : getPrimaryTextValue(el).trim();
     linkInput.value = el.getAttribute('data-link') || '';
     keyField.value = key || generateKeySuggestion(el);
     if (selectedType === 'image' || selectedType === 'background') {
@@ -1933,7 +1960,7 @@
     }
     const useBackend = backendToggle.checked;
     if (selectedType === 'text' && !textValueDirty) {
-      valueInput.value = selectedElement.textContent;
+      valueInput.value = getPrimaryTextValue(selectedElement);
     }
     const key = keyField.value.trim();
     let value = selectedType === 'image' || selectedType === 'background'
@@ -2049,11 +2076,11 @@
       );
     } else if (textValueDirty) {
       const nextValue = valueInput.value;
-      const currentText = selectedElement.textContent || '';
+      const currentText = getPrimaryTextValue(selectedElement);
       if (nextValue.trim() === '' && currentText.trim() !== '') {
         bodyValue = null;
       } else {
-        selectedElement.textContent = nextValue;
+        setPrimaryTextValue(selectedElement, nextValue);
         bodyValue = nextValue;
       }
     } else {
@@ -2435,7 +2462,7 @@
   });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text' || backendToggle.checked) return;
-    selectedElement.textContent = e.target.value;
+    setPrimaryTextValue(selectedElement, e.target.value);
     textValueDirty = true;
   });
   backendToggle.addEventListener('change', () => {
