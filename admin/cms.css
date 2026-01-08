@@ -1449,7 +1449,7 @@ body.cms-editing #cms-toggle::after {
 .cms-outline {
   position: absolute;
   pointer-events: none;
-  border: 2px dashed rgba(239, 68, 68, 0.8);
+  border: 2px dashed rgba(124, 58, 237, 0.8);
   border-radius: 6px;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
   z-index: 9997;
@@ -1457,7 +1457,7 @@ body.cms-editing #cms-toggle::after {
 }
 
 .cms-outlined {
-  outline: 2px dashed rgba(239, 68, 68, 0.7);
+  outline: 2px dashed rgba(124, 58, 237, 0.7);
   outline-offset: 4px;
 }
 
