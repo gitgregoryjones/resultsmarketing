@@ -1813,17 +1813,22 @@
   function handleQuickPickerClick(event) {
     event.preventDefault();
     const type = event.currentTarget.dataset.quickPicker;
+    console.debug('[cms] Quick picker click', { type, selected: Boolean(selectedElement) });
     if (!type) return;
     if (type === 'text') {
       quickColorPicker.value = textColorInput.value;
+      console.debug('[cms] Quick picker set text value', { value: quickColorPicker.value });
     } else {
       quickColorPicker.value = backgroundColorInput.value;
+      console.debug('[cms] Quick picker set background value', { value: quickColorPicker.value });
     }
     quickColorPicker.dataset.pickerType = type;
     quickColorPicker.focus({ preventScroll: true });
     if (typeof quickColorPicker.showPicker === 'function') {
+      console.debug('[cms] Quick picker showPicker');
       quickColorPicker.showPicker();
     } else {
+      console.debug('[cms] Quick picker click fallback');
       quickColorPicker.click();
     }
   }
