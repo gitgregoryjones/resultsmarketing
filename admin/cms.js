@@ -146,11 +146,17 @@
           <div class="cms-quick-styles__title">Quick Styles</div>
           <div class="cms-quick-styles__grid">
             <div class="cms-quick-style">
-              <span>Text Color</span>
+              <div class="cms-quick-style__label">
+                <span>Text Color</span>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="text" aria-label="Pick text color">🎨</button>
+              </div>
               <div class="cms-quick-style__swatches" data-quick-styles="text"></div>
             </div>
             <div class="cms-quick-style">
-              <span>Background</span>
+              <div class="cms-quick-style__label">
+                <span>Background</span>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="background" aria-label="Pick background color">🎨</button>
+              </div>
               <div class="cms-quick-style__swatches" data-quick-styles="background"></div>
             </div>
           </div>
@@ -317,6 +323,12 @@
   const serviceUrlInput = sidebar.querySelector('#cms-service-url');
   const serviceOkButton = sidebar.querySelector('#cms-service-ok');
   const serviceCancelButton = sidebar.querySelector('#cms-service-cancel');
+  const quickColorPicker = document.createElement('input');
+  quickColorPicker.type = 'color';
+  quickColorPicker.className = 'cms-quick-style-picker';
+  quickColorPicker.setAttribute('aria-hidden', 'true');
+  quickColorPicker.tabIndex = -1;
+  document.body.appendChild(quickColorPicker);
   const valueInput = sidebar.querySelector('#cms-value');
   const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
@@ -346,6 +358,7 @@
   const dockArrowButtons = sidebar.querySelectorAll('.cms-dock__arrows button');
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
+  const quickPickerButtons = sidebar.querySelectorAll('[data-quick-picker]');
   const textColorInput = sidebar.querySelector('#cms-text-color');
   const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
   const fontSizeInput = sidebar.querySelector('#cms-font-size');
@@ -1582,6 +1595,19 @@
     updateStyleInputs(selectedElement);
   }
 
+  function handleQuickPickerClick(event) {
+    if (!selectedElement) return;
+    const type = event.currentTarget.dataset.quickPicker;
+    if (!type) return;
+    if (type === 'text') {
+      quickColorPicker.value = textColorInput.value;
+    } else {
+      quickColorPicker.value = backgroundColorInput.value;
+    }
+    quickColorPicker.dataset.pickerType = type;
+    quickColorPicker.click();
+  }
+
   function updateStyleInputs(el) {
     if (!el) return;
     const computed = window.getComputedStyle(el);
@@ -2286,6 +2312,9 @@
   if (quickBgSwatches) {
     quickBgSwatches.addEventListener('click', handleQuickStyleClick);
   }
+  quickPickerButtons.forEach((button) => {
+    button.addEventListener('click', handleQuickPickerClick);
+  });
   resizeOverlay.addEventListener('mousedown', handleResizeStart);
   window.addEventListener('resize', () => updateResizeOverlay(selectedElement));
   window.addEventListener('scroll', () => updateResizeOverlay(selectedElement), true);
@@ -2346,6 +2375,27 @@
       updateStyleInputs(selectedElement);
       scheduleLayoutPersist();
     });
+  });
+  quickColorPicker.addEventListener('input', () => {
+    if (!selectedElement) return;
+    const type = quickColorPicker.dataset.pickerType;
+    if (type === 'text') {
+      selectedElement.style.color = quickColorPicker.value;
+      textColorInput.value = quickColorPicker.value;
+      const swatch = findNearestSwatch(quickColorPicker.value);
+      if (swatch?.textClass) {
+        updateQuickStyleHistory('text', swatch.textClass);
+      }
+    } else if (type === 'background') {
+      selectedElement.style.backgroundColor = quickColorPicker.value;
+      backgroundColorInput.value = quickColorPicker.value;
+      const swatch = findNearestSwatch(quickColorPicker.value);
+      if (swatch?.bgClass) {
+        updateQuickStyleHistory('background', swatch.bgClass);
+      }
+    }
+    updateStyleInputs(selectedElement);
+    scheduleLayoutPersist();
   });
   fontSizeInput.addEventListener('input', () => {
     if (!selectedElement || selectedType !== 'text') return;
