@@ -371,7 +371,6 @@
       hideQuickColorMenu();
       clearReorderIndicator();
     } else {
-      applyGridLayoutDefaults();
       updateResizeOverlay(selectedElement);
     }
   }
@@ -630,6 +629,7 @@
     section.className = 'cms-wireframe-section cms-wireframe-resizable';
     section.setAttribute('data-wireframe-section', 'true');
     section.setAttribute('draggable', 'true');
+    section.dataset.wireframeCreated = 'true';
     section.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     const label = document.createElement('div');
@@ -638,6 +638,7 @@
 
     const content = document.createElement('div');
     content.className = 'cms-wireframe-section__content grid grid-cols-1 gap-4';
+    content.dataset.wireframeCreated = 'true';
 
     section.appendChild(label);
     section.appendChild(content);
@@ -653,6 +654,7 @@
       textBlock.className = 'cms-wireframe-text cms-wireframe-resizable';
       textBlock.textContent = 'Text placeholder';
       textBlock.setAttribute('data-cms-text', generateWireframeKey('text'));
+      textBlock.dataset.wireframeCreated = 'true';
       if (isWireframeEnabled()) {
         textBlock.setAttribute('draggable', 'true');
       }
@@ -664,6 +666,7 @@
         'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
       circle.textContent = 'Circle';
       circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
+      circle.dataset.wireframeCreated = 'true';
       if (isWireframeEnabled()) {
         circle.setAttribute('draggable', 'true');
       }
@@ -674,6 +677,7 @@
       'cms-wireframe-shape cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
     square.textContent = 'Square';
     square.setAttribute('data-cms-text', generateWireframeKey('square'));
+    square.dataset.wireframeCreated = 'true';
     if (isWireframeEnabled()) {
       square.setAttribute('draggable', 'true');
     }
@@ -721,8 +725,9 @@
     return Number.isNaN(value) ? 0 : value;
   }
 
-  function ensureGridLayout(element, columns = 1) {
+  function ensureGridLayout(element, columns = 1, force = false) {
     if (!supportsGridLayout(element)) return;
+    if (!force && element.dataset?.wireframeCreated !== 'true') return;
     if (!element.classList.contains('grid')) {
       element.classList.add('grid');
     }
@@ -741,16 +746,9 @@
       .filter((name) => name.startsWith('grid-cols-'))
       .forEach((name) => element.classList.remove(name));
     element.classList.add(`grid-cols-${nextCount}`);
-    ensureGridLayout(element, nextCount);
+    ensureGridLayout(element, nextCount, true);
     updateGridControls(element);
     scheduleLayoutPersist();
-  }
-
-  function applyGridLayoutDefaults() {
-    document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
-      if (!supportsGridLayout(el)) return;
-      ensureGridLayout(el);
-    });
   }
 
   function updateGridControls(element) {
@@ -927,7 +925,7 @@
         }
       } else {
         const container = getDropContainer(target);
-        ensureGridLayout(container);
+        ensureGridLayout(element);
         container.appendChild(element);
         if (container.classList.contains('cms-wireframe-section__content')) {
           adjustSectionGridOnDrop(container);
@@ -1631,9 +1629,6 @@
       if (backendServices.some((service) => service.alias === backendServiceAlias)) {
         serviceSelect.dispatchEvent(new Event('change'));
       }
-    }
-    if (supportsGridLayout(el)) {
-      ensureGridLayout(el);
     }
     updateStyleInputs(el);
     updateGridControls(el);
