@@ -145,6 +145,8 @@ body.cms-editing #cms-toggle::after {
   padding: 20px 22px;
   border-bottom: 1px solid #e5e7eb;
   background: #fff;
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
 }
 
 .cms-sidebar__header-row {
