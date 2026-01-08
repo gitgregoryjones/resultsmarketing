@@ -612,6 +612,14 @@ body.cms-editing #cms-toggle::after {
   pointer-events: none;
 }
 
+.cms-quick-style-picker.is-active {
+  width: 16px;
+  height: 16px;
+  opacity: 0.01;
+  pointer-events: auto;
+  z-index: 10003;
+}
+
 .cms-quick-style__swatches {
   display: flex;
   gap: 10px;

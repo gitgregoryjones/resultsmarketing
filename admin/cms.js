@@ -1823,6 +1823,7 @@
       console.debug('[cms] Quick picker set background value', { value: quickColorPicker.value });
     }
     quickColorPicker.dataset.pickerType = type;
+    quickColorPicker.classList.add('is-active');
     quickColorPicker.focus({ preventScroll: true });
     if (typeof quickColorPicker.showPicker === 'function') {
       console.debug('[cms] Quick picker showPicker');
@@ -1831,6 +1832,9 @@
       console.debug('[cms] Quick picker click fallback');
       quickColorPicker.click();
     }
+    window.setTimeout(() => {
+      quickColorPicker.classList.remove('is-active');
+    }, 100);
   }
 
   function updateStyleInputs(el) {
