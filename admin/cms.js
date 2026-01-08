@@ -184,7 +184,7 @@
           <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
         </div>
         <button id="cms-save">Save</button>
-        <div class="cms-action-row cms-action-row--split">
+        <div class="grid grid-cols-2 gap-4 mt-4">
           <button id="cms-clone" type="button">Clone</button>
           <button id="cms-delete" type="button">Delete</button>
         </div>
