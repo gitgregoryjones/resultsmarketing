@@ -182,7 +182,14 @@
         </div>
         <div class="cms-field cms-field--image">
           <label for="cms-image-url">Image URL</label>
-          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">No image selected</div>
+          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">
+            <span class="cms-image-preview__empty">No image selected</span>
+            <button type="button" class="cms-image-preview__delete" aria-label="Remove image" title="Remove image">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9z" />
+              </svg>
+            </button>
+          </div>
           <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
           <div class="cms-image-controls">
             <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
@@ -426,6 +433,7 @@
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
+  const imagePreviewDelete = sidebar.querySelector('.cms-image-preview__delete');
   const saveButton = sidebar.querySelector('#cms-save');
   const cloneButton = sidebar.querySelector('#cms-clone');
   const reorderToggle = sidebar.querySelector('#cms-reorder-toggle');
@@ -1433,12 +1441,16 @@
 
   function updateImagePreview(src) {
     if (!src) {
-      imagePreview.textContent = 'No image selected';
+      const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
+      if (emptyLabel) emptyLabel.textContent = 'No image selected';
       imagePreview.style.backgroundImage = 'none';
+      imagePreview.classList.remove('has-image');
       return;
     }
-    imagePreview.textContent = '';
+    const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
+    if (emptyLabel) emptyLabel.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+    imagePreview.classList.add('has-image');
   }
 
   function applyImagePreviewToElement(src) {
@@ -2879,6 +2891,18 @@
     imageFileInput.value = '';
     imageFileInput.click();
   });
+  if (imagePreviewDelete) {
+    imagePreviewDelete.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
+      imageUrlInput.value = '';
+      imageFileInput.value = '';
+      updateImagePreview('');
+      applyImageToElement(selectedElement, '', selectedType === 'background' ? 'background' : 'image');
+      scheduleLayoutPersist();
+    });
+  }
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
     toggleGallery(true);
