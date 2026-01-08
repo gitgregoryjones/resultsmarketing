@@ -26,6 +26,18 @@
   let backendServiceData = null;
   let backendServiceAlias = '';
   let backendPendingKey = '';
+  let quickTextHistory = [];
+  let quickBgHistory = [];
+
+  const COLOR_SWATCHES = [
+    { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
+    { hex: '#ffffff', textClass: 'text-white', bgClass: 'bg-white' },
+    { hex: '#6b7280', textClass: 'text-gray-500', bgClass: 'bg-gray-500' },
+    { hex: '#7c3aed', textClass: 'text-purple-600', bgClass: 'bg-purple-600' },
+    { hex: '#2563eb', textClass: 'text-blue-600', bgClass: 'bg-blue-600' },
+    { hex: '#16a34a', textClass: 'text-green-600', bgClass: 'bg-green-600' },
+    { hex: '#ef4444', textClass: 'text-red-500', bgClass: 'bg-red-500' },
+  ];
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
@@ -89,7 +101,6 @@
           </div>
           <p class="cms-field__hint">Applies to non-text/image elements.</p>
         </div>
-        <button id="cms-clone" type="button">Clone element</button>
       </div>
       <div class="cms-panel active" data-panel="content">
         <div class="cms-field">
@@ -127,17 +138,38 @@
             <button type="button" id="cms-service-cancel">Cancel</button>
           </div>
         </div>
-        <div class="cms-field" id="cms-key-field">
-          <label for="cms-key">Field key</label>
-          <input id="cms-key" type="text" placeholder="auto.tag.hash" />
-        </div>
-        <div class="cms-field">
-          <label for="cms-link">Link (optional)</label>
-          <input id="cms-link" type="text" placeholder="https://example.com or #section" />
-        </div>
         <div class="cms-field cms-field--text">
           <label for="cms-value">Content</label>
           <textarea id="cms-value" placeholder="Type content here..."></textarea>
+        </div>
+        <div class="cms-quick-styles">
+          <div class="cms-quick-styles__title">Quick Styles</div>
+          <div class="cms-quick-styles__grid">
+            <div class="cms-quick-style">
+              <span>Text Color</span>
+              <div class="cms-quick-style__swatches" data-quick-styles="text"></div>
+            </div>
+            <div class="cms-quick-style">
+              <span>Background</span>
+              <div class="cms-quick-style__swatches" data-quick-styles="background"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cms-advanced">
+          <button type="button" class="cms-advanced__toggle" id="cms-advanced-toggle" aria-expanded="false">
+            <span>Advanced</span>
+            <span class="cms-advanced__chevron">⌄</span>
+          </button>
+          <div class="cms-advanced__content" id="cms-advanced-content">
+            <div class="cms-field" id="cms-key-field">
+              <label for="cms-key">Element Key</label>
+              <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+            </div>
+            <div class="cms-field cms-field--link" id="cms-link-field">
+              <label for="cms-link">Link URL</label>
+              <input id="cms-link" type="text" placeholder="https://example.com or #section" />
+            </div>
+          </div>
         </div>
         <div class="cms-field cms-field--image">
           <label for="cms-image-url">Image URL</label>
@@ -152,7 +184,10 @@
           <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
         </div>
         <button id="cms-save">Save</button>
-        <button id="cms-delete" type="button">Delete element</button>
+        <div class="cms-action-row cms-action-row--split">
+          <button id="cms-clone" type="button">Clone</button>
+          <button id="cms-delete" type="button">Delete</button>
+        </div>
         <div id="cms-message"></div>
         <div class="cms-discovered">
           <div class="cms-hint">Existing keys on the page</div>
@@ -294,6 +329,10 @@
   const gridDecreaseButton = sidebar.querySelector('#cms-grid-decrease');
   const gridIncreaseButton = sidebar.querySelector('#cms-grid-increase');
   const gridCountLabel = sidebar.querySelector('#cms-grid-count');
+  const advancedToggle = sidebar.querySelector('#cms-advanced-toggle');
+  const advancedContent = sidebar.querySelector('#cms-advanced-content');
+  const quickTextSwatches = sidebar.querySelector('[data-quick-styles="text"]');
+  const quickBgSwatches = sidebar.querySelector('[data-quick-styles="background"]');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
@@ -325,6 +364,8 @@
   let layoutSaveTimer = null;
   deleteButton.disabled = true;
   cloneButton.disabled = true;
+  loadQuickStyleHistory();
+  renderQuickStyles();
 
   function handleBackendKeyChange(event) {
     if (!backendToggle.checked) return;
@@ -1389,6 +1430,144 @@
     return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
   }
 
+  function normalizeHex(value) {
+    if (!value) return '';
+    const hex = value.startsWith('#') ? value.slice(1) : value;
+    if (hex.length === 3) {
+      return `#${hex.split('').map((c) => c + c).join('')}`.toLowerCase();
+    }
+    return `#${hex}`.toLowerCase();
+  }
+
+  function hexToRgb(value) {
+    const hex = normalizeHex(value).replace('#', '');
+    if (hex.length !== 6) return null;
+    const r = Number.parseInt(hex.slice(0, 2), 16);
+    const g = Number.parseInt(hex.slice(2, 4), 16);
+    const b = Number.parseInt(hex.slice(4, 6), 16);
+    return { r, g, b };
+  }
+
+  function colorDistance(a, b) {
+    return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
+  }
+
+  function findNearestSwatch(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return COLOR_SWATCHES[0];
+    return COLOR_SWATCHES.reduce((closest, swatch) => {
+      const swatchRgb = hexToRgb(swatch.hex);
+      if (!swatchRgb) return closest;
+      if (!closest) return swatch;
+      const closestRgb = hexToRgb(closest.hex);
+      return colorDistance(rgb, swatchRgb) < colorDistance(rgb, closestRgb) ? swatch : closest;
+    }, null);
+  }
+
+  function getSwatchClasses(type) {
+    return COLOR_SWATCHES.map((swatch) => (type === 'text' ? swatch.textClass : swatch.bgClass));
+  }
+
+  function applyTailwindColorClass(type, className) {
+    if (!selectedElement || !className) return;
+    const swatchClasses = getSwatchClasses(type);
+    swatchClasses.forEach((swatchClass) => selectedElement.classList.remove(swatchClass));
+    selectedElement.classList.add(className);
+    if (type === 'text') {
+      selectedElement.style.color = '';
+    } else {
+      selectedElement.style.backgroundColor = '';
+    }
+    scheduleLayoutPersist();
+  }
+
+  function updateQuickStyleHistory(type, className) {
+    const list = type === 'text' ? quickTextHistory : quickBgHistory;
+    const filtered = list.filter((entry) => entry !== className);
+    filtered.unshift(className);
+    const next = filtered.slice(0, 4);
+    if (type === 'text') {
+      quickTextHistory = next;
+      localStorage.setItem('cmsQuickTextColors', JSON.stringify(next));
+    } else {
+      quickBgHistory = next;
+      localStorage.setItem('cmsQuickBgColors', JSON.stringify(next));
+    }
+    renderQuickStyles();
+  }
+
+  function getDefaultQuickHistory(type) {
+    const defaults = [
+      COLOR_SWATCHES[0],
+      COLOR_SWATCHES[2],
+      COLOR_SWATCHES[3],
+      COLOR_SWATCHES[1],
+    ];
+    return defaults.map((swatch) => (type === 'text' ? swatch.textClass : swatch.bgClass));
+  }
+
+  function loadQuickStyleHistory() {
+    const storedText = localStorage.getItem('cmsQuickTextColors');
+    const storedBg = localStorage.getItem('cmsQuickBgColors');
+    try {
+      quickTextHistory = JSON.parse(storedText) || getDefaultQuickHistory('text');
+    } catch (err) {
+      quickTextHistory = getDefaultQuickHistory('text');
+    }
+    try {
+      quickBgHistory = JSON.parse(storedBg) || getDefaultQuickHistory('background');
+    } catch (err) {
+      quickBgHistory = getDefaultQuickHistory('background');
+    }
+  }
+
+  function renderQuickStyles() {
+    if (!quickTextSwatches || !quickBgSwatches) return;
+    const render = (container, list, type) => {
+      container.innerHTML = '';
+      list.forEach((className) => {
+        const swatch = COLOR_SWATCHES.find((entry) =>
+          type === 'text' ? entry.textClass === className : entry.bgClass === className
+        );
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cms-swatch';
+        if (swatch) {
+          button.style.backgroundColor = swatch.hex;
+          button.dataset.tailwindClass = className;
+          button.dataset.swatchType = type;
+          if (selectedElement && selectedElement.classList.contains(className)) {
+            button.classList.add('is-active');
+          }
+        }
+        container.appendChild(button);
+      });
+    };
+    render(quickTextSwatches, quickTextHistory, 'text');
+    render(quickBgSwatches, quickBgHistory, 'background');
+  }
+
+  function handleQuickStyleClick(event) {
+    const button = event.target.closest('.cms-swatch');
+    if (!button || !selectedElement) return;
+    const className = button.dataset.tailwindClass;
+    const type = button.dataset.swatchType;
+    if (!className || !type) return;
+    applyTailwindColorClass(type, className);
+    updateQuickStyleHistory(type, className);
+    const swatch = COLOR_SWATCHES.find((entry) =>
+      type === 'text' ? entry.textClass === className : entry.bgClass === className
+    );
+    if (swatch) {
+      if (type === 'text') {
+        textColorInput.value = swatch.hex;
+      } else {
+        backgroundColorInput.value = swatch.hex;
+      }
+    }
+    updateStyleInputs(selectedElement);
+  }
+
   function updateStyleInputs(el) {
     if (!el) return;
     const computed = window.getComputedStyle(el);
@@ -1634,6 +1813,7 @@
     updateStyleInputs(el);
     updateGridControls(el);
     updateResizeOverlay(el);
+    renderQuickStyles();
     deleteButton.disabled = false;
     updateCloneState();
   }
@@ -2079,6 +2259,19 @@
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
+  if (advancedToggle && advancedContent) {
+    advancedToggle.addEventListener('click', () => {
+      const isOpen = advancedContent.classList.toggle('is-open');
+      advancedToggle.setAttribute('aria-expanded', String(isOpen));
+      advancedToggle.classList.toggle('is-open', isOpen);
+    });
+  }
+  if (quickTextSwatches) {
+    quickTextSwatches.addEventListener('click', handleQuickStyleClick);
+  }
+  if (quickBgSwatches) {
+    quickBgSwatches.addEventListener('click', handleQuickStyleClick);
+  }
   resizeOverlay.addEventListener('mousedown', handleResizeStart);
   window.addEventListener('resize', () => updateResizeOverlay(selectedElement));
   window.addEventListener('scroll', () => updateResizeOverlay(selectedElement), true);
@@ -2104,11 +2297,19 @@
   textColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.color = textColorInput.value;
+    const swatch = findNearestSwatch(textColorInput.value);
+    if (swatch?.textClass) {
+      updateQuickStyleHistory('text', swatch.textClass);
+    }
     scheduleLayoutPersist();
   });
   backgroundColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.backgroundColor = backgroundColorInput.value;
+    const swatch = findNearestSwatch(backgroundColorInput.value);
+    if (swatch?.bgClass) {
+      updateQuickStyleHistory('background', swatch.bgClass);
+    }
     scheduleLayoutPersist();
   });
   quickColorMenu.querySelectorAll('[data-quick-color]').forEach((input) => {
@@ -2117,8 +2318,16 @@
       const colorType = event.target.dataset.quickColor;
       if (colorType === 'text') {
         selectedElement.style.color = event.target.value;
+        const swatch = findNearestSwatch(event.target.value);
+        if (swatch?.textClass) {
+          updateQuickStyleHistory('text', swatch.textClass);
+        }
       } else {
         selectedElement.style.backgroundColor = event.target.value;
+        const swatch = findNearestSwatch(event.target.value);
+        if (swatch?.bgClass) {
+          updateQuickStyleHistory('background', swatch.bgClass);
+        }
       }
       updateStyleInputs(selectedElement);
       scheduleLayoutPersist();
