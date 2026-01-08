@@ -202,6 +202,7 @@
                   </svg>
                 </button>
               </div>
+              <input id="cms-quick-text-color" class="cms-quick-style-input" type="color" value="#111827" />
               <div class="cms-quick-style__swatches" data-quick-styles="text"></div>
             </div>
             <div class="cms-quick-style">
@@ -448,6 +449,7 @@
   const panels = sidebar.querySelectorAll('.cms-panel');
   const quickPickerButtons = sidebar.querySelectorAll('[data-quick-picker]');
   const textColorInput = sidebar.querySelector('#cms-text-color');
+  const quickTextColorInput = sidebar.querySelector('#cms-quick-text-color');
   const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
   const fontSizeInput = sidebar.querySelector('#cms-font-size');
   const flexSelect = sidebar.querySelector('#cms-flex');
@@ -1816,6 +1818,13 @@
     console.debug('[cms] Quick picker click', { type, selected: Boolean(selectedElement) });
     if (!type) return;
     if (type === 'text') {
+      if (quickTextColorInput) {
+        quickTextColorInput.value = textColorInput.value;
+        console.debug('[cms] Quick picker trigger text input', { value: quickTextColorInput.value });
+        quickTextColorInput.focus({ preventScroll: true });
+        quickTextColorInput.click();
+        return;
+      }
       quickColorPicker.value = textColorInput.value;
       console.debug('[cms] Quick picker set text value', { value: quickColorPicker.value });
     } else {
@@ -1841,6 +1850,9 @@
     if (!el) return;
     const computed = window.getComputedStyle(el);
     textColorInput.value = rgbToHex(computed.color);
+    if (quickTextColorInput) {
+      quickTextColorInput.value = textColorInput.value;
+    }
     backgroundColorInput.value = rgbToHex(computed.backgroundColor);
     fontSizeInput.value = Number.parseFloat(computed.fontSize) || 16;
     flexSelect.value = computed.flexDirection || 'row';
@@ -2613,6 +2625,18 @@
     }
     scheduleLayoutPersist();
   });
+  if (quickTextColorInput) {
+    quickTextColorInput.addEventListener('input', () => {
+      if (!selectedElement) return;
+      selectedElement.style.color = quickTextColorInput.value;
+      textColorInput.value = quickTextColorInput.value;
+      const swatch = findNearestSwatch(quickTextColorInput.value);
+      if (swatch?.textClass) {
+        updateQuickStyleHistory('text', swatch.textClass);
+      }
+      scheduleLayoutPersist();
+    });
+  }
   backgroundColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.backgroundColor = backgroundColorInput.value;
@@ -2649,6 +2673,9 @@
     if (type === 'text') {
       selectedElement.style.color = quickColorPicker.value;
       textColorInput.value = quickColorPicker.value;
+      if (quickTextColorInput) {
+        quickTextColorInput.value = quickColorPicker.value;
+      }
       const swatch = findNearestSwatch(quickColorPicker.value);
       if (swatch?.textClass) {
         updateQuickStyleHistory('text', swatch.textClass);

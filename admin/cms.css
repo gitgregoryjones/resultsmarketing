@@ -612,6 +612,16 @@ body.cms-editing #cms-toggle::after {
   pointer-events: none;
 }
 
+.cms-quick-style-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .cms-quick-style-picker.is-active {
   width: 16px;
   height: 16px;
