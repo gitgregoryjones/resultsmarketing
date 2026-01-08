@@ -1590,12 +1590,41 @@ body.cms-editing #cms-toggle::after {
   gap: 16px;
 }
 
-.cms-gallery__section h4 {
-  margin: 0 0 8px;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.cms-gallery__tabs {
+  display: inline-flex;
+  gap: 8px;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.cms-gallery__tab {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--cms-gray);
+  cursor: pointer;
+}
+
+.cms-gallery__tab.is-active {
+  background: white;
+  color: #111827;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+}
+
+.cms-gallery__content {
+  display: none;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.cms-gallery__content.is-active {
+  display: block;
 }
 
 .cms-gallery__grid {

@@ -351,13 +351,15 @@
         </div>
         <button type="button" class="cms-gallery__close" data-gallery-close="true">Close</button>
       </div>
+      <div class="cms-gallery__tabs" role="tablist">
+        <button type="button" class="cms-gallery__tab is-active" data-gallery-tab="uploads" role="tab">Uploaded Images</button>
+        <button type="button" class="cms-gallery__tab" data-gallery-tab="remote" role="tab">Remote URLs</button>
+      </div>
       <div class="cms-gallery__body">
-        <div class="cms-gallery__section">
-          <h4>Uploaded images</h4>
+        <div class="cms-gallery__content" data-gallery-content="uploads">
           <div class="cms-gallery__grid" data-gallery-section="uploads"></div>
         </div>
-        <div class="cms-gallery__section">
-          <h4>Remote URLs</h4>
+        <div class="cms-gallery__content" data-gallery-content="remote">
           <div class="cms-gallery__grid" data-gallery-section="remote"></div>
         </div>
         <p class="cms-gallery__empty">No images found yet.</p>
@@ -461,6 +463,8 @@
   const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
+  const galleryTabs = gallery.querySelectorAll('[data-gallery-tab]');
+  const galleryContents = gallery.querySelectorAll('[data-gallery-content]');
   const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
   const settingsDialogOriginalParent = siteField?.parentElement || null;
   const settingsMessageParent = settingsMessageEl?.parentElement || null;
@@ -1883,6 +1887,18 @@
   function toggleGallery(open) {
     gallery.classList.toggle('open', open);
     document.body.classList.toggle('cms-gallery-open', open);
+    if (open) {
+      setGalleryTab('uploads');
+    }
+  }
+
+  function setGalleryTab(tabName) {
+    galleryTabs.forEach((tab) => {
+      tab.classList.toggle('is-active', tab.dataset.galleryTab === tabName);
+    });
+    galleryContents.forEach((content) => {
+      content.classList.toggle('is-active', content.dataset.galleryContent === tabName);
+    });
   }
 
   function buildGalleryItem(src, label) {
@@ -1916,6 +1932,9 @@
     });
     const hasAny = uploads.length || remote.length;
     galleryEmpty.style.display = hasAny ? 'none' : 'block';
+    if (!uploads.length && remote.length) {
+      setGalleryTab('remote');
+    }
   }
 
   function isRemoteImageUrl(value) {
@@ -2870,6 +2889,12 @@
     if (target && target.dataset && target.dataset.galleryClose) {
       toggleGallery(false);
     }
+  });
+
+  galleryTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      setGalleryTab(tab.dataset.galleryTab);
+    });
   });
 
   document.addEventListener('DOMContentLoaded', () => {
