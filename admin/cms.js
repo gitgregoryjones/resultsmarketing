@@ -1445,6 +1445,12 @@
     }
   }
 
+  function updateServiceFormVisibility() {
+    const shouldShow = backendToggle.checked && serviceSelect.value === '__new__';
+    serviceForm.classList.toggle('is-visible', shouldShow);
+    return shouldShow;
+  }
+
   function rgbToHex(value) {
     if (!value) return '#111827';
     if (value.startsWith('#')) return value;
@@ -2439,18 +2445,19 @@
       backendServices = getMetaServices();
       populateServiceSelect();
     }
+    updateServiceFormVisibility();
   });
   serviceSelect.addEventListener('change', async () => {
     const selected = serviceSelect.value;
     messageEl.textContent = '';
     if (selected === '__new__') {
-      serviceForm.classList.add('is-visible');
+      updateServiceFormVisibility();
       backendServiceData = null;
       backendServiceAlias = '';
       setBackendKeyOptions([]);
       return;
     }
-    serviceForm.classList.remove('is-visible');
+    updateServiceFormVisibility();
     if (!selected) {
       backendServiceData = null;
       backendServiceAlias = '';
