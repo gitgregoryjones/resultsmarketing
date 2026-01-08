@@ -63,6 +63,7 @@
         </div>
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-settings-button">Settings</button>
       <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
       <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -73,6 +74,27 @@
     </div>
   `;
   document.body.appendChild(floatingMenu);
+
+  const toast = document.createElement('div');
+  toast.id = 'cms-toast';
+  toast.className = 'cms-toast cms-ui';
+  toast.innerHTML = '<span></span>';
+  document.body.appendChild(toast);
+
+  const settingsDialog = document.createElement('div');
+  settingsDialog.id = 'cms-settings-dialog';
+  settingsDialog.className = 'cms-settings-dialog cms-ui';
+  settingsDialog.innerHTML = `
+    <div class="cms-settings-dialog__backdrop" data-settings-close="true"></div>
+    <div class="cms-settings-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="cms-settings-dialog-title">
+      <div class="cms-settings-dialog__header">
+        <h3 id="cms-settings-dialog-title">Site settings</h3>
+        <button type="button" class="cms-settings-dialog__close" data-settings-close="true">Close</button>
+      </div>
+      <div class="cms-settings-dialog__body"></div>
+    </div>
+  `;
+  document.body.appendChild(settingsDialog);
 
   const publishShortcutButton = document.createElement('button');
   publishShortcutButton.id = 'cms-publish-shortcut';
@@ -371,9 +393,12 @@
   const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
   const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
+  const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
+  const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
+  const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
 
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
@@ -413,6 +438,7 @@
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
+  const siteField = sidebar.querySelector('.cms-field--site');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
@@ -432,6 +458,9 @@
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
   const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
+  const settingsDialogOriginalParent = siteField?.parentElement || null;
+  const settingsMessageParent = settingsMessageEl?.parentElement || null;
+  const settingsNextSibling = siteField?.nextSibling || null;
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
@@ -538,6 +567,38 @@
     settingsMessageEl.style.color = '#16a34a';
   }
 
+  function showToast(message, type = 'info') {
+    const label = toast.querySelector('span');
+    if (label) {
+      label.textContent = message;
+    }
+    toast.classList.remove('is-info', 'is-success', 'is-error', 'is-visible');
+    toast.classList.add('is-visible', `is-${type}`);
+    window.clearTimeout(showToast.hideTimer);
+    showToast.hideTimer = window.setTimeout(() => {
+      toast.classList.remove('is-visible');
+    }, 3000);
+  }
+
+  function openSettingsDialog() {
+    if (!siteField || !settingsMessageEl) return;
+    if (settingsDialog.classList.contains('is-visible')) return;
+    settingsDialogBody.appendChild(siteField);
+    settingsDialogBody.appendChild(settingsMessageEl);
+    settingsDialog.classList.add('is-visible');
+  }
+
+  function closeSettingsDialog() {
+    if (!settingsDialog.classList.contains('is-visible')) return;
+    if (settingsDialogOriginalParent && siteField) {
+      settingsDialogOriginalParent.insertBefore(siteField, settingsNextSibling);
+    }
+    if (settingsMessageParent && settingsMessageEl) {
+      settingsMessageParent.appendChild(settingsMessageEl);
+    }
+    settingsDialog.classList.remove('is-visible');
+  }
+
   function togglePagesDropdown(forceState) {
     const nextState = typeof forceState === 'boolean'
       ? forceState
@@ -549,6 +610,14 @@
     if (!pagesDropdown.classList.contains('is-open')) return;
     if (floatingMenu.contains(event.target)) return;
     togglePagesDropdown(false);
+  }
+
+  function handleSettingsDialogClick(event) {
+    const target = event.target;
+    if (!target) return;
+    if (target.dataset.settingsClose) {
+      closeSettingsDialog();
+    }
   }
 
   function handleMenuDragStart(event) {
@@ -2309,6 +2378,7 @@
       settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
       settingsMessageEl.style.color = '#ef4444';
       siteNameInput.focus();
+      showToast('Please enter a site name before publishing.', 'error');
       return false;
     }
 
@@ -2324,12 +2394,15 @@
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
-      settingsMessageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      const successMessage = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      settingsMessageEl.textContent = successMessage;
       settingsMessageEl.style.color = '#16a34a';
+      showToast(successMessage, 'success');
     } catch (err) {
       success = false;
       settingsMessageEl.textContent = 'Unable to publish static pages.';
       settingsMessageEl.style.color = '#ef4444';
+      showToast('Unable to publish static pages.', 'error');
     } finally {
       publishButton.disabled = false;
       publishButton.textContent = originalLabel;
@@ -2689,6 +2762,9 @@
   effectsButton.addEventListener('click', () => {
     window.alert('Effects coming soon.');
   });
+  settingsMenuButton.addEventListener('click', () => {
+    openSettingsDialog();
+  });
   xrayButton.addEventListener('click', () => {
     activateTab(isWireframeEnabled() ? 'content' : 'wireframe');
   });
@@ -2699,6 +2775,7 @@
     floatingMenu.classList.toggle('is-minimized');
   });
   floatingMenu.addEventListener('mousedown', handleMenuDragStart);
+  settingsDialog.addEventListener('click', handleSettingsDialogClick);
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
