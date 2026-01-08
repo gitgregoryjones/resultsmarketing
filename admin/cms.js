@@ -1812,7 +1812,6 @@
 
   function handleQuickPickerClick(event) {
     event.preventDefault();
-    if (!selectedElement) return;
     const type = event.currentTarget.dataset.quickPicker;
     if (!type) return;
     if (type === 'text') {
@@ -1821,6 +1820,7 @@
       quickColorPicker.value = backgroundColorInput.value;
     }
     quickColorPicker.dataset.pickerType = type;
+    quickColorPicker.focus({ preventScroll: true });
     if (typeof quickColorPicker.showPicker === 'function') {
       quickColorPicker.showPicker();
     } else {
