@@ -1468,10 +1468,24 @@
     return COLOR_SWATCHES.map((swatch) => (type === 'text' ? swatch.textClass : swatch.bgClass));
   }
 
+  function stripTailwindTextColorClasses(element) {
+    if (!element || !element.classList) return;
+    const colorPattern =
+      /^text-(?:black|white|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d{2,3})?$/;
+    Array.from(element.classList).forEach((className) => {
+      if (colorPattern.test(className)) {
+        element.classList.remove(className);
+      }
+    });
+  }
+
   function applyTailwindColorClass(type, className) {
     if (!selectedElement || !className) return;
     const swatchClasses = getSwatchClasses(type);
     swatchClasses.forEach((swatchClass) => selectedElement.classList.remove(swatchClass));
+    if (type === 'text') {
+      stripTailwindTextColorClasses(selectedElement);
+    }
     selectedElement.classList.add(className);
     if (type === 'text') {
       selectedElement.style.color = '';
