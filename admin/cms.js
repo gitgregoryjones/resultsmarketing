@@ -156,6 +156,7 @@
           <label for="cms-link">Link URL</label>
           <input id="cms-link" type="text" placeholder="https://example.com or #section" />
         </div>
+        <button id="cms-save">Save</button>
         <div class="cms-advanced">
           <button type="button" class="cms-advanced__toggle" id="cms-advanced-toggle" aria-expanded="false">
             <span>Advanced</span>
@@ -200,7 +201,6 @@
             </div>
           </div>
         </div>
-        <button id="cms-save">Save</button>
         <div class="grid grid-cols-2 gap-4 mt-4">
           <button id="cms-clone" type="button">Clone</button>
           <button id="cms-delete" type="button">Delete</button>
