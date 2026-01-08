@@ -436,6 +436,28 @@ body.cms-editing #cms-toggle::after {
   color: var(--cms-gray);
 }
 
+.cms-toggle__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cms-toggle__label svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.cms-toggle__label--data {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cms-toggle__label--data svg {
+  color: #6b7280;
+}
+
 .cms-toggle input {
   position: absolute;
   opacity: 0;

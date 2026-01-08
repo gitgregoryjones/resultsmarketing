@@ -113,7 +113,12 @@
         </div>
         <div class="cms-field cms-field--toggle">
           <label class="cms-toggle">
-            <span>Use Backend Content</span>
+            <span class="cms-toggle__label cms-toggle__label--data">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm0 2c3.31 0 6 .99 6 2s-2.69 2-6 2-6-.99-6-2 2.69-2 6-2zm0 6c3.31 0 6-.99 6-2v3c0 1.01-2.69 2-6 2s-6-.99-6-2V9c0 1.01 2.69 2 6 2zm0 8c-3.31 0-6-.99-6-2v-3c0 1.01 2.69 2 6 2s6-.99 6-2v3c0 1.01-2.69 2-6 2z" />
+              </svg>
+              <span>Connect to Data</span>
+            </span>
             <input id="cms-backend-toggle" type="checkbox" />
             <span class="cms-toggle__control" aria-hidden="true"></span>
           </label>
