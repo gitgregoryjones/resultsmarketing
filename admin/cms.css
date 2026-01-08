@@ -970,6 +970,31 @@ body.cms-editing #cms-toggle::after {
   flex: 1;
 }
 
+.cms-image-controls input[type='url'],
+.cms-image-controls button {
+  border-radius: 999px;
+}
+
+.cms-image-controls input[type='url'] {
+  border: 1px solid #e5e7eb;
+  padding: 10px 16px;
+  font-size: 14px;
+  background: white;
+}
+
+.cms-image-controls button {
+  border: none;
+  background: #f3f4f6;
+  color: #111827;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cms-image-controls button:hover {
+  background: #e5e7eb;
+}
+
 .cms-image-file {
   display: none;
 }
