@@ -54,6 +54,10 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  transition: opacity 160ms ease, transform 160ms ease, max-width 160ms ease;
+  opacity: 1;
+  transform: scale(1);
+  max-width: 600px;
 }
 
 .cms-floating-menu__button {
@@ -117,7 +121,10 @@
 }
 
 .cms-floating-menu.is-minimized .cms-floating-menu__items {
-  display: none;
+  opacity: 0;
+  transform: scale(0.95);
+  max-width: 0;
+  pointer-events: none;
 }
 
 .cms-floating-menu.is-minimized {
