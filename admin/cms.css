@@ -54,7 +54,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: opacity 160ms ease, transform 160ms ease, max-width 160ms ease;
+  transition: opacity 800ms ease, transform 800ms ease, max-width 800ms ease;
   opacity: 1;
   transform: scale(1);
   max-width: 600px;
@@ -129,6 +129,10 @@
 
 .cms-floating-menu.is-minimized {
   padding: 10px;
+  width: 50px;
+  height: 50px;
+  border-radius: 999px;
+  justify-content: center;
 }
 
 .cms-floating-menu__button.is-publishing svg {
