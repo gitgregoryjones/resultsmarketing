@@ -187,15 +187,13 @@
         </div>
         <div class="cms-field cms-field--image">
           <label for="cms-image-url">Image URL</label>
-          <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-          <div class="cms-action-row">
-            <button type="button" id="cms-open-gallery">Browse gallery</button>
-            <div class="cms-upload">
-              <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-              <input id="cms-image-file" type="file" accept="image/*" />
-            </div>
+          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">No image selected</div>
+          <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
+          <div class="cms-image-controls">
+            <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+            <button type="button" id="cms-open-gallery">Gallery</button>
           </div>
-          <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*" />
         </div>
         <button id="cms-save">Save</button>
         <div class="grid grid-cols-2 gap-4 mt-4">
@@ -2523,6 +2521,11 @@
     if (!nextUrl) return;
     updateImagePreview(nextUrl);
     applyImagePreviewToElement(nextUrl);
+  });
+  imagePreview.addEventListener('dblclick', () => {
+    if (imageFileInput.disabled) return;
+    imageFileInput.value = '';
+    imageFileInput.click();
   });
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();

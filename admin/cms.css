@@ -959,6 +959,27 @@ body.cms-editing #cms-toggle::after {
   gap: 10px;
 }
 
+.cms-image-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cms-image-controls input[type='url'] {
+  flex: 1;
+}
+
+.cms-image-file {
+  display: none;
+}
+
+.cms-image-help {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--cms-gray);
+}
+
 .cms-image-actions {
   display: flex;
   justify-content: flex-end;
@@ -1021,9 +1042,9 @@ body.cms-editing #cms-toggle::after {
 
 .cms-image-preview {
   margin-top: 8px;
-  border-radius: 10px;
+  border-radius: 20px;
   border: 1px dashed var(--cms-border);
-  min-height: 120px;
+  min-height: 140px;
   background-size: cover;
   background-position: center;
   display: flex;
@@ -1032,6 +1053,10 @@ body.cms-editing #cms-toggle::after {
   color: var(--cms-gray);
   font-size: 13px;
   padding: 10px;
+}
+
+.cms-image-preview--interactive {
+  cursor: pointer;
 }
 
 #cms-save:hover {
