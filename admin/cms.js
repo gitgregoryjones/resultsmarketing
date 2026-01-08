@@ -43,11 +43,27 @@
   outline.className = 'cms-outline cms-ui';
   document.body.appendChild(outline);
 
+  const floatingActions = document.createElement('div');
+  floatingActions.className = 'cms-floating-actions cms-ui';
+  document.body.appendChild(floatingActions);
+
+  const publishShortcutButton = document.createElement('button');
+  publishShortcutButton.id = 'cms-publish-shortcut';
+  publishShortcutButton.classList.add('cms-ui');
+  publishShortcutButton.type = 'button';
+  publishShortcutButton.setAttribute('aria-label', 'Publish site');
+  publishShortcutButton.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 14c0 3.3 1.7 5 5 5l2-4-3-3-4 2zm10-9c3 3 3 8 3 8l-5 5s-5 0-8-3 0-8 0-8l5-5s5 0 8 3zM14 6a2 2 0 1 0 4 0 2 2 0 0 0-4 0zM4 20l3-1-2-2-1 3z" />
+    </svg>
+  `;
+
   const toggleButton = document.createElement('button');
   toggleButton.id = 'cms-toggle';
   toggleButton.classList.add('cms-ui');
   toggleButton.textContent = 'Edit';
-  document.body.appendChild(toggleButton);
+  floatingActions.appendChild(publishShortcutButton);
+  floatingActions.appendChild(toggleButton);
 
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
@@ -1157,6 +1173,7 @@
       hideResizeOverlay();
       hideQuickColorMenu();
     }
+    publishShortcutButton.disabled = editMode;
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
   }
@@ -2180,7 +2197,7 @@
       settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
       settingsMessageEl.style.color = '#ef4444';
       siteNameInput.focus();
-      return;
+      return false;
     }
 
     const originalLabel = publishButton.textContent;
@@ -2188,6 +2205,7 @@
     publishButton.textContent = 'Publishing...';
     settingsMessageEl.textContent = 'Publishing merged HTML to the site root...';
     settingsMessageEl.style.color = '#111827';
+    let success = true;
 
     try {
       const res = await fetch('/api/publish', { method: 'POST' });
@@ -2197,12 +2215,14 @@
       settingsMessageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
       settingsMessageEl.style.color = '#16a34a';
     } catch (err) {
+      success = false;
       settingsMessageEl.textContent = 'Unable to publish static pages.';
       settingsMessageEl.style.color = '#ef4444';
     } finally {
       publishButton.disabled = false;
       publishButton.textContent = originalLabel;
     }
+    return success;
   }
 
   function handleClick(e) {
@@ -2345,6 +2365,21 @@
     cloneSelection();
   });
   publishButton.addEventListener('click', publishStaticSite);
+  publishShortcutButton.addEventListener('click', async () => {
+    if (publishShortcutButton.disabled) return;
+    publishShortcutButton.classList.remove('is-error');
+    publishShortcutButton.classList.add('is-publishing');
+    publishShortcutButton.disabled = true;
+    const success = await publishStaticSite();
+    publishShortcutButton.classList.remove('is-publishing');
+    if (!success) {
+      publishShortcutButton.classList.add('is-error');
+      window.setTimeout(() => {
+        publishShortcutButton.classList.remove('is-error');
+      }, 3000);
+    }
+    publishShortcutButton.disabled = editMode;
+  });
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
