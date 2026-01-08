@@ -115,6 +115,16 @@
           <label for="cms-value">Content</label>
           <textarea id="cms-value" placeholder="Type content here..."></textarea>
         </div>
+        <div class="cms-field cms-field--image">
+          <label for="cms-image-url">Image URL</label>
+          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">No image selected</div>
+          <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
+          <div class="cms-image-controls">
+            <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+            <button type="button" id="cms-open-gallery">Gallery</button>
+          </div>
+          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*" />
+        </div>
         <div class="cms-quick-styles">
           <div class="cms-quick-styles__title">Quick Styles</div>
           <div class="cms-quick-styles__grid">
@@ -189,16 +199,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="cms-field cms-field--image">
-          <label for="cms-image-url">Image URL</label>
-          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">No image selected</div>
-          <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
-          <div class="cms-image-controls">
-            <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-            <button type="button" id="cms-open-gallery">Gallery</button>
-          </div>
-          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*" />
         </div>
         <button id="cms-save">Save</button>
         <div class="grid grid-cols-2 gap-4 mt-4">
