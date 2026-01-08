@@ -1604,6 +1604,7 @@
   }
 
   function handleQuickPickerClick(event) {
+    event.preventDefault();
     if (!selectedElement) return;
     const type = event.currentTarget.dataset.quickPicker;
     if (!type) return;
@@ -1613,7 +1614,11 @@
       quickColorPicker.value = backgroundColorInput.value;
     }
     quickColorPicker.dataset.pickerType = type;
-    quickColorPicker.click();
+    if (typeof quickColorPicker.showPicker === 'function') {
+      quickColorPicker.showPicker();
+    } else {
+      quickColorPicker.click();
+    }
   }
 
   function updateStyleInputs(el) {
