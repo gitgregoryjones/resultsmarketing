@@ -621,6 +621,7 @@ body.cms-editing #cms-toggle::after {
   background: transparent;
   cursor: pointer;
   appearance: none;
+  visibility: hidden;
 }
 
 .cms-quick-style-picker.is-active {
