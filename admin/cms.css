@@ -256,15 +256,16 @@ body.cms-editing #cms-toggle::after {
 }
 
 .cms-quick-styles {
-  margin: 18px 0 20px;
+  margin: 24px 0;
   display: grid;
-  gap: 12px;
+  gap: 16px;
 }
 
 .cms-quick-styles__title {
   font-size: 14px;
   font-weight: 600;
   color: #6b7280;
+  letter-spacing: 0.2px;
 }
 
 .cms-quick-styles__grid {
@@ -349,8 +350,8 @@ body.cms-editing #cms-toggle::after {
 
 .cms-advanced {
   border-top: 1px solid #e5e7eb;
-  padding-top: 12px;
-  margin-bottom: 12px;
+  padding-top: 18px;
+  margin: 24px 0;
 }
 
 .cms-advanced__toggle {
@@ -398,8 +399,8 @@ body.cms-editing #cms-toggle::after {
 .cms-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .cms-discovered {
@@ -495,9 +496,10 @@ body.cms-editing #cms-toggle::after {
 }
 
 .cms-field label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--cms-gray);
+  color: #6b7280;
+  letter-spacing: 0.2px;
 }
 
 .cms-field__hint {
