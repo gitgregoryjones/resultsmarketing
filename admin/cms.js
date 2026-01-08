@@ -28,6 +28,9 @@
   let backendPendingKey = '';
   let quickTextHistory = [];
   let quickBgHistory = [];
+  let isMenuDragging = false;
+  let menuDragOffsetX = 0;
+  let menuDragOffsetY = 0;
 
   const COLOR_SWATCHES = [
     { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
@@ -46,6 +49,29 @@
   const floatingActions = document.createElement('div');
   floatingActions.className = 'cms-floating-actions cms-ui';
   document.body.appendChild(floatingActions);
+
+  const floatingMenu = document.createElement('div');
+  floatingMenu.id = 'cms-floating-menu';
+  floatingMenu.className = 'cms-floating-menu cms-ui';
+  floatingMenu.innerHTML = `
+    <button type="button" class="cms-floating-menu__minimize" aria-label="Minimize menu">–</button>
+    <div class="cms-floating-menu__items">
+      <div class="cms-floating-menu__item cms-floating-menu__pages">
+        <button type="button" class="cms-floating-menu__button" id="cms-pages-toggle">Pages</button>
+        <div class="cms-floating-menu__dropdown" id="cms-pages-dropdown">
+          <select id="cms-pages-select" aria-label="Select page"></select>
+        </div>
+      </div>
+      <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+        </svg>
+        <span>Publish</span>
+      </button>
+    </div>
+  `;
+  document.body.appendChild(floatingMenu);
 
   const publishShortcutButton = document.createElement('button');
   publishShortcutButton.id = 'cms-publish-shortcut';
@@ -340,6 +366,13 @@
   `;
   document.body.appendChild(quickColorMenu);
 
+  const pagesToggleButton = floatingMenu.querySelector('#cms-pages-toggle');
+  const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
+  const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
+  const effectsButton = floatingMenu.querySelector('#cms-effects-button');
+  const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
+  const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
+
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
@@ -503,6 +536,62 @@
     settingsMessageEl.style.color = '#16a34a';
   }
 
+  function togglePagesDropdown(forceState) {
+    const nextState = typeof forceState === 'boolean'
+      ? forceState
+      : !pagesDropdown.classList.contains('is-open');
+    pagesDropdown.classList.toggle('is-open', nextState);
+  }
+
+  function handleMenuDismiss(event) {
+    if (!pagesDropdown.classList.contains('is-open')) return;
+    if (floatingMenu.contains(event.target)) return;
+    togglePagesDropdown(false);
+  }
+
+  function handleMenuDragStart(event) {
+    if (event.button !== 0) return;
+    if (event.target.closest('button, select, option, input, .cms-floating-menu__dropdown')) return;
+    const rect = floatingMenu.getBoundingClientRect();
+    isMenuDragging = true;
+    menuDragOffsetX = event.clientX - rect.left;
+    menuDragOffsetY = event.clientY - rect.top;
+    floatingMenu.classList.add('is-dragging');
+    floatingMenu.style.transform = 'none';
+    window.addEventListener('mousemove', handleMenuDragMove);
+    window.addEventListener('mouseup', handleMenuDragEnd);
+  }
+
+  function handleMenuDragMove(event) {
+    if (!isMenuDragging) return;
+    floatingMenu.style.left = `${event.clientX - menuDragOffsetX}px`;
+    floatingMenu.style.top = `${event.clientY - menuDragOffsetY}px`;
+  }
+
+  function handleMenuDragEnd() {
+    if (!isMenuDragging) return;
+    isMenuDragging = false;
+    floatingMenu.classList.remove('is-dragging');
+    window.removeEventListener('mousemove', handleMenuDragMove);
+    window.removeEventListener('mouseup', handleMenuDragEnd);
+  }
+
+  async function triggerPublishWithFeedback(button) {
+    if (!button || button.disabled) return;
+    button.classList.remove('is-error');
+    button.classList.add('is-publishing');
+    button.disabled = true;
+    const success = await publishStaticSite();
+    button.classList.remove('is-publishing');
+    if (!success) {
+      button.classList.add('is-error');
+      window.setTimeout(() => {
+        button.classList.remove('is-error');
+      }, 3000);
+    }
+    button.disabled = editMode && button === publishShortcutButton;
+  }
+
   function removeOutlines() {
     document.querySelectorAll('.cms-outlined').forEach((el) => {
       el.classList.remove('cms-outlined');
@@ -626,6 +715,11 @@
     return `${API_ENDPOINT}?${query.toString()}`;
   }
 
+  function navigateToFile(file) {
+    const nextPath = file === 'index.html' ? '/' : `/${file}`;
+    window.location.href = nextPath;
+  }
+
   async function persistSiteName() {
     const desiredName = sanitizeSiteName(siteNameInput.value);
     if (!desiredName) {
@@ -669,13 +763,29 @@
         if (file === currentFile) option.selected = true;
         fileSelect.appendChild(option);
       });
+      populatePagesSelect();
     } catch (err) {
       const fallbackOption = document.createElement('option');
       fallbackOption.value = currentFile;
       fallbackOption.textContent = currentFile;
       fileSelect.innerHTML = '';
       fileSelect.appendChild(fallbackOption);
+      populatePagesSelect();
     }
+  }
+
+  function populatePagesSelect() {
+    if (!pagesSelect || !fileSelect) return;
+    pagesSelect.innerHTML = '';
+    Array.from(fileSelect.options).forEach((option) => {
+      const nextOption = document.createElement('option');
+      nextOption.value = option.value;
+      nextOption.textContent = option.textContent;
+      if (option.value === currentFile) {
+        nextOption.selected = true;
+      }
+      pagesSelect.appendChild(nextOption);
+    });
   }
 
   function positionOutline(target) {
@@ -2347,6 +2457,7 @@
   document.addEventListener('click', handleClick, true);
   document.addEventListener('dblclick', handleDoubleClick, true);
   document.addEventListener('click', handleQuickMenuDismiss, true);
+  document.addEventListener('click', handleMenuDismiss, true);
   document.addEventListener('click', handleLinkNavigation);
   document.addEventListener('dragstart', handleDragStart, true);
   document.addEventListener('dragover', handleDragOver, true);
@@ -2366,19 +2477,7 @@
   });
   publishButton.addEventListener('click', publishStaticSite);
   publishShortcutButton.addEventListener('click', async () => {
-    if (publishShortcutButton.disabled) return;
-    publishShortcutButton.classList.remove('is-error');
-    publishShortcutButton.classList.add('is-publishing');
-    publishShortcutButton.disabled = true;
-    const success = await publishStaticSite();
-    publishShortcutButton.classList.remove('is-publishing');
-    if (!success) {
-      publishShortcutButton.classList.add('is-error');
-      window.setTimeout(() => {
-        publishShortcutButton.classList.remove('is-error');
-      }, 3000);
-    }
-    publishShortcutButton.disabled = editMode;
+    await triggerPublishWithFeedback(publishShortcutButton);
   });
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
@@ -2576,10 +2675,25 @@
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
   fileSelect.addEventListener('change', () => {
-    const nextFile = fileSelect.value;
-    const nextPath = nextFile === 'index.html' ? '/' : `/${nextFile}`;
-    window.location.href = nextPath;
+    navigateToFile(fileSelect.value);
   });
+  pagesSelect.addEventListener('change', () => {
+    navigateToFile(pagesSelect.value);
+    togglePagesDropdown(false);
+  });
+  pagesToggleButton.addEventListener('click', () => {
+    togglePagesDropdown();
+  });
+  effectsButton.addEventListener('click', () => {
+    window.alert('Effects coming soon.');
+  });
+  publishMenuButton.addEventListener('click', async () => {
+    await triggerPublishWithFeedback(publishMenuButton);
+  });
+  floatingMinimizeButton.addEventListener('click', () => {
+    floatingMenu.classList.toggle('is-minimized');
+  });
+  floatingMenu.addEventListener('mousedown', handleMenuDragStart);
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
