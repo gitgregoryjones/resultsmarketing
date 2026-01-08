@@ -232,6 +232,7 @@
 
 .cms-tabs button[data-tab="wireframe"],
 .cms-tabs button[data-tab="content"],
+.cms-tabs button[data-tab="styles"],
 .cms-tabs button[data-tab="effects"],
 .cms-tabs button[data-tab="settings"] {
   display: none;
