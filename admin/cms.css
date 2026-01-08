@@ -72,7 +72,8 @@
 }
 
 .cms-floating-menu__button:hover {
-  background: #f3f4f6;
+  background: #7c3aed;
+  color: #fff;
 }
 
 .cms-floating-menu__button:disabled {
