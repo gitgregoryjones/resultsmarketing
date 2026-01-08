@@ -2560,6 +2560,7 @@
     backendServices = getMetaServices();
     populateServiceSelect();
     setBackendMode(false);
+    updateServiceFormVisibility();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
