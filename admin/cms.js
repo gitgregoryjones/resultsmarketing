@@ -1079,6 +1079,7 @@
   function setEditMode(enabled) {
     if (editMode === enabled) return;
     editMode = enabled;
+    document.body.classList.toggle('cms-editing', editMode);
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
