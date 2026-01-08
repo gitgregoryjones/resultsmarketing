@@ -302,6 +302,12 @@ body.cms-editing #cms-toggle::after {
   transition: all 120ms ease;
 }
 
+.cms-eye-dropper svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
 .cms-eye-dropper:hover {
   border-color: var(--cms-purple);
   color: var(--cms-purple);

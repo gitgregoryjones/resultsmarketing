@@ -148,14 +148,22 @@
             <div class="cms-quick-style">
               <div class="cms-quick-style__label">
                 <span>Text Color</span>
-                <button type="button" class="cms-eye-dropper" data-quick-picker="text" aria-label="Pick text color">🎨</button>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="text" aria-label="Pick text color">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M14.7 3.3a2.5 2.5 0 0 1 3.5 3.5l-1.1 1.1-3.5-3.5 1.1-1.1zM4 14.5 13.1 5.4l3.5 3.5L7.5 18H4v-3.5zM3 19h18v2H3z" />
+                  </svg>
+                </button>
               </div>
               <div class="cms-quick-style__swatches" data-quick-styles="text"></div>
             </div>
             <div class="cms-quick-style">
               <div class="cms-quick-style__label">
                 <span>Background</span>
-                <button type="button" class="cms-eye-dropper" data-quick-picker="background" aria-label="Pick background color">🎨</button>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="background" aria-label="Pick background color">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M14.7 3.3a2.5 2.5 0 0 1 3.5 3.5l-1.1 1.1-3.5-3.5 1.1-1.1zM4 14.5 13.1 5.4l3.5 3.5L7.5 18H4v-3.5zM3 19h18v2H3z" />
+                  </svg>
+                </button>
               </div>
               <div class="cms-quick-style__swatches" data-quick-styles="background"></div>
             </div>
