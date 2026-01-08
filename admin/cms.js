@@ -111,26 +111,6 @@
             <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
           </div>
         </div>
-        <div class="cms-field cms-backend-only">
-          <label class="cms-toggle">
-            <span>Repeat items</span>
-            <input id="cms-repeat-toggle" type="checkbox" />
-            <span class="cms-toggle__control" aria-hidden="true"></span>
-          </label>
-        </div>
-        <div class="cms-field cms-backend-only">
-          <label for="cms-service">Service</label>
-          <select id="cms-service"></select>
-        </div>
-        <div class="cms-field cms-backend-only cms-service-form" id="cms-service-form">
-          <label>New service call</label>
-          <input id="cms-service-alias" type="text" placeholder="Service alias" />
-          <input id="cms-service-url" type="url" placeholder="https://example.com/api" />
-          <div class="cms-action-row">
-            <button type="button" id="cms-service-ok">OK</button>
-            <button type="button" id="cms-service-cancel">Cancel</button>
-          </div>
-        </div>
         <div class="cms-field cms-field--text">
           <label for="cms-value">Content</label>
           <textarea id="cms-value" placeholder="Type content here..."></textarea>
@@ -187,6 +167,26 @@
             <div class="cms-field" id="cms-key-field">
               <label for="cms-key">Element Key</label>
               <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+            </div>
+            <div class="cms-field cms-backend-only">
+              <label class="cms-toggle">
+                <span>Repeat items</span>
+                <input id="cms-repeat-toggle" type="checkbox" />
+                <span class="cms-toggle__control" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="cms-field cms-backend-only">
+              <label for="cms-service">Service</label>
+              <select id="cms-service"></select>
+            </div>
+            <div class="cms-field cms-backend-only cms-service-form" id="cms-service-form">
+              <label>New service call</label>
+              <input id="cms-service-alias" type="text" placeholder="Service alias" />
+              <input id="cms-service-url" type="url" placeholder="https://example.com/api" />
+              <div class="cms-action-row">
+                <button type="button" id="cms-service-ok">OK</button>
+                <button type="button" id="cms-service-cancel">Cancel</button>
+              </div>
             </div>
           </div>
         </div>
