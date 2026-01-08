@@ -63,6 +63,7 @@
         </div>
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
       <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
@@ -370,6 +371,7 @@
   const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
   const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
+  const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
 
@@ -2686,6 +2688,9 @@
   });
   effectsButton.addEventListener('click', () => {
     window.alert('Effects coming soon.');
+  });
+  xrayButton.addEventListener('click', () => {
+    activateTab(isWireframeEnabled() ? 'content' : 'wireframe');
   });
   publishMenuButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishMenuButton);
