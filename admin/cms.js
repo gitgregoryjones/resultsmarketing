@@ -255,7 +255,10 @@
             </div>
             <div class="cms-field">
               <label for="cms-component-id">Component ID</label>
-              <input id="cms-component-id" type="text" placeholder="header.primary" list="cms-component-options" />
+              <div class="cms-action-row">
+                <input id="cms-component-id" type="text" placeholder="header.primary" list="cms-component-options" />
+                <button type="button" id="cms-component-clear">Clear</button>
+              </div>
               <datalist id="cms-component-options"></datalist>
             </div>
             <div class="cms-field">
@@ -427,6 +430,7 @@
   let keyField = sidebar.querySelector('#cms-key');
   const componentIdInput = sidebar.querySelector('#cms-component-id');
   const componentOptionsList = sidebar.querySelector('#cms-component-options');
+  const componentClearButton = sidebar.querySelector('#cms-component-clear');
   const componentSourceToggle = sidebar.querySelector('#cms-component-source');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
@@ -596,6 +600,21 @@
 
   function getComponentId(value) {
     return (value || '').trim();
+  }
+
+  function clearComponentSelection() {
+    if (!selectedElement) return;
+    selectedElement.removeAttribute('data-component-id');
+    selectedElement.removeAttribute('data-component-source');
+    if (componentIdInput) {
+      componentIdInput.value = '';
+    }
+    if (componentSourceToggle) {
+      componentSourceToggle.checked = false;
+      componentSourceToggle.disabled = true;
+    }
+    lastComponentId = '';
+    scheduleLayoutPersist();
   }
 
   function getComponentSource(componentId) {
@@ -2928,6 +2947,11 @@
         lastComponentId = nextId;
         applyComponentFromDisk(nextId);
       }
+    });
+  }
+  if (componentClearButton) {
+    componentClearButton.addEventListener('click', () => {
+      clearComponentSelection();
     });
   }
   if (componentSourceToggle) {
