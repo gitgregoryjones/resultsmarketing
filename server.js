@@ -167,6 +167,18 @@ async function applyStylesToHtml(html = '') {
   return root.toString();
 }
 
+async function listComponents() {
+  try {
+    const entries = await fs.readdir(COMPONENTS_DIR, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
+      .map((entry) => path.basename(entry.name, '.html'));
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return [];
+    throw err;
+  }
+}
+
 async function listHtmlFiles() {
   const entries = await fs.readdir(ADMIN_DIR, { withFileTypes: true });
   return entries
@@ -614,6 +626,7 @@ async function renderFile(fileName = DEFAULT_FILE) {
   
   // Fetch and populate HTML with remote JSON data from meta tags
   html = await populateHtmlFromMetaTags(html);
+  html = await applyComponentsToHtml(html);
 
   //write File back to disk for caching if needed   
   fs.writeFile(htmlPath, html);
@@ -1458,6 +1471,32 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to list files' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/components' && req.method === 'GET') {
+    const componentId = parsedUrl.query.id;
+    if (componentId) {
+      try {
+        const html = await loadComponentHtml(componentId);
+        if (!html) {
+          sendJsonError(res, 404, 'Component not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ html }));
+      } catch (err) {
+        sendJsonError(res, 500, err.message || 'Unable to load component');
+      }
+      return;
+    }
+    try {
+      const components = await listComponents();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ components }));
+    } catch (err) {
+      sendJsonError(res, 500, err.message || 'Unable to list components');
     }
     return;
   }

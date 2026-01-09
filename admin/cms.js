@@ -255,7 +255,8 @@
             </div>
             <div class="cms-field">
               <label for="cms-component-id">Component ID</label>
-              <input id="cms-component-id" type="text" placeholder="header.primary" />
+              <input id="cms-component-id" type="text" placeholder="header.primary" list="cms-component-options" />
+              <datalist id="cms-component-options"></datalist>
             </div>
             <div class="cms-field">
               <label class="cms-toggle">
@@ -425,6 +426,7 @@
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
   const componentIdInput = sidebar.querySelector('#cms-component-id');
+  const componentOptionsList = sidebar.querySelector('#cms-component-options');
   const componentSourceToggle = sidebar.querySelector('#cms-component-source');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
@@ -495,6 +497,7 @@
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
   let layoutSaveTimer = null;
+  let lastComponentId = '';
   deleteButton.disabled = true;
   cloneButton.disabled = true;
   loadQuickStyleHistory();
@@ -600,6 +603,29 @@
     return document.querySelector(
       `[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`
     );
+  }
+
+  async function applyComponentFromDisk(componentId) {
+    if (!selectedElement || !componentId) return;
+    if (selectedElement.getAttribute('data-component-source') === 'true') return;
+    try {
+      const res = await fetch(`/api/components?id=${encodeURIComponent(componentId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.html) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = data.html.trim();
+      const nextNode = wrapper.firstElementChild;
+      if (!nextNode) return;
+      nextNode.removeAttribute('data-component-source');
+      nextNode.setAttribute('data-component-id', componentId);
+      selectedElement.replaceWith(nextNode);
+      selectedElement = nextNode;
+      selectElement(nextNode);
+      scheduleLayoutPersist();
+    } catch (err) {
+      console.warn('Unable to apply component from disk', err);
+    }
   }
 
   function syncComponentInstances(componentId) {
@@ -926,6 +952,24 @@
       fileSelect.innerHTML = '';
       fileSelect.appendChild(fallbackOption);
       populatePagesSelect();
+    }
+  }
+
+  async function loadComponentOptions() {
+    if (!componentOptionsList) return;
+    try {
+      const res = await fetch('/api/components');
+      if (!res.ok) throw new Error('Unable to fetch components');
+      const data = await res.json();
+      const components = Array.isArray(data.components) ? data.components : [];
+      componentOptionsList.innerHTML = '';
+      components.forEach((componentId) => {
+        const option = document.createElement('option');
+        option.value = componentId;
+        componentOptionsList.appendChild(option);
+      });
+    } catch (err) {
+      componentOptionsList.innerHTML = '';
     }
   }
 
@@ -2219,6 +2263,7 @@
       componentIdInput.value = componentId;
       componentSourceToggle.checked = el.getAttribute('data-component-source') === 'true';
       componentSourceToggle.disabled = !componentId;
+      lastComponentId = componentId;
     }
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
@@ -2879,6 +2924,10 @@
           syncComponentInstances(nextId);
         }
       }
+      if (!componentSourceToggle?.checked && nextId !== lastComponentId) {
+        lastComponentId = nextId;
+        applyComponentFromDisk(nextId);
+      }
     });
   }
   if (componentSourceToggle) {
@@ -3044,6 +3093,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
+    loadComponentOptions();
     applySidebarPosition();
     flexField.style.display = 'none';
     fontSizeField.style.display = 'flex';
