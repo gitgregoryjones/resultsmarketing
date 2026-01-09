@@ -258,6 +258,7 @@
               <div class="cms-action-row">
                 <input id="cms-component-id" type="text" placeholder="header.primary" list="cms-component-options" />
                 <button type="button" id="cms-component-clear">Clear</button>
+                <button type="button" id="cms-component-create">Create New</button>
               </div>
               <datalist id="cms-component-options"></datalist>
             </div>
@@ -424,6 +425,7 @@
   const componentIdInput = sidebar.querySelector('#cms-component-id');
   const componentOptionsList = sidebar.querySelector('#cms-component-options');
   const componentClearButton = sidebar.querySelector('#cms-component-clear');
+  const componentCreateButton = sidebar.querySelector('#cms-component-create');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
@@ -590,6 +592,18 @@
     return (value || '').trim();
   }
 
+  function listComponentIds() {
+    if (!componentOptionsList) return [];
+    return Array.from(componentOptionsList.options || []).map((option) => option.value);
+  }
+
+  function updateComponentCreateState() {
+    if (!componentCreateButton || !componentIdInput) return;
+    const nextId = getComponentId(componentIdInput.value);
+    const hasOption = listComponentIds().some((value) => value === nextId);
+    componentCreateButton.style.display = nextId && !hasOption ? 'inline-flex' : 'none';
+  }
+
   function clearComponentSelection() {
     if (!selectedElement) return;
     selectedElement.removeAttribute('data-component-id');
@@ -599,6 +613,7 @@
     }
     lastComponentId = '';
     scheduleLayoutPersist();
+    updateComponentCreateState();
   }
 
   async function applyComponentFromDisk(componentId) {
@@ -618,9 +633,11 @@
       selectedElement = nextNode;
       selectElement(nextNode);
       scheduleLayoutPersist();
+      return true;
     } catch (err) {
       console.warn('Unable to apply component from disk', err);
     }
+    return false;
   }
 
   function clearMessage() {
@@ -924,8 +941,10 @@
         option.value = componentId;
         componentOptionsList.appendChild(option);
       });
+      updateComponentCreateState();
     } catch (err) {
       componentOptionsList.innerHTML = '';
+      updateComponentCreateState();
     }
   }
 
@@ -2855,6 +2874,7 @@
   });
   if (componentIdInput) {
     componentIdInput.addEventListener('input', () => {
+      updateComponentCreateState();
       if (!selectedElement) return;
       const nextId = getComponentId(componentIdInput.value);
       if (!nextId) {
@@ -2865,13 +2885,29 @@
       selectedElement.setAttribute('data-component-id', nextId);
       if (nextId !== lastComponentId) {
         lastComponentId = nextId;
-        applyComponentFromDisk(nextId);
+        applyComponentFromDisk(nextId).then((applied) => {
+          if (applied) {
+            showToast(`Component "${nextId}" applied.`, 'success');
+          }
+        });
       }
     });
   }
   if (componentClearButton) {
     componentClearButton.addEventListener('click', () => {
       clearComponentSelection();
+    });
+  }
+  if (componentCreateButton) {
+    componentCreateButton.addEventListener('click', () => {
+      if (!selectedElement || !componentIdInput) return;
+      const nextId = getComponentId(componentIdInput.value);
+      if (!nextId) return;
+      selectedElement.setAttribute('data-component-id', nextId);
+      lastComponentId = nextId;
+      scheduleLayoutPersist();
+      showToast(`Component "${nextId}" created.`, 'success');
+      updateComponentCreateState();
     });
   }
   serviceSelect.addEventListener('change', async () => {
@@ -3022,6 +3058,7 @@
     loadFiles();
     loadComponentOptions();
     applySidebarPosition();
+    updateComponentCreateState();
     flexField.style.display = 'none';
     fontSizeField.style.display = 'flex';
     clearSettingsMessage();
