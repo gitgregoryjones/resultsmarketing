@@ -85,7 +85,7 @@ function styleFileName(styleId = '') {
 
 async function persistComponentSources(html = '') {
   const root = parse(html);
-  const sources = root.querySelectorAll('[data-component-id][data-component-source="true"]');
+  const sources = root.querySelectorAll('[data-component-id]');
   if (!sources.length) return;
   await ensureDir(COMPONENTS_DIR);
   await Promise.all(
