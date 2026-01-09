@@ -46,6 +46,11 @@ async function ensureDir(dirPath) {
   }
 }
 
+function stripOutlineClasses(element) {
+  if (!element || !element.classList) return;
+  element.classList.remove('cms-outlined');
+}
+
 function parseJsonBody(body = '') {
   if (!body) return {};
   try {
@@ -93,6 +98,7 @@ async function persistComponentSources(html = '') {
       const componentId = el.getAttribute('data-component-id');
       const fileName = componentFileName(componentId);
       if (!fileName) return;
+      stripOutlineClasses(el);
       await fs.writeFile(path.join(COMPONENTS_DIR, fileName), el.toString());
     })
   );
