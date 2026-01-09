@@ -438,6 +438,7 @@ function stripCmsUi(html) {
   try {
     const root = parse(html);
     root.querySelectorAll('.cms-ui, .cms-outline').forEach((el) => el.remove());
+    root.querySelectorAll('input.cms-quick-style-picker').forEach((el) => el.remove());
     const body = root.querySelector('body');
     if (body) {
       body.classList.remove('cms-wireframe');
