@@ -2680,10 +2680,14 @@
         //applyStoredTags(storedTags);
       }
       //applyContent();
-      syncAllComponents();
     } catch (err) {
       console.warn('Hydration failed', err);
     }
+  }
+
+  function handleAutoSaveChange() {
+    if (!editMode || !selectedElement) return;
+    saveSelection();
   }
 
   toggleButton.addEventListener('click', toggleEdit);
@@ -2863,6 +2867,11 @@
     setPrimaryTextValue(selectedElement, e.target.value);
     textValueDirty = true;
   });
+  valueInput.addEventListener('change', handleAutoSaveChange);
+  linkInput.addEventListener('change', handleAutoSaveChange);
+  if (keyField && keyField.tagName === 'INPUT') {
+    keyField.addEventListener('change', handleAutoSaveChange);
+  }
   backendToggle.addEventListener('change', () => {
     const enabled = backendToggle.checked;
     setBackendMode(enabled);
@@ -2892,6 +2901,7 @@
         });
       }
     });
+    componentIdInput.addEventListener('change', handleAutoSaveChange);
   }
   if (componentClearButton) {
     componentClearButton.addEventListener('click', () => {
@@ -3019,6 +3029,7 @@
     updateImagePreview(nextUrl);
     applyImagePreviewToElement(nextUrl);
   });
+  imageUrlInput.addEventListener('change', handleAutoSaveChange);
   imagePreview.addEventListener('dblclick', () => {
     if (imageFileInput.disabled) return;
     imageFileInput.value = '';
