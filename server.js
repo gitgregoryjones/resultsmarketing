@@ -11,7 +11,7 @@ const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
-const DATA_ROOT = process.env.DATA_DIR || '/data';
+const DATA_ROOT = process.env.DATA_DIR || 'data';
 const COMPONENTS_DIR = path.join(DATA_ROOT, 'components');
 const STYLES_DIR = path.join(DATA_ROOT, 'styles');
 const PUBLISH_TARGET = ROOT;
@@ -36,7 +36,14 @@ function htmlPathFor(fileName = DEFAULT_FILE) {
 }
 
 async function ensureDir(dirPath) {
-  await fs.mkdir(dirPath, { recursive: true });
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Unable to create directory';
+    const error = new Error(`Unable to create directory: ${dirPath}. ${message}`);
+    error.code = err && err.code ? err.code : 'DIR_CREATE_FAILED';
+    throw error;
+  }
 }
 
 function parseJsonBody(body = '') {
@@ -51,6 +58,11 @@ function parseJsonBody(body = '') {
     }
     throw err;
   }
+}
+
+function sendJsonError(res, status, message) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: message }));
 }
 
 function componentFileName(componentId = '') {
@@ -1371,8 +1383,9 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        const isSyntaxError = err instanceof SyntaxError;
+        const message = isSyntaxError ? 'Invalid JSON payload' : err.message || 'Unable to save content';
+        sendJsonError(res, isSyntaxError ? 400 : 500, message);
       }
     });
     return;
@@ -1429,8 +1442,9 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        const isSyntaxError = err instanceof SyntaxError;
+        const message = isSyntaxError ? 'Invalid JSON payload' : err.message || 'Unable to save layout';
+        sendJsonError(res, isSyntaxError ? 400 : 500, message);
       }
     });
     return;
