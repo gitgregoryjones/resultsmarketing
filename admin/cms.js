@@ -253,6 +253,17 @@
               <label for="cms-key">Element Key</label>
               <input id="cms-key" type="text" placeholder="auto.tag.hash" />
             </div>
+            <div class="cms-field">
+              <label for="cms-component-id">Component ID</label>
+              <input id="cms-component-id" type="text" placeholder="header.primary" />
+            </div>
+            <div class="cms-field">
+              <label class="cms-toggle">
+                <span>Component source</span>
+                <input id="cms-component-source" type="checkbox" />
+                <span class="cms-toggle__control" aria-hidden="true"></span>
+              </label>
+            </div>
             <div class="cms-field cms-backend-only">
               <label class="cms-toggle">
                 <span>Repeat items</span>
@@ -413,6 +424,8 @@
 
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
+  const componentIdInput = sidebar.querySelector('#cms-component-id');
+  const componentSourceToggle = sidebar.querySelector('#cms-component-source');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
@@ -553,6 +566,11 @@
 
   function clearForm() {
     keyField.value = '';
+    if (componentIdInput) componentIdInput.value = '';
+    if (componentSourceToggle) {
+      componentSourceToggle.checked = false;
+      componentSourceToggle.disabled = true;
+    }
     valueInput.value = '';
     linkInput.value = '';
     imageUrlInput.value = '';
@@ -571,6 +589,56 @@
     if (!siteName) {
       siteNameInput.placeholder = 'required for publishing';
     }
+  }
+
+  function getComponentId(value) {
+    return (value || '').trim();
+  }
+
+  function getComponentSource(componentId) {
+    if (!componentId) return null;
+    return document.querySelector(
+      `[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`
+    );
+  }
+
+  function syncComponentInstances(componentId) {
+    if (!componentId) return;
+    const source = getComponentSource(componentId);
+    if (!source) return;
+    const instances = Array.from(
+      document.querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"]`)
+    );
+    instances.forEach((instance) => {
+      if (instance === source) return;
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('data-component-source');
+      clone.setAttribute('data-component-id', componentId);
+      instance.replaceWith(clone);
+      if (selectedElement === instance) {
+        selectedElement = clone;
+        selectElement(clone);
+      }
+    });
+  }
+
+  function syncAllComponents() {
+    const ids = new Set(
+      Array.from(document.querySelectorAll('[data-component-id]')).map((el) =>
+        el.getAttribute('data-component-id')
+      )
+    );
+    ids.forEach((id) => syncComponentInstances(id));
+  }
+
+  function setComponentSource(componentId, sourceEl) {
+    if (!componentId || !sourceEl) return;
+    document
+      .querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`)
+      .forEach((el) => {
+        if (el !== sourceEl) el.removeAttribute('data-component-source');
+      });
+    sourceEl.setAttribute('data-component-source', 'true');
   }
 
   function clearMessage() {
@@ -1891,6 +1959,10 @@
       clearTimeout(layoutSaveTimer);
     }
     layoutSaveTimer = setTimeout(() => {
+      if (selectedElement && selectedElement.hasAttribute('data-component-source')) {
+        const componentId = selectedElement.getAttribute('data-component-id');
+        syncComponentInstances(componentId);
+      }
       persistLayout();
       layoutSaveTimer = null;
     }, 400);
@@ -2142,6 +2214,12 @@
       : getPrimaryTextValue(el).trim();
     linkInput.value = el.getAttribute('data-link') || '';
     keyField.value = key || generateKeySuggestion(el);
+    if (componentIdInput && componentSourceToggle) {
+      const componentId = el.getAttribute('data-component-id') || '';
+      componentIdInput.value = componentId;
+      componentSourceToggle.checked = el.getAttribute('data-component-source') === 'true';
+      componentSourceToggle.disabled = !componentId;
+    }
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
@@ -2446,6 +2524,8 @@
       return false;
     }
 
+    syncAllComponents();
+
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
@@ -2586,6 +2666,7 @@
         //applyStoredTags(storedTags);
       }
       //applyContent();
+      syncAllComponents();
     } catch (err) {
       console.warn('Hydration failed', err);
     }
@@ -2777,6 +2858,46 @@
     }
     updateServiceFormVisibility();
   });
+  if (componentIdInput) {
+    componentIdInput.addEventListener('input', () => {
+      if (!selectedElement) return;
+      const nextId = getComponentId(componentIdInput.value);
+      if (!nextId) {
+        selectedElement.removeAttribute('data-component-id');
+        selectedElement.removeAttribute('data-component-source');
+        if (componentSourceToggle) {
+          componentSourceToggle.checked = false;
+          componentSourceToggle.disabled = true;
+        }
+        return;
+      }
+      selectedElement.setAttribute('data-component-id', nextId);
+      if (componentSourceToggle) {
+        componentSourceToggle.disabled = false;
+        if (componentSourceToggle.checked) {
+          setComponentSource(nextId, selectedElement);
+          syncComponentInstances(nextId);
+        }
+      }
+    });
+  }
+  if (componentSourceToggle) {
+    componentSourceToggle.addEventListener('change', () => {
+      if (!selectedElement) return;
+      const componentId = getComponentId(componentIdInput?.value);
+      if (!componentId) {
+        componentSourceToggle.checked = false;
+        componentSourceToggle.disabled = true;
+        return;
+      }
+      if (componentSourceToggle.checked) {
+        setComponentSource(componentId, selectedElement);
+        syncComponentInstances(componentId);
+      } else {
+        selectedElement.removeAttribute('data-component-source');
+      }
+    });
+  }
   serviceSelect.addEventListener('change', async () => {
     const selected = serviceSelect.value;
     messageEl.textContent = '';
