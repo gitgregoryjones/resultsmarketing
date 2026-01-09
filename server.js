@@ -11,6 +11,9 @@ const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
+const DATA_ROOT = process.env.DATA_DIR || 'data';
+const COMPONENTS_DIR = path.join(DATA_ROOT, 'components');
+const STYLES_DIR = path.join(DATA_ROOT, 'styles');
 const PUBLISH_TARGET = ROOT;
 
 function sanitizeSiteName(name = '') {
@@ -33,7 +36,153 @@ function htmlPathFor(fileName = DEFAULT_FILE) {
 }
 
 async function ensureDir(dirPath) {
-  await fs.mkdir(dirPath, { recursive: true });
+  try {
+    await fs.mkdir(dirPath, { recursive: true });
+  } catch (err) {
+    const message = err && err.message ? err.message : 'Unable to create directory';
+    const error = new Error(`Unable to create directory: ${dirPath}. ${message}`);
+    error.code = err && err.code ? err.code : 'DIR_CREATE_FAILED';
+    throw error;
+  }
+}
+
+function stripOutlineClasses(element) {
+  if (!element || !element.classList) return;
+  element.classList.remove('cms-outlined');
+}
+
+function parseJsonBody(body = '') {
+  if (!body) return {};
+  try {
+    return JSON.parse(body);
+  } catch (err) {
+    const start = body.indexOf('{');
+    const end = body.lastIndexOf('}');
+    if (start !== -1 && end > start) {
+      return JSON.parse(body.slice(start, end + 1));
+    }
+    throw err;
+  }
+}
+
+function sendJsonError(res, status, message) {
+  res.writeHead(status, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: message }));
+}
+
+function componentFileName(componentId = '') {
+  const safeId = String(componentId || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return safeId ? `${safeId}.html` : '';
+}
+
+function styleFileName(styleId = '') {
+  const safeId = String(styleId || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return safeId ? `${safeId}.css` : '';
+}
+
+async function persistComponentSources(html = '') {
+  const root = parse(html);
+  const sources = root.querySelectorAll('[data-component-id]');
+  if (!sources.length) return;
+  await ensureDir(COMPONENTS_DIR);
+  await Promise.all(
+    sources.map(async (el) => {
+      const componentId = el.getAttribute('data-component-id');
+      const fileName = componentFileName(componentId);
+      if (!fileName) return;
+      stripOutlineClasses(el);
+      await fs.writeFile(path.join(COMPONENTS_DIR, fileName), el.toString());
+    })
+  );
+}
+
+async function persistStyleSources(html = '') {
+  const root = parse(html);
+  const sources = root.querySelectorAll('style[data-style-id][data-style-source="true"]');
+  if (!sources.length) return;
+  await ensureDir(STYLES_DIR);
+  await Promise.all(
+    sources.map(async (el) => {
+      const styleId = el.getAttribute('data-style-id');
+      const fileName = styleFileName(styleId);
+      if (!fileName) return;
+      await fs.writeFile(path.join(STYLES_DIR, fileName), el.innerHTML || '');
+    })
+  );
+}
+
+async function loadComponentHtml(componentId) {
+  const fileName = componentFileName(componentId);
+  if (!fileName) return null;
+  try {
+    return await fs.readFile(path.join(COMPONENTS_DIR, fileName), 'utf8');
+  } catch (err) {
+    return null;
+  }
+}
+
+async function loadStyleCss(styleId) {
+  const fileName = styleFileName(styleId);
+  if (!fileName) return null;
+  try {
+    return await fs.readFile(path.join(STYLES_DIR, fileName), 'utf8');
+  } catch (err) {
+    return null;
+  }
+}
+
+async function applyComponentsToHtml(html = '') {
+  const root = parse(html);
+  const nodes = root.querySelectorAll('[data-component-id]');
+  if (!nodes.length) return html;
+  await ensureDir(COMPONENTS_DIR);
+  for (const node of nodes) {
+    const componentId = node.getAttribute('data-component-id');
+    const componentHtml = await loadComponentHtml(componentId);
+    if (!componentHtml) continue;
+    const componentRoot = parse(componentHtml);
+    const componentNode = componentRoot.firstChild;
+    if (!componentNode) continue;
+    componentNode.removeAttribute('data-component-source');
+    componentNode.setAttribute('data-component-id', componentId);
+    node.replaceWith(componentNode);
+  }
+  return root.toString();
+}
+
+async function applyStylesToHtml(html = '') {
+  const root = parse(html);
+  const nodes = root.querySelectorAll('style[data-style-id]');
+  if (!nodes.length) return html;
+  await ensureDir(STYLES_DIR);
+  for (const node of nodes) {
+    const styleId = node.getAttribute('data-style-id');
+    const styleCss = await loadStyleCss(styleId);
+    if (!styleCss) continue;
+    node.set_content(styleCss);
+    node.removeAttribute('data-style-source');
+  }
+  return root.toString();
+}
+
+async function listComponents() {
+  try {
+    const entries = await fs.readdir(COMPONENTS_DIR, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.html'))
+      .map((entry) => path.basename(entry.name, '.html'));
+  } catch (err) {
+    if (err && err.code === 'ENOENT') return [];
+    throw err;
+  }
 }
 
 async function listHtmlFiles() {
@@ -289,6 +438,7 @@ function stripCmsUi(html) {
   try {
     const root = parse(html);
     root.querySelectorAll('.cms-ui, .cms-outline').forEach((el) => el.remove());
+    root.querySelectorAll('input.cms-quick-style-picker').forEach((el) => el.remove());
     const body = root.querySelector('body');
     if (body) {
       body.classList.remove('cms-wireframe');
@@ -418,6 +568,8 @@ async function publishSite() {
   for (const file of files) {
     try {
       let html = await fs.readFile(htmlPathFor(file), 'utf8');
+      html = await applyComponentsToHtml(html);
+      html = await applyStylesToHtml(html);
       if (siteName) {
         const root = parse(html);
         root.querySelectorAll('[data-cms-image]').forEach((el) => {
@@ -481,6 +633,7 @@ async function renderFile(fileName = DEFAULT_FILE) {
   
   // Fetch and populate HTML with remote JSON data from meta tags
   html = await populateHtmlFromMetaTags(html);
+  html = await applyComponentsToHtml(html);
 
   //write File back to disk for caching if needed   
   fs.writeFile(htmlPath, html);
@@ -1120,7 +1273,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
     });
     req.on('end', async () => {
       try {
-        const payload = JSON.parse(body || '{}');
+        const payload = parseJsonBody(body);
         const {
           key,
           value,
@@ -1158,6 +1311,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
             return;
           }
           currentHtml = removeElementFromHtml(currentHtml, { key, elementPath });
+          await persistComponentSources(currentHtml);
+          await persistStyleSources(currentHtml);
           await fs.writeFile(htmlPath, currentHtml);
           const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1239,6 +1394,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           }
         }
 
+        await persistComponentSources(currentHtml);
+        await persistStyleSources(currentHtml);
         await fs.writeFile(htmlPath, currentHtml);
 
         const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
@@ -1246,8 +1403,9 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        const isSyntaxError = err instanceof SyntaxError;
+        const message = isSyntaxError ? 'Invalid JSON payload' : err.message || 'Unable to save content';
+        sendJsonError(res, isSyntaxError ? 400 : 500, message);
       }
     });
     return;
@@ -1287,7 +1445,7 @@ const server = http.createServer(async (req, res) => {
     });
     req.on('end', async () => {
       try {
-        const payload = JSON.parse(body || '{}');
+        const payload = parseJsonBody(body);
         const { html, file } = payload;
         if (!html) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1297,13 +1455,16 @@ const server = http.createServer(async (req, res) => {
         const targetFile = sanitizeHtmlFile(file || DEFAULT_FILE);
         const htmlPath = htmlPathFor(targetFile);
         const cleanedHtml = stripCmsUi(html);
+        await persistComponentSources(cleanedHtml);
+        await persistStyleSources(cleanedHtml);
         await fs.writeFile(htmlPath, cleanedHtml);
         const { values, siteName } = extractContentFromHtml(cleanedHtml);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName }));
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        const isSyntaxError = err instanceof SyntaxError;
+        const message = isSyntaxError ? 'Invalid JSON payload' : err.message || 'Unable to save layout';
+        sendJsonError(res, isSyntaxError ? 400 : 500, message);
       }
     });
     return;
@@ -1317,6 +1478,32 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Unable to list files' }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/components' && req.method === 'GET') {
+    const componentId = parsedUrl.query.id;
+    if (componentId) {
+      try {
+        const html = await loadComponentHtml(componentId);
+        if (!html) {
+          sendJsonError(res, 404, 'Component not found');
+          return;
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ html }));
+      } catch (err) {
+        sendJsonError(res, 500, err.message || 'Unable to load component');
+      }
+      return;
+    }
+    try {
+      const components = await listComponents();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ components }));
+    } catch (err) {
+      sendJsonError(res, 500, err.message || 'Unable to list components');
     }
     return;
   }
