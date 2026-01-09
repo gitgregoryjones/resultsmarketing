@@ -17,22 +17,102 @@
   let inlineInputHandler = null;
   let draggedElement = null;
   let dropTarget = null;
+  let dropTargetPosition = null;
   let activeWireframeTool = null;
   let textValueDirty = false;
+  let reorderMode = false;
+  let resizeState = null;
   let backendServices = [];
   let backendServiceData = null;
   let backendServiceAlias = '';
   let backendPendingKey = '';
+  let quickTextHistory = [];
+  let quickBgHistory = [];
+  let isMenuDragging = false;
+  let menuDragOffsetX = 0;
+  let menuDragOffsetY = 0;
+
+  const COLOR_SWATCHES = [
+    { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
+    { hex: '#ffffff', textClass: 'text-white', bgClass: 'bg-white' },
+    { hex: '#6b7280', textClass: 'text-gray-500', bgClass: 'bg-gray-500' },
+    { hex: '#7c3aed', textClass: 'text-purple-600', bgClass: 'bg-purple-600' },
+    { hex: '#2563eb', textClass: 'text-blue-600', bgClass: 'bg-blue-600' },
+    { hex: '#16a34a', textClass: 'text-green-600', bgClass: 'bg-green-600' },
+    { hex: '#ef4444', textClass: 'text-red-500', bgClass: 'bg-red-500' },
+  ];
 
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
   document.body.appendChild(outline);
 
+  const floatingActions = document.createElement('div');
+  floatingActions.className = 'cms-floating-actions cms-ui';
+  document.body.appendChild(floatingActions);
+
+  const floatingMenu = document.createElement('div');
+  floatingMenu.id = 'cms-floating-menu';
+  floatingMenu.className = 'cms-floating-menu cms-ui';
+  floatingMenu.innerHTML = `
+    <button type="button" class="cms-floating-menu__minimize" aria-label="Minimize menu">–</button>
+    <div class="cms-floating-menu__items">
+      <div class="cms-floating-menu__item cms-floating-menu__pages">
+        <button type="button" class="cms-floating-menu__button" id="cms-pages-toggle">Pages</button>
+        <div class="cms-floating-menu__dropdown" id="cms-pages-dropdown">
+          <select id="cms-pages-select" aria-label="Select page"></select>
+        </div>
+      </div>
+      <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-settings-button">Settings</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+        </svg>
+        <span>Publish</span>
+      </button>
+    </div>
+  `;
+  document.body.appendChild(floatingMenu);
+
+  const toast = document.createElement('div');
+  toast.id = 'cms-toast';
+  toast.className = 'cms-toast cms-ui';
+  toast.innerHTML = '<span></span>';
+  document.body.appendChild(toast);
+
+  const settingsDialog = document.createElement('div');
+  settingsDialog.id = 'cms-settings-dialog';
+  settingsDialog.className = 'cms-settings-dialog cms-ui';
+  settingsDialog.innerHTML = `
+    <div class="cms-settings-dialog__backdrop" data-settings-close="true"></div>
+    <div class="cms-settings-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="cms-settings-dialog-title">
+      <div class="cms-settings-dialog__header">
+        <h3 id="cms-settings-dialog-title">Site settings</h3>
+        <button type="button" class="cms-settings-dialog__close" data-settings-close="true">Close</button>
+      </div>
+      <div class="cms-settings-dialog__body"></div>
+    </div>
+  `;
+  document.body.appendChild(settingsDialog);
+
+  const publishShortcutButton = document.createElement('button');
+  publishShortcutButton.id = 'cms-publish-shortcut';
+  publishShortcutButton.classList.add('cms-ui');
+  publishShortcutButton.type = 'button';
+  publishShortcutButton.setAttribute('aria-label', 'Publish site');
+  publishShortcutButton.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
+    </svg>
+  `;
+
   const toggleButton = document.createElement('button');
   toggleButton.id = 'cms-toggle';
   toggleButton.classList.add('cms-ui');
   toggleButton.textContent = 'Edit';
-  document.body.appendChild(toggleButton);
+  floatingActions.appendChild(publishShortcutButton);
+  floatingActions.appendChild(toggleButton);
 
   const sidebar = document.createElement('aside');
   sidebar.id = 'cms-sidebar';
@@ -70,7 +150,22 @@
             <div class="cms-wireframe-tool" draggable="true" data-wireframe-tool="section">Section</div>
           </div>
         </div>
-        <button id="cms-clone" type="button">Clone element</button>
+        <div class="cms-field cms-field--toggle">
+          <label class="cms-toggle">
+            <span>Reorder mode</span>
+            <input id="cms-reorder-toggle" type="checkbox" />
+            <span class="cms-toggle__control" aria-hidden="true"></span>
+          </label>
+        </div>
+        <div class="cms-field cms-grid-controls">
+          <label>Grid columns</label>
+          <div class="cms-grid-controls__row">
+            <button type="button" id="cms-grid-decrease">-</button>
+            <span id="cms-grid-count">1</span>
+            <button type="button" id="cms-grid-increase">+</button>
+          </div>
+          <p class="cms-field__hint">Applies to non-text/image elements.</p>
+        </div>
       </div>
       <div class="cms-panel active" data-panel="content">
         <div class="cms-field">
@@ -81,59 +176,124 @@
             <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
           </div>
         </div>
-        <div class="cms-field cms-field--toggle">
-          <label class="cms-toggle">
-            <span>Use Backend Content</span>
-            <input id="cms-backend-toggle" type="checkbox" />
-            <span class="cms-toggle__control" aria-hidden="true"></span>
-          </label>
-        </div>
-        <div class="cms-field cms-backend-only">
-          <label class="cms-toggle">
-            <span>Repeat items</span>
-            <input id="cms-repeat-toggle" type="checkbox" />
-            <span class="cms-toggle__control" aria-hidden="true"></span>
-          </label>
-        </div>
-        <div class="cms-field cms-backend-only">
-          <label for="cms-service">Service</label>
-          <select id="cms-service"></select>
-        </div>
-        <div class="cms-field cms-backend-only cms-service-form" id="cms-service-form">
-          <label>New service call</label>
-          <input id="cms-service-alias" type="text" placeholder="Service alias" />
-          <input id="cms-service-url" type="url" placeholder="https://example.com/api" />
-          <div class="cms-action-row">
-            <button type="button" id="cms-service-ok">OK</button>
-            <button type="button" id="cms-service-cancel">Cancel</button>
-          </div>
-        </div>
-        <div class="cms-field" id="cms-key-field">
-          <label for="cms-key">Field key</label>
-          <input id="cms-key" type="text" placeholder="auto.tag.hash" />
-        </div>
-        <div class="cms-field">
-          <label for="cms-link">Link (optional)</label>
-          <input id="cms-link" type="text" placeholder="https://example.com or #section" />
-        </div>
         <div class="cms-field cms-field--text">
           <label for="cms-value">Content</label>
           <textarea id="cms-value" placeholder="Type content here..."></textarea>
         </div>
         <div class="cms-field cms-field--image">
           <label for="cms-image-url">Image URL</label>
-          <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
-          <div class="cms-action-row">
-            <button type="button" id="cms-open-gallery">Browse gallery</button>
-            <div class="cms-upload">
-              <label class="cms-upload__label" for="cms-image-file">Upload image</label>
-              <input id="cms-image-file" type="file" accept="image/*" />
+          <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">
+            <span class="cms-image-preview__empty">No image selected</span>
+            <button type="button" class="cms-image-preview__delete" aria-label="Remove image" title="Remove image">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v9h-2V9zm4 0h2v9h-2V9z" />
+              </svg>
+            </button>
+          </div>
+          <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
+          <div class="cms-image-controls">
+            <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
+            <button type="button" id="cms-open-gallery">Gallery</button>
+          </div>
+          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*" />
+        </div>
+        <div class="cms-quick-styles">
+          <div class="cms-quick-styles__title">Quick Styles</div>
+          <div class="cms-quick-styles__grid">
+            <div class="cms-quick-style">
+              <div class="cms-quick-style__label">
+                <span>Text Color</span>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="text" aria-label="Pick text color">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M14.7 3.3a2.5 2.5 0 0 1 3.5 3.5l-1.1 1.1-3.5-3.5 1.1-1.1zM4 14.5 13.1 5.4l3.5 3.5L7.5 18H4v-3.5zM3 19h18v2H3z" />
+                  </svg>
+                </button>
+                <input id="cms-quick-text-color" class="cms-quick-style-input" type="color" value="#111827" aria-label="Quick text color" />
+              </div>
+              <div class="cms-quick-style__swatches" data-quick-styles="text"></div>
+            </div>
+            <div class="cms-quick-style">
+              <div class="cms-quick-style__label">
+                <span>Background</span>
+                <button type="button" class="cms-eye-dropper" data-quick-picker="background" aria-label="Pick background color">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M14.7 3.3a2.5 2.5 0 0 1 3.5 3.5l-1.1 1.1-3.5-3.5 1.1-1.1zM4 14.5 13.1 5.4l3.5 3.5L7.5 18H4v-3.5zM3 19h18v2H3z" />
+                  </svg>
+                </button>
+                <input id="cms-quick-bg-color" class="cms-quick-style-input" type="color" value="#ffffff" aria-label="Quick background color" />
+              </div>
+              <div class="cms-quick-style__swatches" data-quick-styles="background"></div>
             </div>
           </div>
-          <div id="cms-image-preview" class="cms-image-preview">No image selected</div>
+        </div>
+        <div class="cms-field cms-field--link" id="cms-link-field">
+          <label for="cms-link">Link URL</label>
+          <input id="cms-link" type="text" placeholder="https://example.com or #section" />
         </div>
         <button id="cms-save">Save</button>
-        <button id="cms-delete" type="button">Delete element</button>
+        <div class="cms-advanced">
+          <button type="button" class="cms-advanced__toggle" id="cms-advanced-toggle" aria-expanded="false">
+            <span>Advanced</span>
+            <span class="cms-advanced__chevron">⌄</span>
+          </button>
+          <div class="cms-advanced__content" id="cms-advanced-content">
+            <div class="cms-field cms-field--toggle">
+              <label class="cms-toggle">
+                <span class="cms-toggle__label cms-toggle__label--data">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M12 3C7.58 3 4 4.79 4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7c0-2.21-3.58-4-8-4zm0 2c3.31 0 6 .99 6 2s-2.69 2-6 2-6-.99-6-2 2.69-2 6-2zm0 6c3.31 0 6-.99 6-2v3c0 1.01-2.69 2-6 2s-6-.99-6-2V9c0 1.01 2.69 2 6 2zm0 8c-3.31 0-6-.99-6-2v-3c0 1.01 2.69 2 6 2s6-.99 6-2v3c0 1.01-2.69 2-6 2z" />
+                  </svg>
+                  <span>Connect to Data</span>
+                </span>
+                <input id="cms-backend-toggle" type="checkbox" />
+                <span class="cms-toggle__control" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="cms-field" id="cms-key-field">
+              <label for="cms-key">Element Key</label>
+              <input id="cms-key" type="text" placeholder="auto.tag.hash" />
+            </div>
+            <div class="cms-field">
+              <label for="cms-component-id">Component ID</label>
+              <div class="cms-action-row">
+                <input id="cms-component-id" type="text" placeholder="header.primary" list="cms-component-options" />
+                <button type="button" id="cms-component-clear">Clear</button>
+              </div>
+              <datalist id="cms-component-options"></datalist>
+            </div>
+            <div class="cms-field">
+              <label class="cms-toggle">
+                <span>Component source</span>
+                <input id="cms-component-source" type="checkbox" />
+                <span class="cms-toggle__control" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="cms-field cms-backend-only">
+              <label class="cms-toggle">
+                <span>Repeat items</span>
+                <input id="cms-repeat-toggle" type="checkbox" />
+                <span class="cms-toggle__control" aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="cms-field cms-backend-only">
+              <label for="cms-service">Service</label>
+              <select id="cms-service"></select>
+            </div>
+            <div class="cms-field cms-backend-only cms-service-form" id="cms-service-form">
+              <label>New service call</label>
+              <input id="cms-service-alias" type="text" placeholder="Service alias" />
+              <input id="cms-service-url" type="url" placeholder="https://example.com/api" />
+              <div class="cms-action-row">
+                <button type="button" id="cms-service-ok">OK</button>
+                <button type="button" id="cms-service-cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4 mt-4">
+          <button id="cms-clone" type="button">Clone</button>
+          <button id="cms-delete" type="button">Delete</button>
+        </div>
         <div id="cms-message"></div>
         <div class="cms-discovered">
           <div class="cms-hint">Existing keys on the page</div>
@@ -213,13 +373,15 @@
         </div>
         <button type="button" class="cms-gallery__close" data-gallery-close="true">Close</button>
       </div>
+      <div class="cms-gallery__tabs" role="tablist">
+        <button type="button" class="cms-gallery__tab is-active" data-gallery-tab="uploads" role="tab">Uploaded Images</button>
+        <button type="button" class="cms-gallery__tab" data-gallery-tab="remote" role="tab">Remote URLs</button>
+      </div>
       <div class="cms-gallery__body">
-        <div class="cms-gallery__section">
-          <h4>Uploaded images</h4>
+        <div class="cms-gallery__content" data-gallery-content="uploads">
           <div class="cms-gallery__grid" data-gallery-section="uploads"></div>
         </div>
-        <div class="cms-gallery__section">
-          <h4>Remote URLs</h4>
+        <div class="cms-gallery__content" data-gallery-content="remote">
           <div class="cms-gallery__grid" data-gallery-section="remote"></div>
         </div>
         <p class="cms-gallery__empty">No images found yet.</p>
@@ -228,8 +390,48 @@
   `;
   document.body.appendChild(gallery);
 
+  const resizeOverlay = document.createElement('div');
+  resizeOverlay.className = 'cms-resize-overlay cms-ui';
+  resizeOverlay.innerHTML = `
+    <span class="cms-resize-handle cms-resize-handle--n" data-resize-handle="n"></span>
+    <span class="cms-resize-handle cms-resize-handle--s" data-resize-handle="s"></span>
+    <span class="cms-resize-handle cms-resize-handle--e" data-resize-handle="e"></span>
+    <span class="cms-resize-handle cms-resize-handle--w" data-resize-handle="w"></span>
+    <span class="cms-resize-handle cms-resize-handle--se" data-resize-handle="se"></span>
+  `;
+  document.body.appendChild(resizeOverlay);
+
+  const quickColorMenu = document.createElement('div');
+  quickColorMenu.className = 'cms-quick-colors cms-ui';
+  quickColorMenu.innerHTML = `
+    <label>
+      Text
+      <input type="color" data-quick-color="text" />
+    </label>
+    <label>
+      Background
+      <input type="color" data-quick-color="background" />
+    </label>
+  `;
+  document.body.appendChild(quickColorMenu);
+
+  const pagesToggleButton = floatingMenu.querySelector('#cms-pages-toggle');
+  const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
+  const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
+  const effectsButton = floatingMenu.querySelector('#cms-effects-button');
+  const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
+  const xrayButton = floatingMenu.querySelector('#cms-xray-button');
+  const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
+  const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
+  const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
+  const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
+
   const keyFieldWrapper = sidebar.querySelector('#cms-key-field');
   let keyField = sidebar.querySelector('#cms-key');
+  const componentIdInput = sidebar.querySelector('#cms-component-id');
+  const componentOptionsList = sidebar.querySelector('#cms-component-options');
+  const componentClearButton = sidebar.querySelector('#cms-component-clear');
+  const componentSourceToggle = sidebar.querySelector('#cms-component-source');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
@@ -238,20 +440,36 @@
   const serviceUrlInput = sidebar.querySelector('#cms-service-url');
   const serviceOkButton = sidebar.querySelector('#cms-service-ok');
   const serviceCancelButton = sidebar.querySelector('#cms-service-cancel');
+  const quickColorPicker = document.createElement('input');
+  quickColorPicker.type = 'color';
+  quickColorPicker.className = 'cms-quick-style-picker';
+  quickColorPicker.setAttribute('aria-hidden', 'true');
+  quickColorPicker.tabIndex = -1;
+  document.body.appendChild(quickColorPicker);
   const valueInput = sidebar.querySelector('#cms-value');
   const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
   const imageUrlInput = sidebar.querySelector('#cms-image-url');
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
+  const imagePreviewDelete = sidebar.querySelector('.cms-image-preview__delete');
   const saveButton = sidebar.querySelector('#cms-save');
   const cloneButton = sidebar.querySelector('#cms-clone');
+  const reorderToggle = sidebar.querySelector('#cms-reorder-toggle');
+  const gridDecreaseButton = sidebar.querySelector('#cms-grid-decrease');
+  const gridIncreaseButton = sidebar.querySelector('#cms-grid-increase');
+  const gridCountLabel = sidebar.querySelector('#cms-grid-count');
+  const advancedToggle = sidebar.querySelector('#cms-advanced-toggle');
+  const advancedContent = sidebar.querySelector('#cms-advanced-content');
+  const quickTextSwatches = sidebar.querySelector('[data-quick-styles="text"]');
+  const quickBgSwatches = sidebar.querySelector('[data-quick-styles="background"]');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
+  const siteField = sidebar.querySelector('.cms-field--site');
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
@@ -259,7 +477,10 @@
   const dockArrowButtons = sidebar.querySelectorAll('.cms-dock__arrows button');
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
+  const quickPickerButtons = sidebar.querySelectorAll('[data-quick-picker]');
   const textColorInput = sidebar.querySelector('#cms-text-color');
+  const quickTextColorInput = sidebar.querySelector('#cms-quick-text-color');
+  const quickBgColorInput = sidebar.querySelector('#cms-quick-bg-color');
   const backgroundColorInput = sidebar.querySelector('#cms-bg-color');
   const fontSizeInput = sidebar.querySelector('#cms-font-size');
   const flexSelect = sidebar.querySelector('#cms-flex');
@@ -269,14 +490,22 @@
   const galleryOpenButton = sidebar.querySelector('#cms-open-gallery');
   const galleryUploads = gallery.querySelector('[data-gallery-section="uploads"]');
   const galleryRemote = gallery.querySelector('[data-gallery-section="remote"]');
+  const galleryTabs = gallery.querySelectorAll('[data-gallery-tab]');
+  const galleryContents = gallery.querySelectorAll('[data-gallery-content]');
   const galleryEmpty = gallery.querySelector('.cms-gallery__empty');
+  const settingsDialogOriginalParent = siteField?.parentElement || null;
+  const settingsMessageParent = settingsMessageEl?.parentElement || null;
+  const settingsNextSibling = siteField?.nextSibling || null;
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
   let galleryAssets = { uploads: [], remote: [] };
   let layoutSaveTimer = null;
+  let lastComponentId = '';
   deleteButton.disabled = true;
   cloneButton.disabled = true;
+  loadQuickStyleHistory();
+  renderQuickStyles();
 
   function handleBackendKeyChange(event) {
     if (!backendToggle.checked) return;
@@ -314,6 +543,17 @@
     toggleButton.disabled = enabled;
     setWireframeDragState(enabled);
     updateCloneState();
+    if (!enabled) {
+      reorderMode = false;
+      if (reorderToggle) {
+        reorderToggle.checked = false;
+      }
+      hideResizeOverlay();
+      hideQuickColorMenu();
+      clearReorderIndicator();
+    } else {
+      updateResizeOverlay(selectedElement);
+    }
   }
 
   setWireframeState(localStorage.getItem(WIREFRAME_STORAGE_KEY) === 'true');
@@ -333,6 +573,11 @@
 
   function clearForm() {
     keyField.value = '';
+    if (componentIdInput) componentIdInput.value = '';
+    if (componentSourceToggle) {
+      componentSourceToggle.checked = false;
+      componentSourceToggle.disabled = true;
+    }
     valueInput.value = '';
     linkInput.value = '';
     imageUrlInput.value = '';
@@ -341,6 +586,7 @@
     imagePreview.style.backgroundImage = 'none';
     deleteButton.disabled = true;
     textValueDirty = false;
+    updateGridControls(null);
     updateCloneState();
   }
 
@@ -352,6 +598,94 @@
     }
   }
 
+  function getComponentId(value) {
+    return (value || '').trim();
+  }
+
+  function clearComponentSelection() {
+    if (!selectedElement) return;
+    selectedElement.removeAttribute('data-component-id');
+    selectedElement.removeAttribute('data-component-source');
+    if (componentIdInput) {
+      componentIdInput.value = '';
+    }
+    if (componentSourceToggle) {
+      componentSourceToggle.checked = false;
+      componentSourceToggle.disabled = true;
+    }
+    lastComponentId = '';
+    scheduleLayoutPersist();
+  }
+
+  function getComponentSource(componentId) {
+    if (!componentId) return null;
+    return document.querySelector(
+      `[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`
+    );
+  }
+
+  async function applyComponentFromDisk(componentId) {
+    if (!selectedElement || !componentId) return;
+    if (selectedElement.getAttribute('data-component-source') === 'true') return;
+    try {
+      const res = await fetch(`/api/components?id=${encodeURIComponent(componentId)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.html) return;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = data.html.trim();
+      const nextNode = wrapper.firstElementChild;
+      if (!nextNode) return;
+      nextNode.removeAttribute('data-component-source');
+      nextNode.setAttribute('data-component-id', componentId);
+      selectedElement.replaceWith(nextNode);
+      selectedElement = nextNode;
+      selectElement(nextNode);
+      scheduleLayoutPersist();
+    } catch (err) {
+      console.warn('Unable to apply component from disk', err);
+    }
+  }
+
+  function syncComponentInstances(componentId) {
+    if (!componentId) return;
+    const source = getComponentSource(componentId);
+    if (!source) return;
+    const instances = Array.from(
+      document.querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"]`)
+    );
+    instances.forEach((instance) => {
+      if (instance === source) return;
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('data-component-source');
+      clone.setAttribute('data-component-id', componentId);
+      instance.replaceWith(clone);
+      if (selectedElement === instance) {
+        selectedElement = clone;
+        selectElement(clone);
+      }
+    });
+  }
+
+  function syncAllComponents() {
+    const ids = new Set(
+      Array.from(document.querySelectorAll('[data-component-id]')).map((el) =>
+        el.getAttribute('data-component-id')
+      )
+    );
+    ids.forEach((id) => syncComponentInstances(id));
+  }
+
+  function setComponentSource(componentId, sourceEl) {
+    if (!componentId || !sourceEl) return;
+    document
+      .querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`)
+      .forEach((el) => {
+        if (el !== sourceEl) el.removeAttribute('data-component-source');
+      });
+    sourceEl.setAttribute('data-component-source', 'true');
+  }
+
   function clearMessage() {
     messageEl.textContent = '';
     messageEl.style.color = '#16a34a';
@@ -360,6 +694,102 @@
   function clearSettingsMessage() {
     settingsMessageEl.textContent = '';
     settingsMessageEl.style.color = '#16a34a';
+  }
+
+  function showToast(message, type = 'info') {
+    const label = toast.querySelector('span');
+    if (label) {
+      label.textContent = message;
+    }
+    toast.classList.remove('is-info', 'is-success', 'is-error', 'is-visible');
+    toast.classList.add('is-visible', `is-${type}`);
+    window.clearTimeout(showToast.hideTimer);
+    showToast.hideTimer = window.setTimeout(() => {
+      toast.classList.remove('is-visible');
+    }, 3000);
+  }
+
+  function openSettingsDialog() {
+    if (!siteField || !settingsMessageEl) return;
+    if (settingsDialog.classList.contains('is-visible')) return;
+    settingsDialogBody.appendChild(siteField);
+    settingsDialogBody.appendChild(settingsMessageEl);
+    settingsDialog.classList.add('is-visible');
+  }
+
+  function closeSettingsDialog() {
+    if (!settingsDialog.classList.contains('is-visible')) return;
+    if (settingsDialogOriginalParent && siteField) {
+      settingsDialogOriginalParent.insertBefore(siteField, settingsNextSibling);
+    }
+    if (settingsMessageParent && settingsMessageEl) {
+      settingsMessageParent.appendChild(settingsMessageEl);
+    }
+    settingsDialog.classList.remove('is-visible');
+  }
+
+  function togglePagesDropdown(forceState) {
+    const nextState = typeof forceState === 'boolean'
+      ? forceState
+      : !pagesDropdown.classList.contains('is-open');
+    pagesDropdown.classList.toggle('is-open', nextState);
+  }
+
+  function handleMenuDismiss(event) {
+    if (!pagesDropdown.classList.contains('is-open')) return;
+    if (floatingMenu.contains(event.target)) return;
+    togglePagesDropdown(false);
+  }
+
+  function handleSettingsDialogClick(event) {
+    const target = event.target;
+    if (!target) return;
+    if (target.dataset.settingsClose) {
+      closeSettingsDialog();
+    }
+  }
+
+  function handleMenuDragStart(event) {
+    if (event.button !== 0) return;
+    if (event.target.closest('button, select, option, input, .cms-floating-menu__dropdown')) return;
+    const rect = floatingMenu.getBoundingClientRect();
+    isMenuDragging = true;
+    menuDragOffsetX = event.clientX - rect.left;
+    menuDragOffsetY = event.clientY - rect.top;
+    floatingMenu.classList.add('is-dragging');
+    floatingMenu.style.transform = 'none';
+    window.addEventListener('mousemove', handleMenuDragMove);
+    window.addEventListener('mouseup', handleMenuDragEnd);
+  }
+
+  function handleMenuDragMove(event) {
+    if (!isMenuDragging) return;
+    floatingMenu.style.left = `${event.clientX - menuDragOffsetX}px`;
+    floatingMenu.style.top = `${event.clientY - menuDragOffsetY}px`;
+  }
+
+  function handleMenuDragEnd() {
+    if (!isMenuDragging) return;
+    isMenuDragging = false;
+    floatingMenu.classList.remove('is-dragging');
+    window.removeEventListener('mousemove', handleMenuDragMove);
+    window.removeEventListener('mouseup', handleMenuDragEnd);
+  }
+
+  async function triggerPublishWithFeedback(button) {
+    if (!button || button.disabled) return;
+    button.classList.remove('is-error');
+    button.classList.add('is-publishing');
+    button.disabled = true;
+    const success = await publishStaticSite();
+    button.classList.remove('is-publishing');
+    if (!success) {
+      button.classList.add('is-error');
+      window.setTimeout(() => {
+        button.classList.remove('is-error');
+      }, 3000);
+    }
+    button.disabled = editMode && button === publishShortcutButton;
   }
 
   function removeOutlines() {
@@ -380,10 +810,114 @@
     }
   }
 
+  function updateResizeOverlay(target) {
+    if (!editMode || !isWireframeEnabled() || !target || isCmsUi(target)) {
+      hideResizeOverlay();
+      return;
+    }
+    const rect = target.getBoundingClientRect();
+    resizeOverlay.style.display = 'block';
+    resizeOverlay.style.width = `${rect.width}px`;
+    resizeOverlay.style.height = `${rect.height}px`;
+    resizeOverlay.style.left = `${rect.left + window.scrollX}px`;
+    resizeOverlay.style.top = `${rect.top + window.scrollY}px`;
+  }
+
+  function hideResizeOverlay() {
+    resizeOverlay.style.display = 'none';
+  }
+
+  function hideQuickColorMenu() {
+    quickColorMenu.classList.remove('is-visible');
+  }
+
+  function showQuickColorMenu(target) {
+    if (!target) return;
+    const computed = window.getComputedStyle(target);
+    const textInput = quickColorMenu.querySelector('[data-quick-color="text"]');
+    const bgInput = quickColorMenu.querySelector('[data-quick-color="background"]');
+    if (textInput) {
+      textInput.value = rgbToHex(computed.color);
+    }
+    if (bgInput) {
+      bgInput.value = rgbToHex(computed.backgroundColor);
+    }
+    const rect = target.getBoundingClientRect();
+    quickColorMenu.style.left = `${rect.left + window.scrollX}px`;
+    quickColorMenu.style.top = `${rect.bottom + window.scrollY + 8}px`;
+    quickColorMenu.classList.add('is-visible');
+  }
+
+  function handleResizeStart(event) {
+    const handle = event.target.closest('[data-resize-handle]');
+    if (!handle || !selectedElement || !isWireframeEnabled()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const rect = selectedElement.getBoundingClientRect();
+    const computed = window.getComputedStyle(selectedElement);
+    resizeState = {
+      handle: handle.dataset.resizeHandle,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startHeight: rect.height,
+      baseFontSize: Number.parseFloat(computed.fontSize) || 16,
+      baseHeight: rect.height,
+    };
+    document.body.classList.add('cms-resizing');
+    window.addEventListener('mousemove', handleResizeMove);
+    window.addEventListener('mouseup', handleResizeEnd);
+  }
+
+  function handleResizeMove(event) {
+    if (!resizeState || !selectedElement) return;
+    const dx = event.clientX - resizeState.startX;
+    const dy = event.clientY - resizeState.startY;
+    let nextWidth = resizeState.startWidth;
+    let nextHeight = resizeState.startHeight;
+    if (resizeState.handle.includes('e')) {
+      nextWidth = resizeState.startWidth + dx;
+    }
+    if (resizeState.handle.includes('w')) {
+      nextWidth = resizeState.startWidth - dx;
+    }
+    if (resizeState.handle.includes('s')) {
+      nextHeight = resizeState.startHeight + dy;
+    }
+    if (resizeState.handle.includes('n')) {
+      nextHeight = resizeState.startHeight - dy;
+    }
+    nextWidth = Math.max(40, nextWidth);
+    nextHeight = Math.max(30, nextHeight);
+    selectedElement.style.width = `${nextWidth}px`;
+    selectedElement.style.height = `${nextHeight}px`;
+    if (isTextElement(selectedElement)) {
+      const ratio = nextHeight / resizeState.baseHeight;
+      const nextFont = Math.max(8, Math.round(resizeState.baseFontSize * ratio));
+      selectedElement.style.fontSize = `${nextFont}px`;
+      fontSizeInput.value = String(nextFont);
+    }
+    updateResizeOverlay(selectedElement);
+  }
+
+  function handleResizeEnd() {
+    if (!resizeState) return;
+    resizeState = null;
+    document.body.classList.remove('cms-resizing');
+    window.removeEventListener('mousemove', handleResizeMove);
+    window.removeEventListener('mouseup', handleResizeEnd);
+    scheduleLayoutPersist();
+  }
+
   function buildApiUrl() {
     const query = new URLSearchParams();
     query.set('file', currentFile);
     return `${API_ENDPOINT}?${query.toString()}`;
+  }
+
+  function navigateToFile(file) {
+    const nextPath = file === 'index.html' ? '/' : `/${file}`;
+    window.location.href = nextPath;
   }
 
   async function persistSiteName() {
@@ -429,13 +963,47 @@
         if (file === currentFile) option.selected = true;
         fileSelect.appendChild(option);
       });
+      populatePagesSelect();
     } catch (err) {
       const fallbackOption = document.createElement('option');
       fallbackOption.value = currentFile;
       fallbackOption.textContent = currentFile;
       fileSelect.innerHTML = '';
       fileSelect.appendChild(fallbackOption);
+      populatePagesSelect();
     }
+  }
+
+  async function loadComponentOptions() {
+    if (!componentOptionsList) return;
+    try {
+      const res = await fetch('/api/components');
+      if (!res.ok) throw new Error('Unable to fetch components');
+      const data = await res.json();
+      const components = Array.isArray(data.components) ? data.components : [];
+      componentOptionsList.innerHTML = '';
+      components.forEach((componentId) => {
+        const option = document.createElement('option');
+        option.value = componentId;
+        componentOptionsList.appendChild(option);
+      });
+    } catch (err) {
+      componentOptionsList.innerHTML = '';
+    }
+  }
+
+  function populatePagesSelect() {
+    if (!pagesSelect || !fileSelect) return;
+    pagesSelect.innerHTML = '';
+    Array.from(fileSelect.options).forEach((option) => {
+      const nextOption = document.createElement('option');
+      nextOption.value = option.value;
+      nextOption.textContent = option.textContent;
+      if (option.value === currentFile) {
+        nextOption.selected = true;
+      }
+      pagesSelect.appendChild(nextOption);
+    });
   }
 
   function positionOutline(target) {
@@ -449,7 +1017,12 @@
 
   function isCmsUi(element) {
     return element.closest
-      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline,#cms-gallery');
+      && element.closest('#cms-sidebar, #cms-toggle, .cms-outline, #cms-gallery, .cms-ui');
+  }
+
+  function isForbiddenElement(element) {
+    if (!element || !element.tagName) return false;
+    return ['SCRIPT', 'STYLE', 'META', 'LINK', 'HEAD'].includes(element.tagName);
   }
 
   function isWireframeEnabled() {
@@ -465,6 +1038,7 @@
     section.className = 'cms-wireframe-section cms-wireframe-resizable';
     section.setAttribute('data-wireframe-section', 'true');
     section.setAttribute('draggable', 'true');
+    section.dataset.wireframeCreated = 'true';
     section.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
     const label = document.createElement('div');
@@ -472,7 +1046,8 @@
     label.textContent = 'Section';
 
     const content = document.createElement('div');
-    content.className = 'cms-wireframe-section__content';
+    content.className = 'cms-wireframe-section__content grid grid-cols-1 gap-4';
+    content.dataset.wireframeCreated = 'true';
 
     section.appendChild(label);
     section.appendChild(content);
@@ -488,6 +1063,7 @@
       textBlock.className = 'cms-wireframe-text cms-wireframe-resizable';
       textBlock.textContent = 'Text placeholder';
       textBlock.setAttribute('data-cms-text', generateWireframeKey('text'));
+      textBlock.dataset.wireframeCreated = 'true';
       if (isWireframeEnabled()) {
         textBlock.setAttribute('draggable', 'true');
       }
@@ -495,18 +1071,22 @@
     }
     if (type === 'circle') {
       const circle = document.createElement('div');
-      circle.className = 'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable';
+      circle.className =
+        'cms-wireframe-shape cms-wireframe-shape--circle cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
       circle.textContent = 'Circle';
       circle.setAttribute('data-cms-text', generateWireframeKey('circle'));
+      circle.dataset.wireframeCreated = 'true';
       if (isWireframeEnabled()) {
         circle.setAttribute('draggable', 'true');
       }
       return circle;
     }
     const square = document.createElement('div');
-    square.className = 'cms-wireframe-shape cms-wireframe-resizable';
+    square.className =
+      'cms-wireframe-shape cms-wireframe-resizable grid grid-cols-1 gap-4 place-items-center';
     square.textContent = 'Square';
     square.setAttribute('data-cms-text', generateWireframeKey('square'));
+    square.dataset.wireframeCreated = 'true';
     if (isWireframeEnabled()) {
       square.setAttribute('draggable', 'true');
     }
@@ -532,6 +1112,83 @@
     return element && element.matches && element.matches('[data-wireframe-section="true"]');
   }
 
+  function isTextElement(element) {
+    return element && element.matches && element.matches('[data-cms-text], .cms-wireframe-text');
+  }
+
+  function isImageElement(element) {
+    return element && (element.tagName === 'IMG' || element.hasAttribute?.('data-cms-image'));
+  }
+
+  function supportsGridLayout(element) {
+    if (!element || !element.matches || isCmsUi(element) || isForbiddenElement(element)) return false;
+    if (element === document.body || element === document.documentElement) return true;
+    return !isTextElement(element) && !isImageElement(element);
+  }
+
+  function getGridColumnCount(element) {
+    if (!element || !element.classList) return 0;
+    const match = Array.from(element.classList).find((name) => name.startsWith('grid-cols-'));
+    if (!match) return 0;
+    const value = Number.parseInt(match.replace('grid-cols-', ''), 10);
+    return Number.isNaN(value) ? 0 : value;
+  }
+
+  function ensureGridLayout(element, columns = 1, force = false) {
+    if (!supportsGridLayout(element)) return;
+    if (!force && element.dataset?.wireframeCreated !== 'true') return;
+    if (!element.classList.contains('grid')) {
+      element.classList.add('grid');
+    }
+    if (!Array.from(element.classList).some((name) => name.startsWith('gap-'))) {
+      element.classList.add('gap-4');
+    }
+    if (getGridColumnCount(element) === 0) {
+      element.classList.add(`grid-cols-${columns}`);
+    }
+  }
+
+  function setGridColumnCount(element, count) {
+    if (!element || !element.classList) return;
+    const nextCount = Math.max(1, Math.min(12, count));
+    Array.from(element.classList)
+      .filter((name) => name.startsWith('grid-cols-'))
+      .forEach((name) => element.classList.remove(name));
+    element.classList.add(`grid-cols-${nextCount}`);
+    ensureGridLayout(element, nextCount, true);
+    updateGridControls(element);
+    scheduleLayoutPersist();
+  }
+
+  function updateGridControls(element) {
+    if (!gridCountLabel || !gridDecreaseButton || !gridIncreaseButton) return;
+    if (!element || !supportsGridLayout(element)) {
+      gridCountLabel.textContent = '-';
+      gridDecreaseButton.disabled = true;
+      gridIncreaseButton.disabled = true;
+      return;
+    }
+    const count = getGridColumnCount(element) || 1;
+    gridCountLabel.textContent = String(count);
+    gridDecreaseButton.disabled = count <= 1;
+    gridIncreaseButton.disabled = count >= 12;
+  }
+
+  function adjustSectionGridOnDrop(sectionContent) {
+    if (!sectionContent) return;
+    const count = getGridColumnCount(sectionContent) || 1;
+    if (count < 12) {
+      setGridColumnCount(sectionContent, count + 1);
+    }
+  }
+
+  function clearReorderIndicator() {
+    if (dropTarget) {
+      dropTarget.classList.remove('cms-reorder-before', 'cms-reorder-after');
+    }
+    dropTargetPosition = null;
+  }
+
   function handleWireframeToolDragStart(event) {
     const tool = event.currentTarget;
     const type = tool.dataset.wireframeTool;
@@ -547,7 +1204,8 @@
       && element.nodeType === Node.ELEMENT_NODE
       && element !== document.body
       && element !== document.documentElement
-      && !isCmsUi(element);
+      && !isCmsUi(element)
+      && !isForbiddenElement(element);
   }
 
   function setWireframeDragState(enabled) {
@@ -565,6 +1223,7 @@
         draggedElement.classList.remove('cms-dragging');
         draggedElement = null;
       }
+      clearReorderIndicator();
       document.body.classList.remove('cms-drag-active');
     }
   }
@@ -573,6 +1232,7 @@
     if (dropTarget) {
       dropTarget.classList.remove('cms-drop-target');
       dropTarget = null;
+      dropTargetPosition = null;
     }
   }
 
@@ -605,6 +1265,34 @@
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target) || target === draggedElement || target.contains(draggedElement)) {
       clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
+    if (reorderMode) {
+      const targetParent = target.parentElement;
+      if (!targetParent || targetParent !== draggedElement.parentElement) {
+        clearDropTarget();
+        clearReorderIndicator();
+        return;
+      }
+      const sectionContent = resolveSectionContainer(targetParent);
+      if (!sectionContent || sectionContent !== targetParent) {
+        clearDropTarget();
+        clearReorderIndicator();
+        return;
+      }
+      event.preventDefault();
+      if (dropTarget !== target) {
+        clearDropTarget();
+        clearReorderIndicator();
+        dropTarget = target;
+      }
+      const rect = target.getBoundingClientRect();
+      dropTargetPosition = event.clientX > rect.left + rect.width / 2 ? 'after' : 'before';
+      dropTarget.classList.remove('cms-reorder-before', 'cms-reorder-after');
+      dropTarget.classList.add(
+        dropTargetPosition === 'after' ? 'cms-reorder-after' : 'cms-reorder-before'
+      );
       return;
     }
     if (isWireframeSection(draggedElement)) {
@@ -638,10 +1326,19 @@
       event.preventDefault();
       const element = buildWireframeElement(toolType);
       if (toolType === 'section') {
-        document.body.insertBefore(element, document.body.firstChild);
+        const targetSection = target.closest('[data-wireframe-section="true"]');
+        if (targetSection && targetSection.parentElement) {
+          targetSection.parentElement.insertBefore(element, targetSection);
+        } else {
+          document.body.appendChild(element);
+        }
       } else {
         const container = getDropContainer(target);
+        ensureGridLayout(element);
         container.appendChild(element);
+        if (container.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(container);
+        }
       }
       activeWireframeTool = null;
       persistLayout();
@@ -649,15 +1346,33 @@
     }
     if (!draggedElement || !dropTarget) return;
     event.preventDefault();
-    const parent = dropTarget.parentNode;
-    if (!parent) return;
-    const rect = dropTarget.getBoundingClientRect();
-    const insertAfter = event.clientY > rect.top + rect.height / 2;
-    const referenceNode = insertAfter ? dropTarget.nextSibling : dropTarget;
-    if (referenceNode !== draggedElement) {
-      parent.insertBefore(draggedElement, referenceNode);
+    if (reorderMode) {
+      const parent = dropTarget.parentNode;
+      if (!parent) return;
+      const referenceNode = dropTargetPosition === 'after' ? dropTarget.nextSibling : dropTarget;
+      if (referenceNode !== draggedElement) {
+        parent.insertBefore(draggedElement, referenceNode);
+      }
+    } else {
+      const dropContainer = resolveSectionContainer(dropTarget) || dropTarget;
+      const draggedRect = draggedElement.getBoundingClientRect();
+      const dropRect = dropTarget.getBoundingClientRect();
+      const isLarger = dropRect.width * dropRect.height > draggedRect.width * draggedRect.height;
+      if (supportsGridLayout(dropContainer) && isLarger) {
+        ensureGridLayout(dropContainer);
+        dropContainer.appendChild(draggedElement);
+        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(dropContainer);
+        }
+      } else if (dropContainer && dropContainer !== draggedElement.parentNode) {
+        dropContainer.appendChild(draggedElement);
+        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
+          adjustSectionGridOnDrop(dropContainer);
+        }
+      }
     }
     clearDropTarget();
+    clearReorderIndicator();
     persistLayout();
   }
 
@@ -669,6 +1384,7 @@
     draggedElement = null;
     activeWireframeTool = null;
     clearDropTarget();
+    clearReorderIndicator();
     document.body.classList.remove('cms-drag-active');
   }
 
@@ -762,7 +1478,7 @@
     if (!editMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
-    if (isCmsUi(target)) {
+    if (isCmsUi(target) || isForbiddenElement(target)) {
       outline.style.display = 'none';
       return;
     }
@@ -772,6 +1488,7 @@
   function setEditMode(enabled) {
     if (editMode === enabled) return;
     editMode = enabled;
+    document.body.classList.toggle('cms-editing', editMode);
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
@@ -781,7 +1498,10 @@
       clearMessage();
       clearForm();
       removeOutlines();
+      hideResizeOverlay();
+      hideQuickColorMenu();
     }
+    publishShortcutButton.disabled = editMode;
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
   }
@@ -852,12 +1572,16 @@
 
   function updateImagePreview(src) {
     if (!src) {
-      imagePreview.textContent = 'No image selected';
+      const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
+      if (emptyLabel) emptyLabel.textContent = 'No image selected';
       imagePreview.style.backgroundImage = 'none';
+      imagePreview.classList.remove('has-image');
       return;
     }
-    imagePreview.textContent = '';
+    const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
+    if (emptyLabel) emptyLabel.textContent = '';
     imagePreview.style.backgroundImage = `url('${src}')`;
+    imagePreview.classList.add('has-image');
   }
 
   function applyImagePreviewToElement(src) {
@@ -1034,7 +1758,7 @@
       if (selectedType === 'image' || selectedType === 'background') {
         applyImageToElement(selectedElement, formatted, selectedType === 'background' ? 'background' : 'image');
       } else {
-        selectedElement.textContent = formatted;
+        setPrimaryTextValue(selectedElement, formatted);
       }
     }
   }
@@ -1070,6 +1794,12 @@
     }
   }
 
+  function updateServiceFormVisibility() {
+    const shouldShow = backendToggle.checked && serviceSelect.value === '__new__';
+    serviceForm.classList.toggle('is-visible', shouldShow);
+    return shouldShow;
+  }
+
   function rgbToHex(value) {
     if (!value) return '#111827';
     if (value.startsWith('#')) return value;
@@ -1079,11 +1809,210 @@
     return `#${toHex(match[1])}${toHex(match[2])}${toHex(match[3])}`;
   }
 
+  function normalizeHex(value) {
+    if (!value) return '';
+    const hex = value.startsWith('#') ? value.slice(1) : value;
+    if (hex.length === 3) {
+      return `#${hex.split('').map((c) => c + c).join('')}`.toLowerCase();
+    }
+    return `#${hex}`.toLowerCase();
+  }
+
+  function hexToRgb(value) {
+    const hex = normalizeHex(value).replace('#', '');
+    if (hex.length !== 6) return null;
+    const r = Number.parseInt(hex.slice(0, 2), 16);
+    const g = Number.parseInt(hex.slice(2, 4), 16);
+    const b = Number.parseInt(hex.slice(4, 6), 16);
+    return { r, g, b };
+  }
+
+  function colorDistance(a, b) {
+    return (a.r - b.r) ** 2 + (a.g - b.g) ** 2 + (a.b - b.b) ** 2;
+  }
+
+  function findNearestSwatch(hex) {
+    const rgb = hexToRgb(hex);
+    if (!rgb) return COLOR_SWATCHES[0];
+    return COLOR_SWATCHES.reduce((closest, swatch) => {
+      const swatchRgb = hexToRgb(swatch.hex);
+      if (!swatchRgb) return closest;
+      if (!closest) return swatch;
+      const closestRgb = hexToRgb(closest.hex);
+      return colorDistance(rgb, swatchRgb) < colorDistance(rgb, closestRgb) ? swatch : closest;
+    }, null);
+  }
+
+  function getSwatchClasses(type) {
+    return COLOR_SWATCHES.map((swatch) => (type === 'text' ? swatch.textClass : swatch.bgClass));
+  }
+
+  function stripTailwindTextColorClasses(element) {
+    if (!element || !element.classList) return;
+    const colorPattern =
+      /^text-(?:black|white|slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)(?:-\d{2,3})?$/;
+    Array.from(element.classList).forEach((className) => {
+      if (colorPattern.test(className)) {
+        element.classList.remove(className);
+      }
+    });
+  }
+
+  function applyTailwindColorClass(type, className) {
+    if (!selectedElement || !className) return;
+    const swatchClasses = getSwatchClasses(type);
+    swatchClasses.forEach((swatchClass) => selectedElement.classList.remove(swatchClass));
+    if (type === 'text') {
+      stripTailwindTextColorClasses(selectedElement);
+    }
+    selectedElement.classList.add(className);
+    if (type === 'text') {
+      selectedElement.style.color = '';
+    } else {
+      selectedElement.style.backgroundColor = '';
+    }
+    scheduleLayoutPersist();
+  }
+
+  function updateQuickStyleHistory(type, className) {
+    const list = type === 'text' ? quickTextHistory : quickBgHistory;
+    const filtered = list.filter((entry) => entry !== className);
+    filtered.unshift(className);
+    const next = filtered.slice(0, 4);
+    if (type === 'text') {
+      quickTextHistory = next;
+      localStorage.setItem('cmsQuickTextColors', JSON.stringify(next));
+    } else {
+      quickBgHistory = next;
+      localStorage.setItem('cmsQuickBgColors', JSON.stringify(next));
+    }
+    renderQuickStyles();
+  }
+
+  function getDefaultQuickHistory(type) {
+    const defaults = [
+      COLOR_SWATCHES[0],
+      COLOR_SWATCHES[2],
+      COLOR_SWATCHES[3],
+      COLOR_SWATCHES[1],
+    ];
+    return defaults.map((swatch) => (type === 'text' ? swatch.textClass : swatch.bgClass));
+  }
+
+  function loadQuickStyleHistory() {
+    const storedText = localStorage.getItem('cmsQuickTextColors');
+    const storedBg = localStorage.getItem('cmsQuickBgColors');
+    try {
+      quickTextHistory = JSON.parse(storedText) || getDefaultQuickHistory('text');
+    } catch (err) {
+      quickTextHistory = getDefaultQuickHistory('text');
+    }
+    try {
+      quickBgHistory = JSON.parse(storedBg) || getDefaultQuickHistory('background');
+    } catch (err) {
+      quickBgHistory = getDefaultQuickHistory('background');
+    }
+  }
+
+  function renderQuickStyles() {
+    if (!quickTextSwatches || !quickBgSwatches) return;
+    const render = (container, list, type) => {
+      container.innerHTML = '';
+      list.forEach((className) => {
+        const swatch = COLOR_SWATCHES.find((entry) =>
+          type === 'text' ? entry.textClass === className : entry.bgClass === className
+        );
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cms-swatch';
+        if (swatch) {
+          button.style.backgroundColor = swatch.hex;
+          button.dataset.tailwindClass = className;
+          button.dataset.swatchType = type;
+          if (selectedElement && selectedElement.classList.contains(className)) {
+            button.classList.add('is-active');
+          }
+        }
+        container.appendChild(button);
+      });
+    };
+    render(quickTextSwatches, quickTextHistory, 'text');
+    render(quickBgSwatches, quickBgHistory, 'background');
+  }
+
+  function handleQuickStyleClick(event) {
+    const button = event.target.closest('.cms-swatch');
+    if (!button || !selectedElement) return;
+    const className = button.dataset.tailwindClass;
+    const type = button.dataset.swatchType;
+    if (!className || !type) return;
+    applyTailwindColorClass(type, className);
+    updateQuickStyleHistory(type, className);
+    const swatch = COLOR_SWATCHES.find((entry) =>
+      type === 'text' ? entry.textClass === className : entry.bgClass === className
+    );
+    if (swatch) {
+      if (type === 'text') {
+        textColorInput.value = swatch.hex;
+      } else {
+        backgroundColorInput.value = swatch.hex;
+      }
+    }
+    updateStyleInputs(selectedElement);
+  }
+
+  function handleQuickPickerClick(event) {
+    event.preventDefault();
+    const type = event.currentTarget.dataset.quickPicker;
+    console.debug('[cms] Quick picker click', { type, selected: Boolean(selectedElement) });
+    if (!type) return;
+    if (type === 'text') {
+      if (quickTextColorInput) {
+        quickTextColorInput.value = textColorInput.value;
+        console.debug('[cms] Quick picker trigger text input', { value: quickTextColorInput.value });
+        quickTextColorInput.focus({ preventScroll: true });
+        quickTextColorInput.click();
+        return;
+      }
+      quickColorPicker.value = textColorInput.value;
+      console.debug('[cms] Quick picker set text value', { value: quickColorPicker.value });
+    } else {
+      if (quickBgColorInput) {
+        quickBgColorInput.value = backgroundColorInput.value;
+        console.debug('[cms] Quick picker trigger background input', { value: quickBgColorInput.value });
+        quickBgColorInput.focus({ preventScroll: true });
+        quickBgColorInput.click();
+        return;
+      }
+      quickColorPicker.value = backgroundColorInput.value;
+      console.debug('[cms] Quick picker set background value', { value: quickColorPicker.value });
+    }
+    quickColorPicker.dataset.pickerType = type;
+    quickColorPicker.classList.add('is-active');
+    quickColorPicker.focus({ preventScroll: true });
+    if (typeof quickColorPicker.showPicker === 'function') {
+      console.debug('[cms] Quick picker showPicker');
+      quickColorPicker.showPicker();
+    } else {
+      console.debug('[cms] Quick picker click fallback');
+      quickColorPicker.click();
+    }
+    window.setTimeout(() => {
+      quickColorPicker.classList.remove('is-active');
+    }, 100);
+  }
+
   function updateStyleInputs(el) {
     if (!el) return;
     const computed = window.getComputedStyle(el);
     textColorInput.value = rgbToHex(computed.color);
+    if (quickTextColorInput) {
+      quickTextColorInput.value = textColorInput.value;
+    }
     backgroundColorInput.value = rgbToHex(computed.backgroundColor);
+    if (quickBgColorInput) {
+      quickBgColorInput.value = backgroundColorInput.value;
+    }
     fontSizeInput.value = Number.parseFloat(computed.fontSize) || 16;
     flexSelect.value = computed.flexDirection || 'row';
   }
@@ -1093,6 +2022,10 @@
       clearTimeout(layoutSaveTimer);
     }
     layoutSaveTimer = setTimeout(() => {
+      if (selectedElement && selectedElement.hasAttribute('data-component-source')) {
+        const componentId = selectedElement.getAttribute('data-component-id');
+        syncComponentInstances(componentId);
+      }
       persistLayout();
       layoutSaveTimer = null;
     }, 400);
@@ -1101,6 +2034,18 @@
   function toggleGallery(open) {
     gallery.classList.toggle('open', open);
     document.body.classList.toggle('cms-gallery-open', open);
+    if (open) {
+      setGalleryTab('uploads');
+    }
+  }
+
+  function setGalleryTab(tabName) {
+    galleryTabs.forEach((tab) => {
+      tab.classList.toggle('is-active', tab.dataset.galleryTab === tabName);
+    });
+    galleryContents.forEach((content) => {
+      content.classList.toggle('is-active', content.dataset.galleryContent === tabName);
+    });
   }
 
   function buildGalleryItem(src, label) {
@@ -1134,6 +2079,9 @@
     });
     const hasAny = uploads.length || remote.length;
     galleryEmpty.style.display = hasAny ? 'none' : 'block';
+    if (!uploads.length && remote.length) {
+      setGalleryTab('remote');
+    }
   }
 
   function isRemoteImageUrl(value) {
@@ -1238,11 +2186,38 @@
     el.style.backgroundImage = src ? `url('${src}')` : '';
   }
 
+  function getPrimaryTextTarget(el) {
+    if (!el) return null;
+    const child = el.firstChild;
+    if (!child) return null;
+    if (child.nodeType === Node.TEXT_NODE || child.nodeType === Node.ELEMENT_NODE) {
+      return child;
+    }
+    return null;
+  }
+
+  function getPrimaryTextValue(el) {
+    const target = getPrimaryTextTarget(el);
+    if (target) return target.textContent || '';
+    return el?.textContent || '';
+  }
+
+  function setPrimaryTextValue(el, value) {
+    const target = getPrimaryTextTarget(el);
+    if (target) {
+      target.textContent = value;
+      return;
+    }
+    if (el) {
+      el.textContent = value;
+    }
+  }
+
   function enableInlineEditing(el) {
-    if (!editMode || selectedType !== 'text' || backendToggle.checked) return;
+    if (!editMode || selectedType !== 'text' || backendToggle.checked || isForbiddenElement(el)) return;
     clearInlineEditing();
     inlineInputHandler = () => {
-      valueInput.value = el.textContent;
+      valueInput.value = getPrimaryTextValue(el);
       textValueDirty = true;
     };
     el.contentEditable = 'true';
@@ -1254,6 +2229,7 @@
     if (selectedElement && selectedElement !== el) {
       clearInlineEditing();
     }
+    hideQuickColorMenu();
     selectedElement = el;
     selectedType = determineElementType(el);
     setTypeSelection(selectedType);
@@ -1298,9 +2274,16 @@
     const key = el.getAttribute(attributeName);
     const value = selectedType === 'image' || selectedType === 'background'
       ? getImageValue(el, key, selectedType)
-      : el.textContent.trim();
+      : getPrimaryTextValue(el).trim();
     linkInput.value = el.getAttribute('data-link') || '';
     keyField.value = key || generateKeySuggestion(el);
+    if (componentIdInput && componentSourceToggle) {
+      const componentId = el.getAttribute('data-component-id') || '';
+      componentIdInput.value = componentId;
+      componentSourceToggle.checked = el.getAttribute('data-component-source') === 'true';
+      componentSourceToggle.disabled = !componentId;
+      lastComponentId = componentId;
+    }
     if (selectedType === 'image' || selectedType === 'background') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
@@ -1321,6 +2304,9 @@
       }
     }
     updateStyleInputs(el);
+    updateGridControls(el);
+    updateResizeOverlay(el);
+    renderQuickStyles();
     deleteButton.disabled = false;
     updateCloneState();
   }
@@ -1378,7 +2364,7 @@
     }
     const useBackend = backendToggle.checked;
     if (selectedType === 'text' && !textValueDirty) {
-      valueInput.value = selectedElement.textContent;
+      valueInput.value = getPrimaryTextValue(selectedElement);
     }
     const key = keyField.value.trim();
     let value = selectedType === 'image' || selectedType === 'background'
@@ -1494,11 +2480,11 @@
       );
     } else if (textValueDirty) {
       const nextValue = valueInput.value;
-      const currentText = selectedElement.textContent || '';
+      const currentText = getPrimaryTextValue(selectedElement);
       if (nextValue.trim() === '' && currentText.trim() !== '') {
         bodyValue = null;
       } else {
-        selectedElement.textContent = nextValue;
+        setPrimaryTextValue(selectedElement, nextValue);
         bodyValue = nextValue;
       }
     } else {
@@ -1598,36 +2584,45 @@
       settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
       settingsMessageEl.style.color = '#ef4444';
       siteNameInput.focus();
-      return;
+      showToast('Please enter a site name before publishing.', 'error');
+      return false;
     }
+
+    syncAllComponents();
 
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
     settingsMessageEl.textContent = 'Publishing merged HTML to the site root...';
     settingsMessageEl.style.color = '#111827';
+    let success = true;
 
     try {
       const res = await fetch('/api/publish', { method: 'POST' });
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
-      settingsMessageEl.textContent = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      const successMessage = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      settingsMessageEl.textContent = successMessage;
       settingsMessageEl.style.color = '#16a34a';
+      showToast(successMessage, 'success');
     } catch (err) {
+      success = false;
       settingsMessageEl.textContent = 'Unable to publish static pages.';
       settingsMessageEl.style.color = '#ef4444';
+      showToast('Unable to publish static pages.', 'error');
     } finally {
       publishButton.disabled = false;
       publishButton.textContent = originalLabel;
     }
+    return success;
   }
 
   function handleClick(e) {
     if (!editMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
-    if (isCmsUi(target)) return;
+    if (isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) {
       messageEl.textContent = 'Select a specific element instead of the page itself.';
       messageEl.style.color = '#ef4444';
@@ -1646,6 +2641,23 @@
     e.preventDefault();
     e.stopPropagation();
     selectElement(target);
+  }
+
+  function handleDoubleClick(e) {
+    if (!editMode) return;
+    const target = getElementTarget(e.target);
+    if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
+    if (target === document.body || target === document.documentElement) return;
+    e.preventDefault();
+    e.stopPropagation();
+    selectElement(target);
+    showQuickColorMenu(target);
+  }
+
+  function handleQuickMenuDismiss(e) {
+    if (!quickColorMenu.classList.contains('is-visible')) return;
+    if (quickColorMenu.contains(e.target)) return;
+    hideQuickColorMenu();
   }
 
   function handleLinkNavigation(e) {
@@ -1718,6 +2730,7 @@
         //applyStoredTags(storedTags);
       }
       //applyContent();
+      syncAllComponents();
     } catch (err) {
       console.warn('Hydration failed', err);
     }
@@ -1726,6 +2739,9 @@
   toggleButton.addEventListener('click', toggleEdit);
   document.addEventListener('mouseover', handleHover, true);
   document.addEventListener('click', handleClick, true);
+  document.addEventListener('dblclick', handleDoubleClick, true);
+  document.addEventListener('click', handleQuickMenuDismiss, true);
+  document.addEventListener('click', handleMenuDismiss, true);
   document.addEventListener('click', handleLinkNavigation);
   document.addEventListener('dragstart', handleDragStart, true);
   document.addEventListener('dragover', handleDragOver, true);
@@ -1744,17 +2760,138 @@
     cloneSelection();
   });
   publishButton.addEventListener('click', publishStaticSite);
+  publishShortcutButton.addEventListener('click', async () => {
+    await triggerPublishWithFeedback(publishShortcutButton);
+  });
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
+  if (advancedToggle && advancedContent) {
+    advancedToggle.addEventListener('click', () => {
+      const isOpen = advancedContent.classList.toggle('is-open');
+      advancedToggle.setAttribute('aria-expanded', String(isOpen));
+      advancedToggle.classList.toggle('is-open', isOpen);
+    });
+  }
+  if (quickTextSwatches) {
+    quickTextSwatches.addEventListener('click', handleQuickStyleClick);
+  }
+  if (quickBgSwatches) {
+    quickBgSwatches.addEventListener('click', handleQuickStyleClick);
+  }
+  quickPickerButtons.forEach((button) => {
+    button.addEventListener('click', handleQuickPickerClick);
+  });
+  resizeOverlay.addEventListener('mousedown', handleResizeStart);
+  window.addEventListener('resize', () => updateResizeOverlay(selectedElement));
+  window.addEventListener('scroll', () => updateResizeOverlay(selectedElement), true);
+  if (reorderToggle) {
+    reorderToggle.addEventListener('change', () => {
+      reorderMode = reorderToggle.checked;
+    });
+  }
+  if (gridDecreaseButton) {
+    gridDecreaseButton.addEventListener('click', () => {
+      if (!selectedElement || !supportsGridLayout(selectedElement)) return;
+      const count = getGridColumnCount(selectedElement) || 1;
+      setGridColumnCount(selectedElement, count - 1);
+    });
+  }
+  if (gridIncreaseButton) {
+    gridIncreaseButton.addEventListener('click', () => {
+      if (!selectedElement || !supportsGridLayout(selectedElement)) return;
+      const count = getGridColumnCount(selectedElement) || 1;
+      setGridColumnCount(selectedElement, count + 1);
+    });
+  }
   textColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.color = textColorInput.value;
+    const swatch = findNearestSwatch(textColorInput.value);
+    if (swatch?.textClass) {
+      updateQuickStyleHistory('text', swatch.textClass);
+    }
     scheduleLayoutPersist();
   });
+  if (quickTextColorInput) {
+    quickTextColorInput.addEventListener('input', () => {
+      if (!selectedElement) return;
+      selectedElement.style.color = quickTextColorInput.value;
+      textColorInput.value = quickTextColorInput.value;
+      const swatch = findNearestSwatch(quickTextColorInput.value);
+      if (swatch?.textClass) {
+        updateQuickStyleHistory('text', swatch.textClass);
+      }
+      scheduleLayoutPersist();
+    });
+  }
+  if (quickBgColorInput) {
+    quickBgColorInput.addEventListener('input', () => {
+      if (!selectedElement) return;
+      selectedElement.style.backgroundColor = quickBgColorInput.value;
+      backgroundColorInput.value = quickBgColorInput.value;
+      const swatch = findNearestSwatch(quickBgColorInput.value);
+      if (swatch?.bgClass) {
+        updateQuickStyleHistory('background', swatch.bgClass);
+      }
+      scheduleLayoutPersist();
+    });
+  }
   backgroundColorInput.addEventListener('input', () => {
     if (!selectedElement) return;
     selectedElement.style.backgroundColor = backgroundColorInput.value;
+    const swatch = findNearestSwatch(backgroundColorInput.value);
+    if (swatch?.bgClass) {
+      updateQuickStyleHistory('background', swatch.bgClass);
+    }
+    scheduleLayoutPersist();
+  });
+  quickColorMenu.querySelectorAll('[data-quick-color]').forEach((input) => {
+    input.addEventListener('input', (event) => {
+      if (!selectedElement) return;
+      const colorType = event.target.dataset.quickColor;
+      if (colorType === 'text') {
+        selectedElement.style.color = event.target.value;
+        const swatch = findNearestSwatch(event.target.value);
+        if (swatch?.textClass) {
+          updateQuickStyleHistory('text', swatch.textClass);
+        }
+      } else {
+        selectedElement.style.backgroundColor = event.target.value;
+        const swatch = findNearestSwatch(event.target.value);
+        if (swatch?.bgClass) {
+          updateQuickStyleHistory('background', swatch.bgClass);
+        }
+      }
+      updateStyleInputs(selectedElement);
+      scheduleLayoutPersist();
+    });
+  });
+  quickColorPicker.addEventListener('input', () => {
+    if (!selectedElement) return;
+    const type = quickColorPicker.dataset.pickerType;
+    if (type === 'text') {
+      selectedElement.style.color = quickColorPicker.value;
+      textColorInput.value = quickColorPicker.value;
+      if (quickTextColorInput) {
+        quickTextColorInput.value = quickColorPicker.value;
+      }
+      const swatch = findNearestSwatch(quickColorPicker.value);
+      if (swatch?.textClass) {
+        updateQuickStyleHistory('text', swatch.textClass);
+      }
+    } else if (type === 'background') {
+      selectedElement.style.backgroundColor = quickColorPicker.value;
+      backgroundColorInput.value = quickColorPicker.value;
+      if (quickBgColorInput) {
+        quickBgColorInput.value = quickColorPicker.value;
+      }
+      const swatch = findNearestSwatch(quickColorPicker.value);
+      if (swatch?.bgClass) {
+        updateQuickStyleHistory('background', swatch.bgClass);
+      }
+    }
+    updateStyleInputs(selectedElement);
     scheduleLayoutPersist();
   });
   fontSizeInput.addEventListener('input', () => {
@@ -1773,7 +2910,7 @@
   });
   valueInput.addEventListener('input', (e) => {
     if (!editMode || !selectedElement || selectedType !== 'text' || backendToggle.checked) return;
-    selectedElement.textContent = e.target.value;
+    setPrimaryTextValue(selectedElement, e.target.value);
     textValueDirty = true;
   });
   backendToggle.addEventListener('change', () => {
@@ -1783,18 +2920,68 @@
       backendServices = getMetaServices();
       populateServiceSelect();
     }
+    updateServiceFormVisibility();
   });
+  if (componentIdInput) {
+    componentIdInput.addEventListener('input', () => {
+      if (!selectedElement) return;
+      const nextId = getComponentId(componentIdInput.value);
+      if (!nextId) {
+        selectedElement.removeAttribute('data-component-id');
+        selectedElement.removeAttribute('data-component-source');
+        if (componentSourceToggle) {
+          componentSourceToggle.checked = false;
+          componentSourceToggle.disabled = true;
+        }
+        return;
+      }
+      selectedElement.setAttribute('data-component-id', nextId);
+      if (componentSourceToggle) {
+        componentSourceToggle.disabled = false;
+        if (componentSourceToggle.checked) {
+          setComponentSource(nextId, selectedElement);
+          syncComponentInstances(nextId);
+        }
+      }
+      if (!componentSourceToggle?.checked && nextId !== lastComponentId) {
+        lastComponentId = nextId;
+        applyComponentFromDisk(nextId);
+      }
+    });
+  }
+  if (componentClearButton) {
+    componentClearButton.addEventListener('click', () => {
+      clearComponentSelection();
+    });
+  }
+  if (componentSourceToggle) {
+    componentSourceToggle.addEventListener('change', () => {
+      if (!selectedElement) return;
+      const componentId = getComponentId(componentIdInput?.value);
+      if (!componentId) {
+        componentSourceToggle.checked = false;
+        componentSourceToggle.disabled = true;
+        return;
+      }
+      if (componentSourceToggle.checked) {
+        setComponentSource(componentId, selectedElement);
+        syncComponentInstances(componentId);
+      } else {
+        selectedElement.removeAttribute('data-component-source');
+      }
+    });
+  }
   serviceSelect.addEventListener('change', async () => {
     const selected = serviceSelect.value;
     messageEl.textContent = '';
     if (selected === '__new__') {
-      serviceForm.classList.add('is-visible');
+      updateServiceFormVisibility();
       backendServiceData = null;
       backendServiceAlias = '';
       setBackendKeyOptions([]);
       return;
     }
-    serviceForm.classList.remove('is-visible');
+    updateServiceFormVisibility();
     if (!selected) {
       backendServiceData = null;
       backendServiceAlias = '';
@@ -1851,10 +3038,32 @@
     input.addEventListener('change', (e) => setTypeSelection(e.target.value));
   });
   fileSelect.addEventListener('change', () => {
-    const nextFile = fileSelect.value;
-    const nextPath = nextFile === 'index.html' ? '/' : `/${nextFile}`;
-    window.location.href = nextPath;
+    navigateToFile(fileSelect.value);
   });
+  pagesSelect.addEventListener('change', () => {
+    navigateToFile(pagesSelect.value);
+    togglePagesDropdown(false);
+  });
+  pagesToggleButton.addEventListener('click', () => {
+    togglePagesDropdown();
+  });
+  effectsButton.addEventListener('click', () => {
+    window.alert('Effects coming soon.');
+  });
+  settingsMenuButton.addEventListener('click', () => {
+    openSettingsDialog();
+  });
+  xrayButton.addEventListener('click', () => {
+    activateTab(isWireframeEnabled() ? 'content' : 'wireframe');
+  });
+  publishMenuButton.addEventListener('click', async () => {
+    await triggerPublishWithFeedback(publishMenuButton);
+  });
+  floatingMinimizeButton.addEventListener('click', () => {
+    floatingMenu.classList.toggle('is-minimized');
+  });
+  floatingMenu.addEventListener('mousedown', handleMenuDragStart);
+  settingsDialog.addEventListener('click', handleSettingsDialogClick);
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
@@ -1871,6 +3080,23 @@
     updateImagePreview(nextUrl);
     applyImagePreviewToElement(nextUrl);
   });
+  imagePreview.addEventListener('dblclick', () => {
+    if (imageFileInput.disabled) return;
+    imageFileInput.value = '';
+    imageFileInput.click();
+  });
+  if (imagePreviewDelete) {
+    imagePreviewDelete.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
+      imageUrlInput.value = '';
+      imageFileInput.value = '';
+      updateImagePreview('');
+      applyImageToElement(selectedElement, '', selectedType === 'background' ? 'background' : 'image');
+      scheduleLayoutPersist();
+    });
+  }
   galleryOpenButton.addEventListener('click', async () => {
     await loadGalleryAssets();
     toggleGallery(true);
@@ -1883,8 +3109,15 @@
     }
   });
 
+  galleryTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      setGalleryTab(tab.dataset.galleryTab);
+    });
+  });
+
   document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
+    loadComponentOptions();
     applySidebarPosition();
     flexField.style.display = 'none';
     fontSizeField.style.display = 'flex';
@@ -1892,6 +3125,7 @@
     backendServices = getMetaServices();
     populateServiceSelect();
     setBackendMode(false);
+    updateServiceFormVisibility();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
