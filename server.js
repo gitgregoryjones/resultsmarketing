@@ -39,6 +39,20 @@ async function ensureDir(dirPath) {
   await fs.mkdir(dirPath, { recursive: true });
 }
 
+function parseJsonBody(body = '') {
+  if (!body) return {};
+  try {
+    return JSON.parse(body);
+  } catch (err) {
+    const start = body.indexOf('{');
+    const end = body.lastIndexOf('}');
+    if (start !== -1 && end > start) {
+      return JSON.parse(body.slice(start, end + 1));
+    }
+    throw err;
+  }
+}
+
 function componentFileName(componentId = '') {
   const safeId = String(componentId || '')
     .trim()
@@ -1227,7 +1241,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
     });
     req.on('end', async () => {
       try {
-        const payload = JSON.parse(body || '{}');
+        const payload = parseJsonBody(body);
         const {
           key,
           value,
@@ -1398,7 +1412,7 @@ const server = http.createServer(async (req, res) => {
     });
     req.on('end', async () => {
       try {
-        const payload = JSON.parse(body || '{}');
+        const payload = parseJsonBody(body);
         const { html, file } = payload;
         if (!html) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
