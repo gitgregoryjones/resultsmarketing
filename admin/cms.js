@@ -261,13 +261,6 @@
               </div>
               <datalist id="cms-component-options"></datalist>
             </div>
-            <div class="cms-field">
-              <label class="cms-toggle">
-                <span>Component source</span>
-                <input id="cms-component-source" type="checkbox" />
-                <span class="cms-toggle__control" aria-hidden="true"></span>
-              </label>
-            </div>
             <div class="cms-field cms-backend-only">
               <label class="cms-toggle">
                 <span>Repeat items</span>
@@ -431,7 +424,6 @@
   const componentIdInput = sidebar.querySelector('#cms-component-id');
   const componentOptionsList = sidebar.querySelector('#cms-component-options');
   const componentClearButton = sidebar.querySelector('#cms-component-clear');
-  const componentSourceToggle = sidebar.querySelector('#cms-component-source');
   const backendToggle = sidebar.querySelector('#cms-backend-toggle');
   const repeatToggle = sidebar.querySelector('#cms-repeat-toggle');
   const serviceSelect = sidebar.querySelector('#cms-service');
@@ -574,10 +566,6 @@
   function clearForm() {
     keyField.value = '';
     if (componentIdInput) componentIdInput.value = '';
-    if (componentSourceToggle) {
-      componentSourceToggle.checked = false;
-      componentSourceToggle.disabled = true;
-    }
     valueInput.value = '';
     linkInput.value = '';
     imageUrlInput.value = '';
@@ -609,24 +597,12 @@
     if (componentIdInput) {
       componentIdInput.value = '';
     }
-    if (componentSourceToggle) {
-      componentSourceToggle.checked = false;
-      componentSourceToggle.disabled = true;
-    }
     lastComponentId = '';
     scheduleLayoutPersist();
   }
 
-  function getComponentSource(componentId) {
-    if (!componentId) return null;
-    return document.querySelector(
-      `[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`
-    );
-  }
-
   async function applyComponentFromDisk(componentId) {
     if (!selectedElement || !componentId) return;
-    if (selectedElement.getAttribute('data-component-source') === 'true') return;
     try {
       const res = await fetch(`/api/components?id=${encodeURIComponent(componentId)}`);
       if (!res.ok) return;
@@ -645,45 +621,6 @@
     } catch (err) {
       console.warn('Unable to apply component from disk', err);
     }
-  }
-
-  function syncComponentInstances(componentId) {
-    if (!componentId) return;
-    const source = getComponentSource(componentId);
-    if (!source) return;
-    const instances = Array.from(
-      document.querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"]`)
-    );
-    instances.forEach((instance) => {
-      if (instance === source) return;
-      const clone = source.cloneNode(true);
-      clone.removeAttribute('data-component-source');
-      clone.setAttribute('data-component-id', componentId);
-      instance.replaceWith(clone);
-      if (selectedElement === instance) {
-        selectedElement = clone;
-        selectElement(clone);
-      }
-    });
-  }
-
-  function syncAllComponents() {
-    const ids = new Set(
-      Array.from(document.querySelectorAll('[data-component-id]')).map((el) =>
-        el.getAttribute('data-component-id')
-      )
-    );
-    ids.forEach((id) => syncComponentInstances(id));
-  }
-
-  function setComponentSource(componentId, sourceEl) {
-    if (!componentId || !sourceEl) return;
-    document
-      .querySelectorAll(`[data-component-id="${CSS.escape(componentId)}"][data-component-source="true"]`)
-      .forEach((el) => {
-        if (el !== sourceEl) el.removeAttribute('data-component-source');
-      });
-    sourceEl.setAttribute('data-component-source', 'true');
   }
 
   function clearMessage() {
@@ -2022,10 +1959,6 @@
       clearTimeout(layoutSaveTimer);
     }
     layoutSaveTimer = setTimeout(() => {
-      if (selectedElement && selectedElement.hasAttribute('data-component-source')) {
-        const componentId = selectedElement.getAttribute('data-component-id');
-        syncComponentInstances(componentId);
-      }
       persistLayout();
       layoutSaveTimer = null;
     }, 400);
@@ -2277,11 +2210,9 @@
       : getPrimaryTextValue(el).trim();
     linkInput.value = el.getAttribute('data-link') || '';
     keyField.value = key || generateKeySuggestion(el);
-    if (componentIdInput && componentSourceToggle) {
+    if (componentIdInput) {
       const componentId = el.getAttribute('data-component-id') || '';
       componentIdInput.value = componentId;
-      componentSourceToggle.checked = el.getAttribute('data-component-source') === 'true';
-      componentSourceToggle.disabled = !componentId;
       lastComponentId = componentId;
     }
     if (selectedType === 'image' || selectedType === 'background') {
@@ -2929,21 +2860,10 @@
       if (!nextId) {
         selectedElement.removeAttribute('data-component-id');
         selectedElement.removeAttribute('data-component-source');
-        if (componentSourceToggle) {
-          componentSourceToggle.checked = false;
-          componentSourceToggle.disabled = true;
-        }
         return;
       }
       selectedElement.setAttribute('data-component-id', nextId);
-      if (componentSourceToggle) {
-        componentSourceToggle.disabled = false;
-        if (componentSourceToggle.checked) {
-          setComponentSource(nextId, selectedElement);
-          syncComponentInstances(nextId);
-        }
-      }
-      if (!componentSourceToggle?.checked && nextId !== lastComponentId) {
+      if (nextId !== lastComponentId) {
         lastComponentId = nextId;
         applyComponentFromDisk(nextId);
       }
@@ -2952,23 +2872,6 @@
   if (componentClearButton) {
     componentClearButton.addEventListener('click', () => {
       clearComponentSelection();
-    });
-  }
-  if (componentSourceToggle) {
-    componentSourceToggle.addEventListener('change', () => {
-      if (!selectedElement) return;
-      const componentId = getComponentId(componentIdInput?.value);
-      if (!componentId) {
-        componentSourceToggle.checked = false;
-        componentSourceToggle.disabled = true;
-        return;
-      }
-      if (componentSourceToggle.checked) {
-        setComponentSource(componentId, selectedElement);
-        syncComponentInstances(componentId);
-      } else {
-        selectedElement.removeAttribute('data-component-source');
-      }
     });
   }
   serviceSelect.addEventListener('change', async () => {
