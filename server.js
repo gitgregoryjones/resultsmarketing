@@ -451,6 +451,19 @@ function stripCmsUi(html) {
   return html;
 }
 
+function stripContentEditable(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('[contenteditable]').forEach((el) => {
+      el.removeAttribute('contenteditable');
+    });
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to strip contenteditable attributes from HTML', err);
+  }
+  return html;
+}
+
 function ensureAnchorStyles(element) {
   const styleAttr = element.getAttribute('style') || '';
   const declarations = styleAttr
@@ -593,6 +606,7 @@ async function publishSite() {
       html = wrapDataLinks(html);
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
+      html = stripContentEditable(html);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
@@ -1301,7 +1315,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         let currentHtml = await fs.readFile(htmlPath, 'utf8');
         const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
         if (html) {
-          currentHtml = stripCmsUi(html);
+          currentHtml = stripContentEditable(stripCmsUi(html));
         }
 
         if (deleteElement) {
@@ -1311,10 +1325,11 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
             return;
           }
           currentHtml = removeElementFromHtml(currentHtml, { key, elementPath });
-          await persistComponentSources(currentHtml);
-          await persistStyleSources(currentHtml);
-          await fs.writeFile(htmlPath, currentHtml);
-          const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
+          const cleanedHtml = stripContentEditable(currentHtml);
+          await persistComponentSources(cleanedHtml);
+          await persistStyleSources(cleanedHtml);
+          await fs.writeFile(htmlPath, cleanedHtml);
+          const { values, siteName: persistedSiteName } = extractContentFromHtml(cleanedHtml);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(
             JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || existingSiteName })
@@ -1360,7 +1375,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
               try {
                 const filePath = htmlPathFor(file);
                 const html = file === targetFile ? currentHtml : await fs.readFile(filePath, 'utf8');
-                const updated = updateSiteNameInHtml(html, finalSiteName);
+                const updated = stripContentEditable(updateSiteNameInHtml(html, finalSiteName));
                 await fs.writeFile(filePath, updated);
                 if (file === targetFile) {
                   currentHtml = updated;
@@ -1394,11 +1409,12 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           }
         }
 
-        await persistComponentSources(currentHtml);
-        await persistStyleSources(currentHtml);
-        await fs.writeFile(htmlPath, currentHtml);
+        const cleanedHtml = stripContentEditable(currentHtml);
+        await persistComponentSources(cleanedHtml);
+        await persistStyleSources(cleanedHtml);
+        await fs.writeFile(htmlPath, cleanedHtml);
 
-        const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
+        const { values, siteName: persistedSiteName } = extractContentFromHtml(cleanedHtml);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
@@ -1454,7 +1470,7 @@ const server = http.createServer(async (req, res) => {
         }
         const targetFile = sanitizeHtmlFile(file || DEFAULT_FILE);
         const htmlPath = htmlPathFor(targetFile);
-        const cleanedHtml = stripCmsUi(html);
+        const cleanedHtml = stripContentEditable(stripCmsUi(html));
         await persistComponentSources(cleanedHtml);
         await persistStyleSources(cleanedHtml);
         await fs.writeFile(htmlPath, cleanedHtml);
