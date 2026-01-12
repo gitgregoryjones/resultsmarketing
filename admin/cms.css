@@ -890,8 +890,8 @@ body.cms-editing #cms-toggle::after {
 }
 
 .cms-wireframe-section__content {
-  display: grid;
-  gap: 16px;
+  display: block;
+  min-height: 24px;
 }
 
 .cms-wireframe-section--dragging {
@@ -1007,6 +1007,14 @@ body.cms-editing #cms-toggle::after {
   transform: translateX(6px);
 }
 
+.cms-layout-mode .cms-reorder-before {
+  transform: translateX(-6px);
+}
+
+.cms-layout-mode .cms-reorder-after {
+  transform: translateX(6px);
+}
+
 .cms-field input,
 .cms-field textarea,
 .cms-field select {
@@ -1042,13 +1050,28 @@ body.cms-editing #cms-toggle::after {
   cursor: grab;
 }
 
+.cms-layout-mode [draggable="true"]:not(.cms-ui):not(.cms-ui *) {
+  cursor: grab;
+}
+
 .cms-wireframe .cms-dragging {
   cursor: grabbing;
   opacity: 0.6;
   outline: 2px solid #93c5fd !important;
 }
 
+.cms-layout-mode .cms-dragging {
+  cursor: grabbing;
+  opacity: 0.6;
+  outline: 2px solid #93c5fd !important;
+}
+
 .cms-wireframe .cms-drop-target {
+  outline: 2px dashed #2563eb !important;
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+
+.cms-layout-mode .cms-drop-target {
   outline: 2px dashed #2563eb !important;
   background-color: rgba(37, 99, 235, 0.08) !important;
 }
