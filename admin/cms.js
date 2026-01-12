@@ -60,6 +60,11 @@
         <button type="button" class="cms-floating-menu__button" id="cms-pages-toggle">Pages</button>
         <div class="cms-floating-menu__dropdown" id="cms-pages-dropdown">
           <select id="cms-pages-select" aria-label="Select page"></select>
+          <div class="cms-floating-menu__page-actions">
+            <input id="cms-page-name" type="text" placeholder="new-page" />
+            <button type="button" id="cms-page-create">Add page</button>
+            <button type="button" id="cms-page-delete" class="is-danger">Delete page</button>
+          </div>
         </div>
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
@@ -426,6 +431,9 @@
   const pagesToggleButton = floatingMenu.querySelector('#cms-pages-toggle');
   const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
   const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
+  const pageNameInput = floatingMenu.querySelector('#cms-page-name');
+  const pageCreateButton = floatingMenu.querySelector('#cms-page-create');
+  const pageDeleteButton = floatingMenu.querySelector('#cms-page-delete');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
@@ -951,6 +959,69 @@
     window.location.href = nextPath;
   }
 
+  function normalizePageName(value) {
+    return (value || '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9-_]/g, '')
+      .toLowerCase();
+  }
+
+  async function createPage(fileName) {
+    const safeName = normalizePageName(fileName);
+    if (!safeName) {
+      showToast('Enter a page name first.', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/api/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: safeName }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Unable to create page.');
+      }
+      await loadFiles();
+      pageNameInput.value = '';
+      togglePagesDropdown(false);
+      navigateToFile(`${safeName}.html`);
+    } catch (err) {
+      showToast(err.message || 'Unable to create page.', 'error');
+    }
+  }
+
+  async function deletePage(fileName) {
+    if (!fileName) {
+      showToast('Select a page to delete.', 'error');
+      return;
+    }
+    const confirmed = window.confirm(`Delete ${fileName}? This cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      const res = await fetch('/api/files', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: fileName }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Unable to delete page.');
+      }
+      const data = await res.json().catch(() => ({}));
+      const nextFile = data.files?.[0] || 'index.html';
+      togglePagesDropdown(false);
+      if (fileName === currentFile) {
+        navigateToFile(nextFile);
+      } else {
+        await loadFiles();
+      }
+    } catch (err) {
+      showToast(err.message || 'Unable to delete page.', 'error');
+    }
+  }
+
   async function persistSiteName() {
     const desiredName = sanitizeSiteName(siteNameInput.value);
     if (!desiredName) {
@@ -1035,6 +1106,9 @@
       }
       pagesSelect.appendChild(nextOption);
     });
+    if (pageDeleteButton) {
+      pageDeleteButton.disabled = !pagesSelect.value || pagesSelect.value === 'index.html';
+    }
   }
 
   function positionOutline(target) {
@@ -3126,9 +3200,22 @@
     navigateToFile(fileSelect.value);
   });
   pagesSelect.addEventListener('change', () => {
+    if (pageDeleteButton) {
+      pageDeleteButton.disabled = pagesSelect.value === 'index.html';
+    }
     navigateToFile(pagesSelect.value);
     togglePagesDropdown(false);
   });
+  if (pageCreateButton) {
+    pageCreateButton.addEventListener('click', () => {
+      createPage(pageNameInput?.value);
+    });
+  }
+  if (pageDeleteButton) {
+    pageDeleteButton.addEventListener('click', () => {
+      deletePage(pagesSelect?.value);
+    });
+  }
   pagesToggleButton.addEventListener('click', () => {
     togglePagesDropdown();
   });

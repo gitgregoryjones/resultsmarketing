@@ -121,6 +121,41 @@
   min-width: 180px;
 }
 
+.cms-floating-menu__page-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cms-floating-menu__page-actions input {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.cms-floating-menu__page-actions button {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: #f3f4f6;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.cms-floating-menu__page-actions button:hover {
+  border-color: var(--cms-purple);
+  color: var(--cms-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.cms-floating-menu__page-actions button.is-danger:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
 .cms-floating-menu.is-minimized .cms-floating-menu__items {
   opacity: 0;
   transform: scale(0.95);
