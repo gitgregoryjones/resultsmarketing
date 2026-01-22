@@ -31575,8 +31575,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Desktop Tabs Functionality
-            const tabButtons = document.querySelectorAll('.tab-btn');
             const tabContents = document.querySelectorAll('.tab-content');
+            const tabButtons = Array.from(document.querySelectorAll('.tab-btn')).filter(button => {
+                const tabId = button.getAttribute('data-tab');
+                return document.getElementById(`${tabId}-content`);
+            });
             
             function switchTab(activeTab) {
                 // Remove active class from all tabs
