@@ -35,6 +35,28 @@ function htmlPathFor(fileName = DEFAULT_FILE) {
   return path.join(ADMIN_DIR, sanitizeHtmlFile(fileName));
 }
 
+function buildBlankAdminPage(title = 'New Page') {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+    <link rel="stylesheet" href="/admin/cms.css" />
+  </head>
+  <body>
+    <main class="page-wrapper">
+      <section style="padding: 48px;">
+        <h1>New page</h1>
+        <p>Start building your layout.</p>
+      </section>
+    </main>
+    <script src="/admin/cms.js"></script>
+  </body>
+</html>
+`;
+}
+
 async function ensureDir(dirPath) {
   try {
     await fs.mkdir(dirPath, { recursive: true });
@@ -451,6 +473,19 @@ function stripCmsUi(html) {
   return html;
 }
 
+function stripContentEditable(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('[contenteditable]').forEach((el) => {
+      el.removeAttribute('contenteditable');
+    });
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to strip contenteditable attributes from HTML', err);
+  }
+  return html;
+}
+
 function ensureAnchorStyles(element) {
   const styleAttr = element.getAttribute('style') || '';
   const declarations = styleAttr
@@ -593,6 +628,7 @@ async function publishSite() {
       html = wrapDataLinks(html);
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
+      html = stripContentEditable(html);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
@@ -1301,7 +1337,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         let currentHtml = await fs.readFile(htmlPath, 'utf8');
         const { siteName: existingSiteName } = extractContentFromHtml(currentHtml);
         if (html) {
-          currentHtml = stripCmsUi(html);
+          currentHtml = stripContentEditable(stripCmsUi(html));
         }
 
         if (deleteElement) {
@@ -1311,10 +1347,11 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
             return;
           }
           currentHtml = removeElementFromHtml(currentHtml, { key, elementPath });
-          await persistComponentSources(currentHtml);
-          await persistStyleSources(currentHtml);
-          await fs.writeFile(htmlPath, currentHtml);
-          const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
+          const cleanedHtml = stripContentEditable(currentHtml);
+          await persistComponentSources(cleanedHtml);
+          await persistStyleSources(cleanedHtml);
+          await fs.writeFile(htmlPath, cleanedHtml);
+          const { values, siteName: persistedSiteName } = extractContentFromHtml(cleanedHtml);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(
             JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || existingSiteName })
@@ -1360,7 +1397,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
               try {
                 const filePath = htmlPathFor(file);
                 const html = file === targetFile ? currentHtml : await fs.readFile(filePath, 'utf8');
-                const updated = updateSiteNameInHtml(html, finalSiteName);
+                const updated = stripContentEditable(updateSiteNameInHtml(html, finalSiteName));
                 await fs.writeFile(filePath, updated);
                 if (file === targetFile) {
                   currentHtml = updated;
@@ -1394,11 +1431,12 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           }
         }
 
-        await persistComponentSources(currentHtml);
-        await persistStyleSources(currentHtml);
-        await fs.writeFile(htmlPath, currentHtml);
+        const cleanedHtml = stripContentEditable(currentHtml);
+        await persistComponentSources(cleanedHtml);
+        await persistStyleSources(cleanedHtml);
+        await fs.writeFile(htmlPath, cleanedHtml);
 
-        const { values, siteName: persistedSiteName } = extractContentFromHtml(currentHtml);
+        const { values, siteName: persistedSiteName } = extractContentFromHtml(cleanedHtml);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
@@ -1454,7 +1492,7 @@ const server = http.createServer(async (req, res) => {
         }
         const targetFile = sanitizeHtmlFile(file || DEFAULT_FILE);
         const htmlPath = htmlPathFor(targetFile);
-        const cleanedHtml = stripCmsUi(html);
+        const cleanedHtml = stripContentEditable(stripCmsUi(html));
         await persistComponentSources(cleanedHtml);
         await persistStyleSources(cleanedHtml);
         await fs.writeFile(htmlPath, cleanedHtml);
@@ -1470,16 +1508,82 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname === '/api/files' && req.method === 'GET') {
-    try {
-      const files = await listHtmlFiles();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ files }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Unable to list files' }));
+  if (pathname === '/api/files') {
+    if (req.method === 'GET') {
+      try {
+        const files = await listHtmlFiles();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ files }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unable to list files' }));
+      }
+      return;
     }
-    return;
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', async () => {
+        try {
+          const payload = parseJsonBody(body);
+          const targetFile = sanitizeHtmlFile(payload.file || '');
+          if (!targetFile) {
+            sendJsonError(res, 400, 'File name is required');
+            return;
+          }
+          const htmlPath = htmlPathFor(targetFile);
+          try {
+            await fs.access(htmlPath);
+            sendJsonError(res, 409, 'File already exists');
+            return;
+          } catch (err) {
+            if (err && err.code !== 'ENOENT') throw err;
+          }
+          const title = targetFile.replace(/\.html$/i, '').replace(/[-_]/g, ' ');
+          await fs.writeFile(htmlPath, buildBlankAdminPage(title));
+          const files = await listHtmlFiles();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ files }));
+        } catch (err) {
+          sendJsonError(res, 500, err.message || 'Unable to create file');
+        }
+      });
+      return;
+    }
+    if (req.method === 'DELETE') {
+      let body = '';
+      req.on('data', (chunk) => {
+        body += chunk;
+      });
+      req.on('end', async () => {
+        try {
+          const payload = parseJsonBody(body);
+          const targetFile = sanitizeHtmlFile(payload.file || '');
+          if (!targetFile) {
+            sendJsonError(res, 400, 'File name is required');
+            return;
+          }
+          if (targetFile === DEFAULT_FILE) {
+            sendJsonError(res, 400, 'Default page cannot be deleted');
+            return;
+          }
+          const htmlPath = htmlPathFor(targetFile);
+          await fs.unlink(htmlPath);
+          const files = await listHtmlFiles();
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ files }));
+        } catch (err) {
+          if (err && err.code === 'ENOENT') {
+            sendJsonError(res, 404, 'File not found');
+            return;
+          }
+          sendJsonError(res, 500, 'Unable to delete file');
+        }
+      });
+      return;
+    }
   }
 
   if (pathname === '/api/components' && req.method === 'GET') {

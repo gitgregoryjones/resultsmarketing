@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="en"><head>
-    <meta charset="UTF-8">
+   <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dr. Camilla Donald, O.D., F.A.A.O., Diplomate ABO</title>
-    <!-- Add these AFTER your existing title tag -->
-<!-- Add these AFTER your existing title tag -->
+    
+
 <meta name="description" content="Dr. Camilla Donald, O.D., F.A.A.O., Diplomate ABO - Expert optometrist in Snellville, GA with 20+ years experience in comprehensive eye care, treating macular degeneration, cataracts, glaucoma, and diabetic retinopathy.">
 <meta name="keywords" content="Dr. Camilla Donald, Snellville eye doctor, Snellville optometrist, eye exam Snellville, eye doctor Snellville GA, Gwinnett County eye doctor, macular degeneration, cataracts, glaucoma, diabetic retinopathy, comprehensive eye care, FAAO, Diplomate ABO">
 <meta name="author" content="Dr. Camilla Donald">
@@ -17,23 +17,24 @@
 <meta name="medical_credentials" content="OD, FAAO, Diplomate ABO">
 
 
-<!-- Canonical URL -->
+
 <link rel="canonical" href="https://drdonaldod.com/">
 <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
-<!-- Favicon & App Icons -->
+
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="manifest" href="/site.webmanifest">
-<link rel="stylesheet" href="cms.css">
+
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="cms.css">
      <style>
       :root{
         --bg: #0b0f14;
@@ -778,8 +779,752 @@
   ]
 }
 </script>
+     <style>
+      :root{
+        --bg: #0b0f14;
+        --ink: #ffffff;
+        --muted: rgba(255,255,255,.78);
+        --muted2: rgba(255,255,255,.66);
+        --line: rgba(255,255,255,.22);
 
-<!-- Additional Schema for Doctor -->
+        --brand: #19b3a7;      /* teal */
+        --brand2: #0ea69a;     /* teal darker */
+        --overlay2: rgba(26, 179, 167,.72);
+        --overlay: rgba(18, 22, 28, .35);
+
+        --shadow: 0 14px 34px rgba(0,0,0,.35);
+        --radius: 14px;
+
+        --serif: "Playfair Display", ui-serif, Georgia, serif;
+        --sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      }
+
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      html{scroll-behavior:smooth}
+      body{
+        margin:0;
+        font-family:var(--sans);
+        --background: #0f141a;
+        color:var(--ink);
+      }
+
+      /* ====== HERO WRAP ====== */
+      .hero{
+        min-height: 620px;
+        height: 78vh;
+        max-height: 860px;
+        position: relative;
+        overflow: hidden;
+        --background: var(--bg);
+      }
+
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  background: 
+    linear-gradient(90deg,
+      rgba(10, 14, 18, 0.92) 0%,
+      rgba(10, 14, 18, 0.92) 42%,
+      rgba(10, 14, 18, 0.65) 48%,
+      rgba(10, 14, 18, 0.35) 55%,
+      rgba(10, 14, 18, 0) 65%
+    ),
+    url("/images/camillasideview-1768139984584.png") center right / cover no-repeat;
+  transform: scale(1.02);
+  filter: saturate(1.02) contrast(1.02);
+  z-index: 0;
+}
+
+
+.chero__overlay{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(180deg,
+      rgba(10,14,18,.72) 0%,
+      rgba(10,14,18,.28) 22%,
+      rgba(10,14,18,.00) 44%
+    ),
+    linear-gradient(90deg,
+      rgba(10,14,18,.80) 0%,
+      rgba(10,14,18,.62) 38%,
+      rgba(10,14,18,.18) 62%,
+      rgba(10,14,18,.00) 78%
+    );
+}
+
+.hero__overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(25, 179, 167, 0.15) 0%,    /* Your teal brand color with slight tint */
+    rgba(25, 179, 167, 0.15) 42%,
+    rgba(25, 179, 167, 0.08) 48%,
+    rgba(25, 179, 167, 0.03) 55%,
+    rgba(25, 179, 167, 0) 65%
+  );
+}
+
+.hero__bg{ z-index: 0; }
+.hero__overlay{ z-index: 1; }
+.hero__bottom-fade{ z-index: 2; }
+.nav, .hero__content{ position: relative; z-index: 3; }
+
+
+
+
+
+
+
+
+      /* Soft bottom fade like the screenshot */
+      .hero__bottom-fade{
+        position:absolute;
+        left:0; right:0; bottom:-2px;
+        height: 160px;
+        background: linear-gradient(to bottom, rgba(15,20,26,0) 0%, #0f141a 90%);
+        pointer-events:none;
+      }
+
+      .container{
+        width: min(1160px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+
+      /* ====== TOP NAV ====== */
+      .nav{
+        position: relative;
+        z-index: 3;
+        padding: 18px 0;
+      }
+
+      .nav__row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap: 18px;
+      }
+
+      .brand{
+        display:flex;
+        align-items:baseline;
+        gap:10px;
+        font-family: var(--serif);
+        letter-spacing: .2px;
+        white-space:nowrap;
+      }
+      .brand__name{font-size: 26px; font-weight:700}
+      .brand__accent{color: var(--brand); font-size: 26px; font-weight:700}
+
+      .nav__links{
+        display:flex;
+        align-items:center;
+        gap: 26px;
+        list-style:none;
+        padding:0;
+        margin:0;
+      }
+      .nav__links a{
+        color: rgba(255,255,255,.86);
+        text-decoration:none;
+        font-weight:500;
+        font-size: 14px;
+        position: relative;
+        padding: 6px 2px;
+      }
+      .nav__links a:hover{color:#fff}
+      .nav__links a::after{
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -6px;
+        width: 100%;
+        height: 3px;
+        background: var(--brand);
+        border-radius: 999px;
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform .2s ease;
+      }
+      .nav__links a:hover::after,
+      .nav__links a.is-active::after{
+        transform: scaleX(1);
+      }
+
+      .nav__actions{
+        display:flex;
+        align-items:center;
+        gap: 14px;
+        white-space:nowrap;
+      }
+
+      .phone{
+        display:flex;
+        align-items:center;
+        gap: 8px;
+        color: rgba(255,255,255,.9);
+        text-decoration:none;
+        font-weight:600;
+        font-size: 14px;
+        padding: 10px 12px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+      }
+      .phone:hover{border-color: rgba(255,255,255,.18); background: rgba(255,255,255,.06)}
+      .icon{
+        width: 16px; height: 16px; display:inline-block;
+      }
+
+       /* ====== ASK DOCTOR DONALD SECTION ====== */
+      .ask-section {
+        padding: 100px 0;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .ask-section__bg {
+        position: absolute;
+        inset: 0;
+        background: 
+          linear-gradient(180deg,
+            rgba(10, 14, 18, 0.92) 0%,
+            rgba(10, 14, 18, 0.92) 42%,
+            rgba(10, 14, 18, 0.65) 48%,
+            rgba(10, 14, 18, 0.35) 55%,
+            rgba(10, 14, 18, 0) 65%
+          ),
+          linear-gradient(90deg,
+            rgba(10, 14, 18, 0.92) 0%,
+            rgba(10, 14, 18, 0.82) 30%,
+            rgba(10, 14, 18, 0.65) 50%,
+            rgba(10, 14, 18, 0.45) 70%,
+            rgba(10, 14, 18, 0) 85%
+          );
+        z-index: 0;
+      }
+
+      .ask-section__overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(25, 179, 167, 0.12) 0%,
+          rgba(25, 179, 167, 0.08) 30%,
+          rgba(25, 179, 167, 0.04) 60%,
+          rgba(25, 179, 167, 0) 85%
+        );
+        z-index: 1;
+      }
+
+      .ask-section__content {
+        position: relative;
+        z-index: 2;
+      }
+
+      .section-header {
+        text-align: center;
+        margin-bottom: 60px;
+      }
+
+      .section-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(25,179,167,.34);
+        background: rgba(25,179,167,.10);
+        color: rgba(255,255,255,.90);
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-family: var(--serif);
+        font-size: clamp(36px, 4vw, 52px);
+        line-height: 1.1;
+        letter-spacing: -0.4px;
+        margin: 0 0 16px;
+      }
+
+      .section-title .accent {
+        color: var(--brand);
+      }
+
+      .section-subtitle {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.5;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      /* Grid layout */
+      .ask-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+
+      /* Question card */
+      .question-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: var(--radius);
+        padding: 36px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 36px;
+        align-items: center;
+        grid-template-areas:
+          "tag image"
+          "title image"
+          "text image"
+          "answer image";
+      }
+
+      .question-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .question-tag {
+        display: inline-block;
+        background: var(--brand);
+        color: #062321;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        margin-bottom: 20px;
+        letter-spacing: 0.5px;
+        grid-area: tag;
+        width: fit-content;
+      }
+
+      .question-title {
+        font-family: var(--serif);
+        font-size: 28px;
+        line-height: 1.3;
+        margin: 0 0 20px;
+        color: #fff;
+        grid-area: title;
+      }
+
+      .question-text {
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.7;
+        margin-bottom: 24px;
+        grid-area: text;
+      }
+
+      .answer-text {
+        background: rgba(25, 179, 167, 0.1);
+        border-left: 4px solid var(--brand);
+        padding: 20px;
+        border-radius: 0 8px 8px 0;
+        margin-top: 24px;
+        grid-area: answer;
+      }
+
+      .answer-text p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        line-height: 1.7;
+        margin: 0;
+      }
+
+      /* Doctor image */
+      .doctor-image-container {
+        position: relative;
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+      }
+
+      .ask-section .doctor-image-container {
+        grid-area: image;
+        align-self: stretch;
+      }
+
+      .ask-section .doctor-image {
+        width: 100%;
+        height: 360px;
+        display: block;
+        border-radius: var(--radius);
+        object-fit: cover;
+        object-position: center top;
+      }
+
+      .doctor-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(10, 14, 18, 0.95) 0%, rgba(10, 14, 18, 0.7) 70%, transparent 100%);
+        padding: 24px;
+        color: #fff;
+      }
+
+      .doctor-name {
+        font-family: var(--serif);
+        font-size: 24px;
+        margin: 0 0 8px;
+      }
+
+      .doctor-credentials {
+        color: var(--muted);
+        font-size: 14px;
+        margin: 0;
+      }
+
+      /* CTA section */
+      .ask-cta {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      @media (max-width: 900px) {
+        .question-card {
+          grid-template-columns: 1fr;
+          grid-template-areas:
+            "tag"
+            "image"
+            "title"
+            "text"
+            "answer";
+          padding: 28px;
+        }
+
+        .ask-section .doctor-image {
+          height: 260px;
+        }
+
+        .doctor-info {
+          padding: 18px;
+        }
+
+        .question-title {
+          font-size: 24px;
+        }
+      }
+
+      .ask-cta p {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.6;
+        max-width: 700px;
+        margin: 0 auto 24px;
+      }
+
+      .btn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap: 10px;
+        border: 0;
+        cursor:pointer;
+        text-decoration:none;
+        font-weight:700;
+        font-size: 14px;
+        padding: 12px 16px;
+        border-radius: 999px;
+        transition: transform .12s ease, filter .12s ease, background .12s ease;
+        user-select:none;
+      }
+      .btn:active{transform: translateY(1px)}
+      .btn--primary{
+        background: var(--brand);
+        color: #062321;
+        box-shadow: 0 10px 18px rgba(25,179,167,.26);
+      }
+      .btn--primary:hover{filter: brightness(1.03)}
+      .btn--ghost{
+        background: rgba(255,255,255,.06);
+        color: #fff;
+        border: 1px solid rgba(255,255,255,.25);
+      }
+      .btn--ghost:hover{background: rgba(255,255,255,.10)}
+
+      /* ====== HERO CONTENT ====== */
+     .hero__content {
+  position: relative;
+  z-index: 2;
+  padding: 56px 0 60px;
+  /* Remove the background-image property from here */
+  background-image: none !important;
+}
+
+      .hero__grid{
+        display:grid;
+        grid-template-columns: 1.05fr .95fr;
+        align-items:center;
+        gap: 28px;
+        min-height: calc(78vh - 90px);
+      }
+
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(25,179,167,.34);
+        background: rgba(25,179,167,.10);
+        color: rgba(255,255,255,.90);
+        font-weight:600;
+        font-size: 13px;
+        width: fit-content;
+      }
+      .pill.pill-tilt{
+        animation: pill-tilt 0.6s ease;
+      }
+      .pill.pill-tilt{
+        animation: pill-tilt 0.6s ease;
+      }
+
+      .headline{
+        margin: 22px 0 14px;
+        font-family: var(--serif);
+        font-size: clamp(44px, 5.2vw, 76px);
+        line-height: 1.02;
+        letter-spacing: -0.6px;
+      }
+      .headline .accent{color: var(--brand)}
+      .headline .headline-line{
+        display:block;
+        opacity: 0;
+        filter: blur(8px);
+        transform: translateY(6px);
+        animation: hero-focus 1.8s ease forwards;
+      }
+
+      .subcopy{
+        max-width: 560px;
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.55;
+        margin: 14px 0 26px;
+      }
+
+      .cta-row{
+        display:flex;
+        align-items:center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+
+      .cta-row .btn{
+        min-width: 210px;
+        padding: 14px 18px;
+        border-radius: 12px; /* screenshot has slightly less rounded on the big CTAs */
+      }
+
+      .btn__icon{
+        width: 18px;
+        height: 18px;
+        opacity:.92;
+      }
+
+      /* Right column placeholder (the background already shows the patient).
+         Keep this empty so content stays left like the screenshot. */
+      .hero__right{
+        min-height: 260px;
+      }
+
+     .image-overlay-container {
+  position: relative;
+  display: inline-block; /* or block depending on layout */
+}
+
+.image-overlay-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 128, 128, 0.3); /* Teal with 30% opacity */
+  mix-blend-mode: multiply; /* Optional: blends with image */
+  pointer-events: none; /* Allows clicks to pass through */
+}
+
+/* Adjust opacity as needed */
+.teal-10 { background-color: rgba(0, 128, 128, 0.1); }
+.teal-20 { background-color: rgba(0, 128, 128, 0.2); }
+.teal-30 { background-color: rgba(0, 128, 128, 0.3); }
+.teal-40 { background-color: rgba(0, 128, 128, 0.4); }
+.teal-50 { background-color: rgba(0, 128, 128, 0.5); }
+
+      /* ====== RESPONSIVE ====== */
+      @media (max-width: 980px){
+        .nav__row{flex-wrap:wrap;}
+        .nav__links{
+          width:100%;
+          justify-content:center;
+          flex-wrap:wrap;
+          gap: 16px;
+          margin-top: 8px;
+        }
+        .nav__actions{
+          width:100%;
+          justify-content:center;
+        }
+        .hero__grid{grid-template-columns: 1fr;}
+        .hero__right{display:none;}
+        .hero__bg{
+          background-image:
+            linear-gradient(180deg, rgba(18,22,28,.62) 0%, rgba(18,22,28,.48) 48%, rgba(18,22,28,.25) 100%),
+            url("/images/camillasideview-1768139984584.png");
+          background-position-x: 60%;
+        }
+        .hero__content{padding: 42px 0 48px;}
+      }
+
+      @media (max-width: 768px){
+        .hero{
+          height: auto;
+          min-height: 520px;
+          padding-bottom: 32px;
+        }
+
+        .hero__content{
+          padding: 32px 0 36px;
+          text-align: left;
+        }
+
+        .pill{
+          font-size: 12px;
+          padding: 8px 14px;
+        }
+
+        .headline{
+          font-size: clamp(32px, 8vw, 44px);
+          line-height: 1.1;
+        }
+
+        .subcopy{
+          font-size: 16px;
+        }
+      }
+
+      @media (max-width: 520px){
+        .container{width: min(1160px, calc(100% - 28px));}
+        .brand__name, .brand__accent{font-size: 22px;}
+        .phone{display:none;}
+        .cta-row .btn{min-width: 100%;}
+      }
+
+      @keyframes hero-focus {
+        0% {
+          opacity: 0;
+          filter: blur(10px);
+          transform: translateY(6px);
+        }
+        100% {
+          opacity: 1;
+          filter: blur(0);
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pill-tilt {
+        0% { transform: rotate(0deg); }
+        40% { transform: rotate(-20deg); }
+        100% { transform: rotate(0deg); }
+      }
+
+      
+    </style>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MedicalBusiness",
+  "name": "Signature Eye Care - Dr. Camilla Donald",
+  "medicalSpecialty": "Optometry",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Your Street Address",  <!-- ADD YOUR STREET -->
+    "addressLocality": "Snellville",
+    "addressRegion": "GA",
+    "postalCode": "30039",                  <!-- OR YOUR ZIP -->
+    "addressCountry": "US"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": "33.8576",                  <!-- Snellville coordinates -->
+    "longitude": "-84.0199"
+  },
+  "areaServed": {
+    "@type": "GeoCircle",
+    "geoMidpoint": {
+      "@type": "GeoCoordinates",
+      "latitude": "33.8576",
+      "longitude": "-84.0199"
+    },
+    "geoRadius": "15000"
+  },
+  "openingHours": "Mo-Fr 09:00-17:00",
+  "priceRange": "$$",
+  "telephone": "+1-770-914-3399",
+  "email": "info@drdonaldod.com",
+  "url": "https://drdonaldod.com/",
+  "image": "https://drdonaldod.com/images/camillasideview-1768139984584.png",
+  "description": "Dr. Camilla Donald, O.D., F.A.A.O., Diplomate ABO - Expert optometrist in Snellville, GA with 20+ years experience in comprehensive eye care.",
+  "founder": {
+    "@type": "Person",
+    "name": "Dr. Camilla Donald",
+    "honorificPrefix": "Dr.",
+    "honorificSuffix": "O.D., F.A.A.O., Diplomate ABO",
+    "hasCredential": "Doctor of Optometry",
+    "alumniOf": {
+      "@type": "EducationalOrganization",
+      "name": "University of Missouri-Saint Louis"
+    }
+  },
+  "service": [
+    {
+      "@type": "MedicalProcedure",
+      "name": "Comprehensive Eye Exams"
+    },
+    {
+      "@type": "MedicalProcedure",
+      "name": "Macular Degeneration Treatment"
+    },
+    {
+      "@type": "MedicalProcedure",
+      "name": "Cataracts Evaluation"
+    },
+    {
+      "@type": "MedicalProcedure",
+      "name": "Glaucoma Management"
+    },
+    {
+      "@type": "MedicalProcedure",
+      "name": "Diabetic Retinopathy Care"
+    }
+  ],
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "5.0",
+    "reviewCount": "10"
+  },
+  "sameAs": [
+    "https://www.facebook.com/DrDonaldOD",
+    "https://www.linkedin.com/in/drcamilladonald",
+    "https://www.instagram.com/DrDonaldOD"
+  ]
+}
+</script>
+
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -790,7 +1535,7 @@
   "honorificSuffix": "O.D., F.A.A.O., Diplomate ABO",
   "description": "Optometrist in Snellville, GA with over 20 years of experience specializing in comprehensive eye care and ocular disease management.",
   "url": "https://drdonaldod.com/",
-  "image": "https://drdonaldod.com/images/withgloves-1767559677382.png",
+  "image": "https://drdonaldod.com/images/camillasideview-1768139984584.png",
   "knowsAbout": [
     "Optometry",
     "Eye Examinations",
@@ -820,7 +1565,7 @@
 }
 </script>
 
-<!-- Additional Schema for Doctor -->
+
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -831,7 +1576,7 @@
   "honorificSuffix": "O.D., F.A.A.O., Diplomate ABO",
   "description": "Optometrist with over 20 years of experience specializing in comprehensive eye care and ocular disease management.",
   "url": "https://drdonaldod.com/",
-  "image": "https://drdonaldod.com/images/withgloves-1767559677382.png",
+  "image": "https://drdonaldod.com/images/camillasideview-1768139984584.png",
   "knowsAbout": [
     "Optometry",
     "Eye Examinations",
@@ -856,7 +1601,7 @@
 </script>
   
 
-  <body cz-shortcut-listen="true" class="">
+  <style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.absolute{position:absolute}.relative{position:relative}.bottom-2{bottom:0.5rem}.left-0{left:0px}.top-0{top:0px}.-z-10{z-index:-10}.mx-auto{margin-left:auto;margin-right:auto}.mb-16{margin-bottom:4rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.mt-16{margin-top:4rem}.mt-4{margin-top:1rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.h-20{height:5rem}.h-12{height:3rem}.h-2{height:0.5rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-full{height:100%}.w-96{width:24rem}.w-1{width:0.25rem}.w-12{width:3rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-full{width:100%}.max-w-3xl{max-width:48rem}.max-w-6xl{max-width:72rem}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.items-center{align-items:center}.justify-center{justify-content:center}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:0.75rem}.rounded-l-xl{border-top-left-radius:0.75rem;border-bottom-left-radius:0.75rem}.border{border-width:1px}.border-t{border-top-width:1px}.border-\[\#19b3a7\]\/30{border-color:rgb(25 179 167 / 0.3)}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.bg-\[\#19b3a7\]{--tw-bg-opacity:1;background-color:rgb(25 179 167 / var(--tw-bg-opacity, 1))}.bg-\[\#19b3a7\]\/10{background-color:rgb(25 179 167 / 0.1)}.bg-\[\#19b3a7\]\/20{background-color:rgb(25 179 167 / 0.2)}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-gradient-to-b{background-image:linear-gradient(to bottom, var(--tw-gradient-stops))}.from-white{--tw-gradient-from:#fff var(--tw-gradient-from-position);--tw-gradient-to:rgb(255 255 255 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-white{--tw-gradient-to:rgb(255 255 255 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #fff var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-\[\#19b3a7\]\/5{--tw-gradient-to:rgb(25 179 167 / 0.05) var(--tw-gradient-to-position)}.p-8{padding:2rem}.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-20{padding-top:5rem;padding-bottom:5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pt-12{padding-top:3rem}.text-center{text-align:center}.font-serif{font-family:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-wide{letter-spacing:0.025em}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-\[\#19b3a7\]{--tw-text-opacity:1;color:rgb(25 179 167 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-\[\#19b3a7\]\/30:hover{border-color:rgb(25 179 167 / 0.3)}.hover\:bg-\[\#0ea69a\]:hover{--tw-bg-opacity:1;background-color:rgb(14 166 154 / var(--tw-bg-opacity, 1))}.hover\:shadow-2xl:hover{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.hover\:shadow-\[\#19b3a7\]\/10:hover{--tw-shadow-color:rgb(25 179 167 / 0.1);--tw-shadow:var(--tw-shadow-colored)}.hover\:shadow-\[\#19b3a7\]\/30:hover{--tw-shadow-color:rgb(25 179 167 / 0.3);--tw-shadow:var(--tw-shadow-colored)}.group:hover .group-hover\:bg-\[\#19b3a7\]{--tw-bg-opacity:1;background-color:rgb(25 179 167 / var(--tw-bg-opacity, 1))}.group:hover .group-hover\:text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}@media (min-width: 640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width: 768px){.md\:min-w-\[900px\]{min-width:900px}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:text-5xl{font-size:3rem;line-height:1}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 1024px){.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:gap-8{gap:2rem}.lg\:px-8{padding-left:2rem;padding-right:2rem}.lg\:text-6xl{font-size:3.75rem;line-height:1}}</style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.absolute{position:absolute}.relative{position:relative}.bottom-2{bottom:0.5rem}.left-0{left:0px}.top-0{top:0px}.-z-10{z-index:-10}.mx-auto{margin-left:auto;margin-right:auto}.mb-16{margin-bottom:4rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.mt-16{margin-top:4rem}.mt-4{margin-top:1rem}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.h-20{height:5rem}.h-12{height:3rem}.h-2{height:0.5rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-full{height:100%}.w-96{width:24rem}.w-1{width:0.25rem}.w-12{width:3rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-full{width:100%}.max-w-3xl{max-width:48rem}.max-w-6xl{max-width:72rem}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.items-center{align-items:center}.justify-center{justify-content:center}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.rounded-full{border-radius:9999px}.rounded-xl{border-radius:0.75rem}.rounded-l-xl{border-top-left-radius:0.75rem;border-bottom-left-radius:0.75rem}.border{border-width:1px}.border-t{border-top-width:1px}.border-\[\#19b3a7\]\/30{border-color:rgb(25 179 167 / 0.3)}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.bg-\[\#19b3a7\]{--tw-bg-opacity:1;background-color:rgb(25 179 167 / var(--tw-bg-opacity, 1))}.bg-\[\#19b3a7\]\/10{background-color:rgb(25 179 167 / 0.1)}.bg-\[\#19b3a7\]\/20{background-color:rgb(25 179 167 / 0.2)}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-gradient-to-b{background-image:linear-gradient(to bottom, var(--tw-gradient-stops))}.from-white{--tw-gradient-from:#fff var(--tw-gradient-from-position);--tw-gradient-to:rgb(255 255 255 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.via-white{--tw-gradient-to:rgb(255 255 255 / 0)  var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), #fff var(--tw-gradient-via-position), var(--tw-gradient-to)}.to-\[\#19b3a7\]\/5{--tw-gradient-to:rgb(25 179 167 / 0.05) var(--tw-gradient-to-position)}.p-8{padding:2rem}.px-4{padding-left:1rem;padding-right:1rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.px-8{padding-left:2rem;padding-right:2rem}.py-20{padding-top:5rem;padding-bottom:5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.pt-12{padding-top:3rem}.text-center{text-align:center}.font-serif{font-family:ui-serif, Georgia, Cambria, "Times New Roman", Times, serif}.text-2xl{font-size:1.5rem;line-height:2rem}.text-4xl{font-size:2.25rem;line-height:2.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.font-bold{font-weight:700}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.leading-relaxed{line-height:1.625}.tracking-wide{letter-spacing:0.025em}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-\[\#19b3a7\]{--tw-text-opacity:1;color:rgb(25 179 167 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-300{transition-duration:300ms}.hover\:-translate-y-1:hover{--tw-translate-y:-0.25rem;transform:translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.hover\:border-\[\#19b3a7\]\/30:hover{border-color:rgb(25 179 167 / 0.3)}.hover\:bg-\[\#0ea69a\]:hover{--tw-bg-opacity:1;background-color:rgb(14 166 154 / var(--tw-bg-opacity, 1))}.hover\:shadow-2xl:hover{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.hover\:shadow-\[\#19b3a7\]\/10:hover{--tw-shadow-color:rgb(25 179 167 / 0.1);--tw-shadow:var(--tw-shadow-colored)}.hover\:shadow-\[\#19b3a7\]\/30:hover{--tw-shadow-color:rgb(25 179 167 / 0.3);--tw-shadow:var(--tw-shadow-colored)}.group:hover .group-hover\:bg-\[\#19b3a7\]{--tw-bg-opacity:1;background-color:rgb(25 179 167 / var(--tw-bg-opacity, 1))}.group:hover .group-hover\:text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}@media (min-width: 640px){.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}}@media (min-width: 768px){.md\:min-w-\[900px\]{min-width:900px}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:text-5xl{font-size:3rem;line-height:1}.md\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 1024px){.lg\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.lg\:gap-8{gap:2rem}.lg\:px-8{padding-left:2rem;padding-right:2rem}.lg\:text-6xl{font-size:3.75rem;line-height:1}}</style></head><body cz-shortcut-listen="true" class="cms-editing">
     <header class="hero">
       
       <div class="hero__bg" aria-hidden="true"></div>
@@ -868,19 +1613,19 @@
       <nav class="nav">
         <div class="container">
           <div class="nav__row">
-            <div class="brand w-96 h-20" aria-label="Signature Eye Care" contenteditable="false" style="background-size: cover; background-image:url('/images/camlogo-1767492262780.png')" data-cms-bg="auto.div">
+            <div class="brand w-96 h-20" aria-label="Signature Eye Care" style="background-size: cover; background-image:url('/images/camlogo-1767492262780.png')" data-cms-bg="auto.div">
               
             </div>
 
             <ul class="nav__links">
-              <li><a href="#about-dr-donald" class="is-active" contenteditable="false">About</a></li>
+              <li><a href="#about-dr-donald" class="is-active">About</a></li>
               <li></li>
-              <li><a href="#ask-doctor-donald" contenteditable="false" class="">Ask Dr. Donald</a></li>
+              <li><a href="#ask-doctor-donald" class="">Ask Dr. Donald</a></li>
               
             </ul>
 
             <div class="nav__actions">
-              <a class="phone" href="mailto:info@drdonaldod.com" aria-label="Email info@drdonaldod.com" contenteditable="false" style="background-color: rgb(27, 179, 167);">info@drdonaldod.com</a>
+              <a class="phone" href="mailto:info@drdonaldod.com" aria-label="Email info@drdonaldod.com" style="background-color: rgb(27, 179, 167);">info@drdonaldod.com</a>
 
               
             </div>
@@ -888,11 +1633,11 @@
         </div>
       </nav>
 
-      <div class="hero__content cms-outlined" contenteditable="false"  data-cms-bg="div.over-20-years-of-excellence-expert-eye-care-personal-touch-dr-camilla-donald-o-d-f-a-a-o-delivers-comprehensive-eye-care-with-precision-compassion-and-over-two-decades-of-expertise-">
+      <div class="hero__content" data-cms-bg="div.over-20-years-of-excellence-expert-eye-care-personal-touch-dr-camilla-donald-o-d-f-a-a-o-delivers-comprehensive-eye-care-with-precision-compassion-and-over-two-decades-of-expertise-">
         <div class="container">
-          <div class="hero__grid" contenteditable="false" data-cms-text="div.over-20-years-of-excellence-expert-eye-care-dr-camilla-donald-dr-camilla-donald-o-d-f-a-a-o-delivers-comprehensive-eye-care-with-precision-compassion-and-over-two-decades-of-expertise-">
+          <div class="hero__grid" data-cms-text="div.over-20-years-of-excellence-expert-eye-care-dr-camilla-donald-dr-camilla-donald-o-d-f-a-a-o-delivers-comprehensive-eye-care-with-precision-compassion-and-over-two-decades-of-expertise-">
             <div class="md:min-w-[900px]">
-              <a href="#about-dr-donald" style="color: inherit; text-decoration: none"><div class="pill" contenteditable="true" data-cms-text="div.over-20-years-of-excellence" data-link="#about-dr-donald">Over 20 Years of Excellence</div></a>
+              <a href="#about-dr-donald" style="color: inherit; text-decoration: none"><div class="pill" data-cms-text="div.over-20-years-of-excellence" data-link="#about-dr-donald">Over 20 Years of Excellence</div></a>
 
               <h1 class="headline">
                 <span class="headline-line text-white">Expert Eye Doctor</span>
@@ -922,9 +1667,9 @@
     <div class="container">
       <div class="ask-section__content">
         <div class="section-header">
-          <div class="section-pill" contenteditable="false" style="color: rgb(237, 243, 242);">Expert Advice</div>
-          <h2 class="section-title" contenteditable="false" style="color: rgb(232, 234, 237);">Ask Doctor <span class="accent">Donald</span></h2>
-          <p class="section-subtitle" contenteditable="false" style="color: rgb(235, 237, 240);">Get answers to your eye health questions from our experienced optometrist, Dr. Camilla Donald.</p>
+          <div class="section-pill" style="color: rgb(237, 243, 242);">Expert Advice</div>
+          <h2 class="section-title" style="color: rgb(232, 234, 237);">Ask Doctor <span class="accent">Donald</span></h2>
+          <p class="section-subtitle" style="color: rgb(235, 237, 240);">Get answers to your eye health questions from our experienced optometrist, Dr. Camilla Donald.</p>
         </div>
         
         <div class="ask-grid">
@@ -932,11 +1677,11 @@
             <div class="question-tag">EYE TIP QUESTION</div>
             <div class="doctor-image-container" style="transform: perspective(1000px) rotateY(-5deg);">
               <div class="image-overlay-container">
-                <img alt="Dr. Camilla Donald" class="doctor-image visually-hiddens" style data-cms-image="auto.img-2" src="/images/withgloves-1767559677382.png">
+                <img alt="Dr. Camilla Donald" class="doctor-image visually-hiddens cms-outlined" style data-cms-image="auto.img-2" src="/images/camillasideview-1768141311047.png">
               </div>
               <div class="doctor-info">
                 <h3 class="doctor-name">Dr. Camilla Donald</h3>
-                <p class="doctor-credentials" contenteditable="false" data-cms-text="p.o-d-f-a-a-o-over-20-years-of-experience">O.D., F.A.A.O., Diplomate ABO • Over 20 Years of Experience</p>
+                <p class="doctor-credentials" data-cms-text="p.o-d-f-a-a-o-over-20-years-of-experience">O.D., F.A.A.O., Diplomate ABO • Over 20 Years of Experience</p>
               </div>
             </div>
             <h3 class="question-title">How often should I have my eyes examined?</h3>
@@ -1000,7 +1745,7 @@
             </div>
           </div>
           
-          <div class="about-content" contenteditable="false">
+          <div class="about-content">
             <h3>Comprehensive Eye Care Specialist</h3>
             <p>Dr. Camilla Donald is an esteemed optometrist who dedicates her expertise to delivering comprehensive eye care services to patients confronting a spectrum of ocular conditions, including macular degeneration, cataracts, glaucoma, and diabetic retinopathy.</p>
             
@@ -1065,7 +1810,7 @@
 <section class="py-20 bg-gradient-to-b from-white via-white to-[#19b3a7]/5" id="services">
   <div class="container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl">
     
-    <!-- Section Header -->
+    
     <div class="text-center mb-16">
       <div class="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-[#19b3a7]/30 bg-[#19b3a7]/10 text-[#19b3a7] font-semibold text-sm uppercase tracking-wide mb-6">
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -1086,10 +1831,10 @@
       </p>
     </div>
     
-    <!-- Services Grid -->
+    
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
       
-      <!-- Service Item 1 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1106,7 +1851,7 @@
         </p>
       </div>
       
-      <!-- Service Item 2 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1122,7 +1867,7 @@
         </p>
       </div>
       
-      <!-- Service Item 3 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1138,7 +1883,7 @@
         </p>
       </div>
       
-      <!-- Service Item 4 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1154,7 +1899,7 @@
         </p>
       </div>
       
-      <!-- Service Item 5 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1170,7 +1915,7 @@
         </p>
       </div>
       
-      <!-- Service Item 6 -->
+      
       <div class="group relative bg-white rounded-xl p-8 shadow-lg border border-gray-100 hover:border-[#19b3a7]/30 hover:shadow-2xl hover:shadow-[#19b3a7]/10 transition-all duration-300 hover:-translate-y-1">
         <div class="absolute top-0 left-0 w-1 h-full bg-[#19b3a7] rounded-l-xl"></div>
         <div class="flex items-center gap-4 mb-6">
@@ -1189,7 +1934,7 @@
       
     </div>
     
-    <!-- CTA Section -->
+    
     <div class="text-center mt-16 pt-12 border-t border-gray-200">
       <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
         Ready to experience personalized eye care tailored to your unique vision needs?

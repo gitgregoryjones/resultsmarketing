@@ -60,6 +60,11 @@
         <button type="button" class="cms-floating-menu__button" id="cms-pages-toggle">Pages</button>
         <div class="cms-floating-menu__dropdown" id="cms-pages-dropdown">
           <select id="cms-pages-select" aria-label="Select page"></select>
+          <div class="cms-floating-menu__page-actions">
+            <input id="cms-page-name" type="text" placeholder="new-page" />
+            <button type="button" id="cms-page-create">Add page</button>
+            <button type="button" id="cms-page-delete" class="is-danger">Delete page</button>
+          </div>
         </div>
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
@@ -156,15 +161,6 @@
             <input id="cms-reorder-toggle" type="checkbox" />
             <span class="cms-toggle__control" aria-hidden="true"></span>
           </label>
-        </div>
-        <div class="cms-field cms-grid-controls">
-          <label>Grid columns</label>
-          <div class="cms-grid-controls__row">
-            <button type="button" id="cms-grid-decrease">-</button>
-            <span id="cms-grid-count">1</span>
-            <button type="button" id="cms-grid-increase">+</button>
-          </div>
-          <p class="cms-field__hint">Applies to non-text/image elements.</p>
         </div>
       </div>
       <div class="cms-panel active" data-panel="content">
@@ -315,6 +311,23 @@
           <label for="cms-font-size">Font size (px)</label>
           <input id="cms-font-size" type="number" min="8" max="120" step="1" value="16" />
         </div>
+        <div class="cms-field cms-layout-actions">
+          <label>Group elements</label>
+          <p class="cms-field__hint">Wrap elements to apply grid or flex layouts.</p>
+          <div class="cms-action-row">
+            <button type="button" id="cms-group">Group selection</button>
+            <button type="button" id="cms-ungroup">Ungroup</button>
+          </div>
+        </div>
+        <div class="cms-field cms-grid-controls">
+          <label>Grid columns</label>
+          <div class="cms-grid-controls__row">
+            <button type="button" id="cms-grid-decrease">-</button>
+            <span id="cms-grid-count">0</span>
+            <button type="button" id="cms-grid-increase">+</button>
+          </div>
+          <p class="cms-field__hint">Use on containers when you want a grid layout.</p>
+        </div>
         <div class="cms-field cms-field--flex">
           <label for="cms-flex">Flex direction</label>
           <select id="cms-flex">
@@ -418,6 +431,9 @@
   const pagesToggleButton = floatingMenu.querySelector('#cms-pages-toggle');
   const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
   const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
+  const pageNameInput = floatingMenu.querySelector('#cms-page-name');
+  const pageCreateButton = floatingMenu.querySelector('#cms-page-create');
+  const pageDeleteButton = floatingMenu.querySelector('#cms-page-delete');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
@@ -459,6 +475,8 @@
   const gridDecreaseButton = sidebar.querySelector('#cms-grid-decrease');
   const gridIncreaseButton = sidebar.querySelector('#cms-grid-increase');
   const gridCountLabel = sidebar.querySelector('#cms-grid-count');
+  const groupButton = sidebar.querySelector('#cms-group');
+  const ungroupButton = sidebar.querySelector('#cms-ungroup');
   const advancedToggle = sidebar.querySelector('#cms-advanced-toggle');
   const advancedContent = sidebar.querySelector('#cms-advanced-content');
   const quickTextSwatches = sidebar.querySelector('[data-quick-styles="text"]');
@@ -534,6 +552,32 @@
     }
   }
 
+  function getActivePanel() {
+    return document.querySelector('.cms-panel.active')?.dataset.panel || '';
+  }
+
+  function isContentPanelActive() {
+    return getActivePanel() === 'content';
+  }
+
+  function isLayoutModeEnabled() {
+    return editMode && (isWireframeEnabled() || isContentPanelActive());
+  }
+
+  function updateLayoutMode() {
+    const enabled = isLayoutModeEnabled();
+    document.body.classList.toggle('cms-layout-mode', enabled);
+    setLayoutDragState(enabled);
+    updateCloneState();
+    if (!enabled) {
+      hideResizeOverlay();
+      hideQuickColorMenu();
+      clearReorderIndicator();
+      return;
+    }
+    updateResizeOverlay(selectedElement);
+  }
+
   function setWireframeState(enabled) {
     if (enabled && !editMode) {
       setEditMode(true);
@@ -541,18 +585,12 @@
     document.body.classList.toggle('cms-wireframe', enabled);
     localStorage.setItem(WIREFRAME_STORAGE_KEY, enabled ? 'true' : 'false');
     toggleButton.disabled = enabled;
-    setWireframeDragState(enabled);
-    updateCloneState();
+    updateLayoutMode();
     if (!enabled) {
       reorderMode = false;
       if (reorderToggle) {
         reorderToggle.checked = false;
       }
-      hideResizeOverlay();
-      hideQuickColorMenu();
-      clearReorderIndicator();
-    } else {
-      updateResizeOverlay(selectedElement);
     }
   }
 
@@ -588,6 +626,7 @@
     textValueDirty = false;
     updateGridControls(null);
     updateCloneState();
+    updateGroupControls();
   }
 
   function updateSiteName(value) {
@@ -811,7 +850,7 @@
   }
 
   function updateResizeOverlay(target) {
-    if (!editMode || !isWireframeEnabled() || !target || isCmsUi(target)) {
+    if (!editMode || !isLayoutModeEnabled() || !target || isCmsUi(target)) {
       hideResizeOverlay();
       return;
     }
@@ -850,7 +889,7 @@
 
   function handleResizeStart(event) {
     const handle = event.target.closest('[data-resize-handle]');
-    if (!handle || !selectedElement || !isWireframeEnabled()) return;
+    if (!handle || !selectedElement || !isLayoutModeEnabled()) return;
     event.preventDefault();
     event.stopPropagation();
     const rect = selectedElement.getBoundingClientRect();
@@ -918,6 +957,69 @@
   function navigateToFile(file) {
     const nextPath = file === 'index.html' ? '/' : `/${file}`;
     window.location.href = nextPath;
+  }
+
+  function normalizePageName(value) {
+    return (value || '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9-_]/g, '')
+      .toLowerCase();
+  }
+
+  async function createPage(fileName) {
+    const safeName = normalizePageName(fileName);
+    if (!safeName) {
+      showToast('Enter a page name first.', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/api/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: safeName }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Unable to create page.');
+      }
+      await loadFiles();
+      pageNameInput.value = '';
+      togglePagesDropdown(false);
+      navigateToFile(`${safeName}.html`);
+    } catch (err) {
+      showToast(err.message || 'Unable to create page.', 'error');
+    }
+  }
+
+  async function deletePage(fileName) {
+    if (!fileName) {
+      showToast('Select a page to delete.', 'error');
+      return;
+    }
+    const confirmed = window.confirm(`Delete ${fileName}? This cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      const res = await fetch('/api/files', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file: fileName }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Unable to delete page.');
+      }
+      const data = await res.json().catch(() => ({}));
+      const nextFile = data.files?.[0] || 'index.html';
+      togglePagesDropdown(false);
+      if (fileName === currentFile) {
+        navigateToFile(nextFile);
+      } else {
+        await loadFiles();
+      }
+    } catch (err) {
+      showToast(err.message || 'Unable to delete page.', 'error');
+    }
   }
 
   async function persistSiteName() {
@@ -1004,6 +1106,9 @@
       }
       pagesSelect.appendChild(nextOption);
     });
+    if (pageDeleteButton) {
+      pageDeleteButton.disabled = !pagesSelect.value || pagesSelect.value === 'index.html';
+    }
   }
 
   function positionOutline(target) {
@@ -1046,7 +1151,7 @@
     label.textContent = 'Section';
 
     const content = document.createElement('div');
-    content.className = 'cms-wireframe-section__content grid grid-cols-1 gap-4';
+    content.className = 'cms-wireframe-section__content';
     content.dataset.wireframeCreated = 'true';
 
     section.appendChild(label);
@@ -1151,6 +1256,7 @@
   function setGridColumnCount(element, count) {
     if (!element || !element.classList) return;
     const nextCount = Math.max(1, Math.min(12, count));
+    element.style.display = 'grid';
     Array.from(element.classList)
       .filter((name) => name.startsWith('grid-cols-'))
       .forEach((name) => element.classList.remove(name));
@@ -1168,18 +1274,10 @@
       gridIncreaseButton.disabled = true;
       return;
     }
-    const count = getGridColumnCount(element) || 1;
-    gridCountLabel.textContent = String(count);
+    const count = getGridColumnCount(element);
+    gridCountLabel.textContent = String(count || 0);
     gridDecreaseButton.disabled = count <= 1;
     gridIncreaseButton.disabled = count >= 12;
-  }
-
-  function adjustSectionGridOnDrop(sectionContent) {
-    if (!sectionContent) return;
-    const count = getGridColumnCount(sectionContent) || 1;
-    if (count < 12) {
-      setGridColumnCount(sectionContent, count + 1);
-    }
   }
 
   function clearReorderIndicator() {
@@ -1208,7 +1306,7 @@
       && !isForbiddenElement(element);
   }
 
-  function setWireframeDragState(enabled) {
+  function setLayoutDragState(enabled) {
     document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
       if (!isValidDragElement(el)) return;
       if (enabled) {
@@ -1237,7 +1335,7 @@
   }
 
   function handleDragStart(event) {
-    if (!isWireframeEnabled()) return;
+    if (!isLayoutModeEnabled()) return;
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target)) return;
     draggedElement = target;
@@ -1251,9 +1349,9 @@
   }
 
   function handleDragOver(event) {
-    if (!isWireframeEnabled()) return;
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
+      if (!isWireframeEnabled()) return;
       const target = getElementTarget(event.target);
       if (!isCmsUi(target)) {
         event.preventDefault();
@@ -1261,6 +1359,7 @@
       }
       return;
     }
+    if (!isLayoutModeEnabled()) return;
     if (!draggedElement) return;
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target) || target === draggedElement || target.contains(draggedElement)) {
@@ -1318,9 +1417,9 @@
   }
 
   function handleDrop(event) {
-    if (!isWireframeEnabled()) return;
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
+      if (!isWireframeEnabled()) return;
       const target = getElementTarget(event.target);
       if (isCmsUi(target)) return;
       event.preventDefault();
@@ -1334,16 +1433,13 @@
         }
       } else {
         const container = getDropContainer(target);
-        ensureGridLayout(element);
         container.appendChild(element);
-        if (container.classList.contains('cms-wireframe-section__content')) {
-          adjustSectionGridOnDrop(container);
-        }
       }
       activeWireframeTool = null;
       persistLayout();
       return;
     }
+    if (!isLayoutModeEnabled()) return;
     if (!draggedElement || !dropTarget) return;
     event.preventDefault();
     if (reorderMode) {
@@ -1355,20 +1451,8 @@
       }
     } else {
       const dropContainer = resolveSectionContainer(dropTarget) || dropTarget;
-      const draggedRect = draggedElement.getBoundingClientRect();
-      const dropRect = dropTarget.getBoundingClientRect();
-      const isLarger = dropRect.width * dropRect.height > draggedRect.width * draggedRect.height;
-      if (supportsGridLayout(dropContainer) && isLarger) {
-        ensureGridLayout(dropContainer);
+      if (dropContainer && dropContainer !== draggedElement.parentNode) {
         dropContainer.appendChild(draggedElement);
-        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
-          adjustSectionGridOnDrop(dropContainer);
-        }
-      } else if (dropContainer && dropContainer !== draggedElement.parentNode) {
-        dropContainer.appendChild(draggedElement);
-        if (dropContainer.classList.contains('cms-wireframe-section__content')) {
-          adjustSectionGridOnDrop(dropContainer);
-        }
       }
     }
     clearDropTarget();
@@ -1389,7 +1473,7 @@
   }
 
   function updateCloneState() {
-    cloneButton.disabled = !editMode || !selectedElement || !isWireframeEnabled();
+    cloneButton.disabled = !editMode || !selectedElement || !isLayoutModeEnabled();
   }
 
   function stripCloneUiState(el) {
@@ -1419,11 +1503,6 @@
   }
 
   function cloneSelection() {
-    if (!isWireframeEnabled()) {
-      messageEl.textContent = 'Enable wireframe mode to clone elements.';
-      messageEl.style.color = '#ef4444';
-      return;
-    }
     if (!selectedElement) {
       messageEl.textContent = 'Select an element to clone.';
       messageEl.style.color = '#ef4444';
@@ -1438,13 +1517,73 @@
     const clone = selectedElement.cloneNode(true);
     remapCloneKeys(clone);
     parent.appendChild(clone);
-    if (isWireframeEnabled()) {
-      setWireframeDragState(true);
+    if (isLayoutModeEnabled()) {
+      setLayoutDragState(true);
     }
     selectElement(clone);
     persistLayout();
     messageEl.textContent = 'Element cloned.';
     messageEl.style.color = '#16a34a';
+  }
+
+  function getGroupContainer(target) {
+    if (!target) return null;
+    if (target.matches?.('[data-cms-group="true"]')) return target;
+    return target.closest?.('[data-cms-group="true"]') || null;
+  }
+
+  function updateGroupControls() {
+    if (!groupButton || !ungroupButton) return;
+    const hasSelection = Boolean(selectedElement && selectedElement !== document.body && selectedElement !== document.documentElement);
+    const groupTarget = getGroupContainer(selectedElement);
+    groupButton.disabled = !editMode || !hasSelection;
+    ungroupButton.disabled = !editMode || !groupTarget;
+  }
+
+  function groupSelection() {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to group.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    if (selectedElement === document.body || selectedElement === document.documentElement) {
+      messageEl.textContent = 'Select a specific element instead of the page itself.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const parent = selectedElement.parentElement;
+    if (!parent) return;
+    const wrapper = document.createElement('div');
+    wrapper.setAttribute('data-cms-group', 'true');
+    wrapper.classList.add('cms-group');
+    parent.insertBefore(wrapper, selectedElement);
+    wrapper.appendChild(selectedElement);
+    selectElement(wrapper);
+    if (isLayoutModeEnabled()) {
+      setLayoutDragState(true);
+    }
+    persistLayout();
+  }
+
+  function ungroupSelection() {
+    const group = getGroupContainer(selectedElement);
+    if (!group) {
+      messageEl.textContent = 'Select a grouped element to ungroup.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const parent = group.parentElement;
+    if (!parent) return;
+    const children = Array.from(group.childNodes);
+    children.forEach((child) => {
+      parent.insertBefore(child, group);
+    });
+    parent.removeChild(group);
+    selectElement(parent);
+    if (isLayoutModeEnabled()) {
+      setLayoutDragState(true);
+    }
+    persistLayout();
   }
 
   function getElementTarget(node) {
@@ -1500,10 +1639,13 @@
       removeOutlines();
       hideResizeOverlay();
       hideQuickColorMenu();
+      document.body.classList.remove('cms-layout-mode');
     }
     publishShortcutButton.disabled = editMode;
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
+    updateGroupControls();
+    updateLayoutMode();
   }
 
   function toggleEdit() {
@@ -2306,6 +2448,7 @@
     updateStyleInputs(el);
     updateGridControls(el);
     updateResizeOverlay(el);
+    updateGroupControls();
     renderQuickStyles();
     deleteButton.disabled = false;
     updateCloneState();
@@ -2793,15 +2936,27 @@
   if (gridDecreaseButton) {
     gridDecreaseButton.addEventListener('click', () => {
       if (!selectedElement || !supportsGridLayout(selectedElement)) return;
-      const count = getGridColumnCount(selectedElement) || 1;
+      const count = getGridColumnCount(selectedElement);
       setGridColumnCount(selectedElement, count - 1);
     });
   }
   if (gridIncreaseButton) {
     gridIncreaseButton.addEventListener('click', () => {
       if (!selectedElement || !supportsGridLayout(selectedElement)) return;
-      const count = getGridColumnCount(selectedElement) || 1;
+      const count = getGridColumnCount(selectedElement);
       setGridColumnCount(selectedElement, count + 1);
+    });
+  }
+  if (groupButton) {
+    groupButton.addEventListener('click', () => {
+      groupSelection();
+      updateGroupControls();
+    });
+  }
+  if (ungroupButton) {
+    ungroupButton.addEventListener('click', () => {
+      ungroupSelection();
+      updateGroupControls();
     });
   }
   textColorInput.addEventListener('input', () => {
@@ -2906,6 +3061,10 @@
     if (!selectedElement || selectedType === 'text') return;
     selectedElement.style.display = 'flex';
     selectedElement.style.flexDirection = flexSelect.value;
+    Array.from(selectedElement.classList)
+      .filter((name) => name === 'grid' || name.startsWith('grid-cols-'))
+      .forEach((name) => selectedElement.classList.remove(name));
+    updateGridControls(selectedElement);
     scheduleLayoutPersist();
   });
   valueInput.addEventListener('input', (e) => {
@@ -3041,9 +3200,22 @@
     navigateToFile(fileSelect.value);
   });
   pagesSelect.addEventListener('change', () => {
+    if (pageDeleteButton) {
+      pageDeleteButton.disabled = pagesSelect.value === 'index.html';
+    }
     navigateToFile(pagesSelect.value);
     togglePagesDropdown(false);
   });
+  if (pageCreateButton) {
+    pageCreateButton.addEventListener('click', () => {
+      createPage(pageNameInput?.value);
+    });
+  }
+  if (pageDeleteButton) {
+    pageDeleteButton.addEventListener('click', () => {
+      deletePage(pagesSelect?.value);
+    });
+  }
   pagesToggleButton.addEventListener('click', () => {
     togglePagesDropdown();
   });
@@ -3130,6 +3302,7 @@
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
     }
+    updateGroupControls();
   });
 
   dockButtons.forEach((button) => {

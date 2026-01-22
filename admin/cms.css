@@ -121,6 +121,41 @@
   min-width: 180px;
 }
 
+.cms-floating-menu__page-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.cms-floating-menu__page-actions input {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.cms-floating-menu__page-actions button {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 12px;
+  background: #f3f4f6;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.cms-floating-menu__page-actions button:hover {
+  border-color: var(--cms-purple);
+  color: var(--cms-purple);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.cms-floating-menu__page-actions button.is-danger:hover {
+  border-color: var(--cms-red);
+  color: var(--cms-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
 .cms-floating-menu.is-minimized .cms-floating-menu__items {
   opacity: 0;
   transform: scale(0.95);
@@ -890,8 +925,8 @@ body.cms-editing #cms-toggle::after {
 }
 
 .cms-wireframe-section__content {
-  display: grid;
-  gap: 16px;
+  display: block;
+  min-height: 24px;
 }
 
 .cms-wireframe-section--dragging {
@@ -1007,6 +1042,14 @@ body.cms-editing #cms-toggle::after {
   transform: translateX(6px);
 }
 
+.cms-layout-mode .cms-reorder-before {
+  transform: translateX(-6px);
+}
+
+.cms-layout-mode .cms-reorder-after {
+  transform: translateX(6px);
+}
+
 .cms-field input,
 .cms-field textarea,
 .cms-field select {
@@ -1042,13 +1085,28 @@ body.cms-editing #cms-toggle::after {
   cursor: grab;
 }
 
+.cms-layout-mode [draggable="true"]:not(.cms-ui):not(.cms-ui *) {
+  cursor: grab;
+}
+
 .cms-wireframe .cms-dragging {
   cursor: grabbing;
   opacity: 0.6;
   outline: 2px solid #93c5fd !important;
 }
 
+.cms-layout-mode .cms-dragging {
+  cursor: grabbing;
+  opacity: 0.6;
+  outline: 2px solid #93c5fd !important;
+}
+
 .cms-wireframe .cms-drop-target {
+  outline: 2px dashed #2563eb !important;
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+
+.cms-layout-mode .cms-drop-target {
   outline: 2px dashed #2563eb !important;
   background-color: rgba(37, 99, 235, 0.08) !important;
 }
