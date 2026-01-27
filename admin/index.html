@@ -22061,7 +22061,7 @@
         }
         
         .accordion-header.active .accordion-icon {
-            transform: rotate(45deg);
+            transform: scaleY(-1);
         }
     </style>
 
@@ -22085,6 +22085,9 @@
         </svg>
       </div>
     </div>
+    <div class="accordion-content w-full text-white text-base md:text-2xl" draggable="true">
+      <div>Building strong foundations for sustainable growth</div>
+    </div>
   </div>
 
   
@@ -22103,6 +22106,9 @@
         </svg>
       </div>
     </div>
+    <div class="accordion-content w-full text-white text-base md:text-2xl" draggable="true">
+      <div>Optimizing distribution, execution, and performance</div>
+    </div>
   </div>
 
   <div class="w-full flex flex-col justify-start items-start gap-2.5 " draggable="true">
@@ -22119,6 +22125,9 @@
           <path d="M12 18L24 30L36 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" draggable="true"></path>
         </svg>
       </div>
+    </div>
+    <div class="accordion-content w-full text-white text-base md:text-2xl" draggable="true">
+      <div>Navigating complex categories with precision and insight</div>
     </div>
   </div>
   
@@ -22462,7 +22471,6 @@
                     // Close all accordion items first
                     accordionHeaders.forEach(otherHeader => {
                         otherHeader.classList.remove('active');
-                        otherHeader.style.backgroundColor = '#000';
                         const otherContent = otherHeader.nextElementSibling;
                         otherContent.classList.remove('active');
                         otherContent.style.maxHeight = '0';
