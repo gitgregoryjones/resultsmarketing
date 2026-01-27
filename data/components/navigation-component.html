@@ -11,8 +11,8 @@
                 <div class="flex justify-start items-center gap-6 lg:gap-8" draggable="true">
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.home" data-link="index.html" style="" draggable="true">Home</a>
                     <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="about-us.html" draggable="true">About Us</a>
-                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">News</a>
-                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="color: rgb(220, 38, 38);" draggable="true">Our Services</a>
+                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: rgb(220, 38, 38);" draggable="true">News</a>
+                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="" draggable="true">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.contact-us" data-link="contact-us.html" style="" draggable="true">Contact Us</a>
                 </div>
             </div>
@@ -43,8 +43,8 @@
             <div class="flex flex-col space-y-6" draggable="true">
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Home</a>
                 <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">About Us</a>
-                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link="" draggable="true">News</a>
-                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="color: rgb(220, 38, 38);" draggable="true">Our Services</a>
+                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link="" style="color: rgb(220, 38, 38);" draggable="true">News</a>
+                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Contact Us</a>
                 
                 
@@ -118,7 +118,7 @@
                     }
                 });
 
-                document.querySelectorAll('a[href="news.html"],a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
+                document.querySelectorAll('a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
                     link.addEventListener("click", (event) => {
                         event.stopPropagation();
                         event.preventDefault();
