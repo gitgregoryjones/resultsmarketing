@@ -486,6 +486,19 @@ function stripContentEditable(html) {
   return html;
 }
 
+function stripDraggableAttributes(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('[draggable]').forEach((el) => {
+      el.removeAttribute('draggable');
+    });
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to strip draggable attributes from HTML', err);
+  }
+  return html;
+}
+
 function ensureAnchorStyles(element) {
   const styleAttr = element.getAttribute('style') || '';
   const declarations = styleAttr
@@ -629,6 +642,7 @@ async function publishSite() {
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);
+      html = stripDraggableAttributes(html);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
       publishedFiles.push(file);
