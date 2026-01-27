@@ -22061,7 +22061,7 @@
         }
         
         .accordion-header.active .accordion-icon {
-            transform: rotate(45deg);
+            transform: scaleY(-1);
         }
     </style>
 
@@ -22471,7 +22471,6 @@
                     // Close all accordion items first
                     accordionHeaders.forEach(otherHeader => {
                         otherHeader.classList.remove('active');
-                        otherHeader.style.backgroundColor = '#000';
                         const otherContent = otherHeader.nextElementSibling;
                         otherContent.classList.remove('active');
                         otherContent.style.maxHeight = '0';
