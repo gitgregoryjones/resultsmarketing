@@ -4985,7 +4985,20 @@
 <div class="flex justify-center" draggable="true">
     <div class="w-full flex flex-col lg:px-20 bg-[#F5F6F8] max-w-md lg:max-w-[1440px]" draggable="true">
         
-        <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link" draggable="true">
+        <div data-component-id="navigation-component">
+    <style>
+        .underline-hover:hover {
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            
+        }   
+        .highlight-current {
+            color: #DC2626;
+            font-weight: 700;
+        }   
+    </style>
+<nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link" draggable="true">
+    
         <div class="max-w-7xl mx-auto flex justify-between items-center" draggable="true">
             
             <div class="w-[147px] h-[69px] flex items-center justify-center rounded" draggable="true">
@@ -5045,19 +5058,38 @@
         <script>
             document.addEventListener("DOMContentLoaded", () => {
                 const currentFile = window.location.pathname.split("/").pop() || "index.html";
+                
                 document.querySelectorAll("[data-nav-link]").forEach((link) => {
                     const href = link.getAttribute("href");
+                    link.classList.remove("highlight-current");
+                    link.addEventListener("mouseenter", () => {
+                        //add underline on hover with inline style and red underline offset
+                        link.style.textDecoration = "underline";
+                        link.style.textUnderlineOffset = "4px"; 
+                        link.style.color = "#DC2626";
+
+                    })
+
+                    link.addEventListener("mouseleave", () => {
+                        //remove underline on mouse leave
+                        link.style.textDecoration = "none"; 
+                        link.style.color = "";
+                    })
+                    
                     if (!href) {
                         return;
                     }
                     const linkFile = href.split("/").pop();
                     if (linkFile === currentFile) {
-                        link.classList.add("text-red-500", "font-bold");
+                        
+                        link.classList.add("text-red-500", "font-bold","highlight-current");
+                        link.style.color = "#DC2626";
                     }
                 });
             });
         </script>
     </nav>
+</div>
 
         
         <div class="w-full relative min-h-[400px] md:h-[400px] bg-black overflow-hidden" draggable="true">
