@@ -4564,19 +4564,7 @@
 <div class="flex justify-center bg-black">
     <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] bg-white max-w-md lg:max-w-[1440px]">
         
-        <div data-component-id="navigation-component">
-    <style>
-        .underline-hover:hover {
-            text-decoration: underline;
-            text-underline-offset: 4px;
-            
-        }   
-        .highlight-current {
-            color: #DC2626;
-            font-weight: 700;
-        }   
-    </style>
-<nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link">
+        <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link">
     
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             
@@ -4588,7 +4576,7 @@
             <div class="hidden md:flex flex-1 justify-center items-center">
                 <div class="flex justify-start items-center gap-6 lg:gap-8">
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.home" data-link="index.html" style="color: inherit; text-decoration: none">Home</a>
-                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" style="color: inherit; text-decoration: none">About Us</a>
+                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" style="color: rgb(220, 38, 38); text-decoration: none">About Us</a>
                     <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.news" data-link="news.html" style="color: inherit; text-decoration: none">News</a>
                     <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.our-services" data-link="services.html" style="color: inherit; text-decoration: none">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.contact-us" data-link="contact-us.html" style="color: inherit; text-decoration: none">Contact Us</a>
@@ -4620,7 +4608,7 @@
             
             <div class="flex flex-col space-y-6">
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link>Home</a>
-                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link>About Us</a>
+                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link style="color: rgb(220, 38, 38);">About Us</a>
                 <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link>News</a>
                 <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link>Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link>Contact Us</a>
@@ -4641,6 +4629,7 @@
                 document.querySelectorAll("[data-nav-link]").forEach((link) => {
                     const href = link.getAttribute("href");
                     link.classList.remove("highlight-current");
+                    link.style.color = "";
                     link.addEventListener("mouseenter", () => {
                         //add underline on hover with inline style and red underline offset
                         link.style.textDecoration = "underline";
@@ -4668,7 +4657,6 @@
             });
         </script>
     </nav>
-</div>
 
         
         <div class="w-full relative overflow-hidden">
