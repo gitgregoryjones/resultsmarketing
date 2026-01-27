@@ -118,8 +118,9 @@
                     }
                 });
 
-                document.querySelectorAll('a[href="new.html"]').forEach((link) => {
+                document.querySelectorAll('a[href="news.html"],a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
                     link.addEventListener("click", (event) => {
+                        event.stopPropagation();
                         event.preventDefault();
                         openComingSoon();
                     });
