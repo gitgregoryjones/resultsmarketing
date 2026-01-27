@@ -74,11 +74,11 @@
             
             <div class="hidden md:flex flex-1 justify-center items-center" draggable="true">
                 <div class="flex justify-start items-center gap-6 lg:gap-8" draggable="true">
-                    <a href="#" class="text-red-500 text-base font-bold hover:text-red-600 transition-colors" data-cms-text="a.home" data-link="index.html" draggable="true">Home</a>
-                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors" data-cms-text="a.about-us" data-link="about-us.html" draggable="true">About Us</a>
-                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors" data-cms-text="a.news" data-link="news.html" draggable="true">News</a>
-                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors" data-cms-text="a.our-services" data-link="services.html" draggable="true">Our Services</a>
-                    <a href="#" class="text-black text-base font-normal hover:text-red-500 transition-colors" data-cms-text="a.contact-us" data-link="contact-us.html" draggable="true">Contact Us</a>
+                    <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.home" data-link="index.html" draggable="true">Home</a>
+                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" draggable="true">About Us</a>
+                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.news" data-link="news.html" draggable="true">News</a>
+                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.our-services" data-link="services.html" draggable="true">Our Services</a>
+                    <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.contact-us" data-link="contact-us.html" draggable="true">Contact Us</a>
                 </div>
             </div>
              <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-image:url('/images/powerbi2-1766477317452.png')" images="" powerbi2-1766477317452.png')"="" http:="" www="" .resultssalesmarketing="" .com="" wp-content="" themes="" resultssalesmarketing="" logo="" .png="" )="" data-cms-bg="auto.div-2-2" data-link="https://powerbi.com" draggable="true">
@@ -106,14 +106,14 @@
             
             
             <div class="flex flex-col space-y-6" draggable="true">
-                <a href="#" class="text-red-500 text-lg font-bold hover:text-red-600 transition-colors py-2 border-b border-gray-100" draggable="true">Home</a>
-                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100" draggable="true">About Us</a>
-                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100" draggable="true">News</a>
-                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100" draggable="true">Our Services</a>
-                <a href="#" class="text-black text-lg font-normal hover:text-red-500 transition-colors py-2 border-b border-gray-100" draggable="true">Contact Us</a>
+                <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link draggable="true">Home</a>
+                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link draggable="true">About Us</a>
+                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link draggable="true">News</a>
+                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link draggable="true">Our Services</a>
+                <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link draggable="true">Contact Us</a>
                 
                 
-                <a href="#" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity" draggable="true">
+                <a href="https://powerbi.com" class="mt-8 w-full h-[49px] bg-gray-300 flex items-center justify-center rounded hover:opacity-90 transition-opacity" draggable="true">
                     <span class="text-gray-700" draggable="true">CTA Image/Link</span>
                 </a>
             </div>
@@ -121,6 +121,21 @@
 
         
         <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay" draggable="true"></div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const currentFile = window.location.pathname.split("/").pop() || "index.html";
+                document.querySelectorAll("[data-nav-link]").forEach((link) => {
+                    const href = link.getAttribute("href");
+                    if (!href) {
+                        return;
+                    }
+                    const linkFile = href.split("/").pop();
+                    if (linkFile === currentFile) {
+                        link.classList.add("text-red-500", "font-bold");
+                    }
+                });
+            });
+        </script>
     </nav>
 
         <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden" draggable="true">
