@@ -5063,6 +5063,19 @@
                 document.querySelectorAll("[data-nav-link]").forEach((link) => {
                     const href = link.getAttribute("href");
                     link.classList.remove("highlight-current");
+                    link.addEventListener("mouseenter", () => {
+                        //add underline on hover with inline style and red underline offset
+                        link.style.textDecoration = "underline";
+                        link.style.textUnderlineOffset = "4px"; 
+                        link.style.color = "#DC2626";
+
+                    })
+
+                    link.addEventListener("mouseleave", () => {
+                        //remove underline on mouse leave
+                        link.style.textDecoration = "none"; 
+                        link.style.color = "";
+                    })
                     
                     if (!href) {
                         return;
