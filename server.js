@@ -57,6 +57,29 @@ function buildBlankAdminPage(title = 'New Page') {
 `;
 }
 
+function ensureCmsAssets(html = '') {
+  const root = parse(html);
+  let head = root.querySelector('head');
+  let body = root.querySelector('body');
+  let container = root;
+
+  if (!head || !body) {
+    const wrapper = parse('<!DOCTYPE html><html><head></head><body></body></html>');
+    head = wrapper.querySelector('head');
+    body = wrapper.querySelector('body');
+    body.set_content(root.toString());
+    container = wrapper;
+  }
+
+  if (!head.querySelector('link[href="/admin/cms.css"]')) {
+    head.appendChild(parse('<link rel="stylesheet" href="/admin/cms.css" />'));
+  }
+  if (!body.querySelector('script[src="/admin/cms.js"]')) {
+    body.appendChild(parse('<script src="/admin/cms.js"></script>'));
+  }
+  return container.toString();
+}
+
 async function ensureDir(dirPath) {
   try {
     await fs.mkdir(dirPath, { recursive: true });
@@ -1517,6 +1540,61 @@ const server = http.createServer(async (req, res) => {
         const isSyntaxError = err instanceof SyntaxError;
         const message = isSyntaxError ? 'Invalid JSON payload' : err.message || 'Unable to save layout';
         sendJsonError(res, isSyntaxError ? 400 : 500, message);
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/files/import' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      try {
+        const payload = parseJsonBody(body);
+        const targetUrl = String(payload.url || '').trim();
+        const targetFile = sanitizeHtmlFile(payload.file || '');
+        if (!targetUrl) {
+          sendJsonError(res, 400, 'URL is required');
+          return;
+        }
+        if (!targetFile) {
+          sendJsonError(res, 400, 'File name is required');
+          return;
+        }
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(targetUrl);
+        } catch (err) {
+          sendJsonError(res, 400, 'Invalid URL');
+          return;
+        }
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          sendJsonError(res, 400, 'URL must start with http or https');
+          return;
+        }
+        const htmlPath = htmlPathFor(targetFile);
+        try {
+          await fs.access(htmlPath);
+          sendJsonError(res, 409, 'File already exists');
+          return;
+        } catch (err) {
+          if (err && err.code !== 'ENOENT') throw err;
+        }
+        const response = await fetch(targetUrl);
+        if (!response.ok) {
+          sendJsonError(res, 502, 'Unable to fetch page');
+          return;
+        }
+        const html = await response.text();
+        const cleanedHtml = ensureCmsAssets(html);
+        await fs.writeFile(htmlPath, cleanedHtml);
+        const files = await listHtmlFiles();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ file: targetFile, files }));
+      } catch (err) {
+        sendJsonError(res, 500, err.message || 'Unable to import page');
       }
     });
     return;
