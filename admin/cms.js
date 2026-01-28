@@ -65,6 +65,12 @@
             <button type="button" id="cms-page-create">Add page</button>
             <button type="button" id="cms-page-delete" class="is-danger">Delete page</button>
           </div>
+          <div class="cms-floating-menu__page-divider" aria-hidden="true"></div>
+          <div class="cms-floating-menu__page-actions">
+            <input id="cms-page-import-url" type="url" placeholder="https://example.com/page" />
+            <input id="cms-page-import-name" type="text" placeholder="imported-page.html" />
+            <button type="button" id="cms-page-import">Import page</button>
+          </div>
         </div>
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
@@ -434,6 +440,9 @@
   const pageNameInput = floatingMenu.querySelector('#cms-page-name');
   const pageCreateButton = floatingMenu.querySelector('#cms-page-create');
   const pageDeleteButton = floatingMenu.querySelector('#cms-page-delete');
+  const pageImportUrlInput = floatingMenu.querySelector('#cms-page-import-url');
+  const pageImportNameInput = floatingMenu.querySelector('#cms-page-import-name');
+  const pageImportButton = floatingMenu.querySelector('#cms-page-import');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
@@ -1019,6 +1028,47 @@
       }
     } catch (err) {
       showToast(err.message || 'Unable to delete page.', 'error');
+    }
+  }
+
+  async function importPage(urlValue, fileName) {
+    const url = (urlValue || '').trim();
+    const name = (fileName || '').trim();
+    if (!url) {
+      showToast('Enter a page URL to import.', 'error');
+      return;
+    }
+    if (!name) {
+      showToast('Enter a page name for the import.', 'error');
+      return;
+    }
+    try {
+      // eslint-disable-next-line no-new
+      new URL(url);
+    } catch (err) {
+      showToast('Enter a valid URL to import.', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/api/files/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, file: name }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Unable to import page.');
+      }
+      const data = await res.json().catch(() => ({}));
+      await loadFiles();
+      if (pageImportUrlInput) pageImportUrlInput.value = '';
+      if (pageImportNameInput) pageImportNameInput.value = '';
+      togglePagesDropdown(false);
+      if (data.file) {
+        navigateToFile(data.file);
+      }
+    } catch (err) {
+      showToast(err.message || 'Unable to import page.', 'error');
     }
   }
 
@@ -3214,6 +3264,11 @@
   if (pageDeleteButton) {
     pageDeleteButton.addEventListener('click', () => {
       deletePage(pagesSelect?.value);
+    });
+  }
+  if (pageImportButton) {
+    pageImportButton.addEventListener('click', () => {
+      importPage(pageImportUrlInput?.value, pageImportNameInput?.value);
     });
   }
   pagesToggleButton.addEventListener('click', () => {
