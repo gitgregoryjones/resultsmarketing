@@ -2055,7 +2055,12 @@
     ensureGridLayers();
     const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
     const clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll('#cms-grid-layer, #cms-nodes-layer, #cms-draw-layer').forEach((el) => el.remove());
+    const gridLayer = clone.querySelector('#cms-grid-layer');
+    if (gridLayer) {
+      gridLayer.classList.remove('is-visible');
+      gridLayer.style.display = 'none';
+    }
+    clone.querySelectorAll('#cms-nodes-layer, #cms-draw-layer').forEach((el) => el.remove());
     clone.body?.classList.remove('cms-grid-active');
     const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
     if (surface) {
