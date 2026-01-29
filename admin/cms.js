@@ -33,12 +33,16 @@
   let menuDragOffsetY = 0;
   let layoutMenuTarget = null;
   let layoutSpanTarget = null;
-  let drawModeEnabled = false;
-  let drawState = null;
   let activeDropZone = null;
+  let gridState = null;
   const DESIGN_SURFACE_SELECTOR = '#designSurface, #canvas, [data-design-surface="true"]';
   const FLOATING_MENU_SELECTOR = '#cms-floating-menu';
-  const DRAW_TOGGLE_SELECTOR = '#cms-draw-toggle';
+  const GRID_OVERLAY_TOGGLE_SELECTOR = '#cms-grid-overlay-toggle';
+  const SNAP_TOGGLE_SELECTOR = '#cms-snap-grid-toggle';
+  const DRAW_RECT_SELECTOR = '#cms-draw-rect';
+  const DRAW_TEXT_SELECTOR = '#cms-draw-text';
+  const GRID_SIZE_PX = 20;
+  const OUTPUT_GRID_COLS = 12;
 
   const COLOR_SWATCHES = [
     { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
@@ -78,7 +82,12 @@
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
       <button type="button" class="cms-floating-menu__button" id="cms-settings-button">Settings</button>
       <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
-      <button type="button" class="cms-floating-menu__button" id="cms-draw-toggle" aria-pressed="false">Draw Mode</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-grid-overlay-toggle" aria-pressed="false">Grid Overlay</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-snap-grid-toggle" aria-pressed="false">Snap Grid</button>
+      <div class="cms-floating-menu__item cms-floating-menu__tools">
+        <button type="button" class="cms-floating-menu__button" id="cms-draw-rect" aria-pressed="false">Draw Rectangle</button>
+        <button type="button" class="cms-floating-menu__button" id="cms-draw-text" aria-pressed="false">Draw Text</button>
+      </div>
       <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
@@ -482,7 +491,10 @@
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
-  const drawToggleButton = floatingMenu.querySelector(DRAW_TOGGLE_SELECTOR);
+  const gridOverlayToggleButton = floatingMenu.querySelector(GRID_OVERLAY_TOGGLE_SELECTOR);
+  const snapToggleButton = floatingMenu.querySelector(SNAP_TOGGLE_SELECTOR);
+  const drawRectButton = floatingMenu.querySelector(DRAW_RECT_SELECTOR);
+  const drawTextButton = floatingMenu.querySelector(DRAW_TEXT_SELECTOR);
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
   const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
   const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
@@ -1399,210 +1411,589 @@
     scheduleLayoutPersist();
   }
 
-  function findValidContainerAtPoint(x, y) {
+  function createGridState() {
+    return {
+      overlayEnabled: false,
+      snapEnabled: false,
+      drawTool: 'none',
+      selectedNodeId: null,
+      nodes: new Map(),
+      nodeElements: new Map(),
+      rootId: 'root',
+      surface: null,
+      gridLayer: null,
+      nodesLayer: null,
+      dragState: null,
+      drawState: null,
+    };
+  }
+
+  function ensureGridLayers() {
+    if (!gridState) {
+      gridState = createGridState();
+    }
+    if (gridState.gridLayer && gridState.nodesLayer) return;
+    const surface = getDesignSurface();
+    gridState.surface = surface;
+    surface.classList.add('cms-grid-surface');
+    surface.style.position = surface.style.position || 'relative';
+
+    const gridLayer = document.createElement('div');
+    gridLayer.id = 'cms-grid-layer';
+    gridLayer.className = 'cms-grid-layer';
+    gridLayer.style.setProperty('--cms-grid-size', `${GRID_SIZE_PX}px`);
+
+    const nodesLayer = document.createElement('div');
+    nodesLayer.id = 'cms-nodes-layer';
+    nodesLayer.className = 'cms-nodes-layer';
+
+    surface.appendChild(gridLayer);
+    surface.appendChild(nodesLayer);
+
+    gridState.gridLayer = gridLayer;
+    gridState.nodesLayer = nodesLayer;
+
+    gridState.nodes.set(gridState.rootId, {
+      id: gridState.rootId,
+      type: 'container',
+      parentId: null,
+      gridRect: { x: 0, y: 0, w: 0, h: 0 },
+      children: [],
+    });
+
+    nodesLayer.addEventListener('mousedown', handleGridMouseDown);
+    window.addEventListener('mousemove', handleGridMouseMove);
+    window.addEventListener('mouseup', handleGridMouseUp);
+  }
+
+  function setGridOverlayEnabled(enabled) {
+    ensureGridLayers();
+    gridState.overlayEnabled = enabled;
+    gridState.gridLayer.classList.toggle('is-visible', enabled);
+  }
+
+  function setSnapEnabled(enabled) {
+    ensureGridLayers();
+    gridState.snapEnabled = enabled;
+  }
+
+  function setDrawTool(tool) {
+    ensureGridLayers();
+    gridState.drawTool = tool;
+    if (gridState.nodesLayer) {
+      gridState.nodesLayer.style.cursor = tool === 'none' ? '' : 'crosshair';
+    }
+  }
+
+  function getContainerLayer(nodeId) {
+    if (!nodeId || nodeId === gridState.rootId) return gridState.nodesLayer;
+    const nodeEl = gridState.nodeElements.get(nodeId);
+    return nodeEl ? nodeEl.querySelector('.cms-grid-node__children') : gridState.nodesLayer;
+  }
+
+  function getContainerMetrics(containerEl) {
+    if (!containerEl) {
+      return { rect: { left: 0, top: 0, width: GRID_SIZE_PX, height: GRID_SIZE_PX }, cols: 1, rows: 1 };
+    }
+    const rect = containerEl.getBoundingClientRect();
+    const cols = Math.max(1, Math.floor(rect.width / GRID_SIZE_PX));
+    const rows = Math.max(1, Math.floor(rect.height / GRID_SIZE_PX));
+    return { rect, cols, rows };
+  }
+
+  function gridUnitsToPx(containerEl, gridRect) {
+    return {
+      left: gridRect.x * GRID_SIZE_PX,
+      top: gridRect.y * GRID_SIZE_PX,
+      width: gridRect.w * GRID_SIZE_PX,
+      height: gridRect.h * GRID_SIZE_PX,
+    };
+  }
+
+  function pxToGridUnits(containerEl, pxRect) {
+    const { rect, cols, rows } = getContainerMetrics(containerEl);
+    const rawX = (pxRect.left - rect.left) / GRID_SIZE_PX;
+    const rawY = (pxRect.top - rect.top) / GRID_SIZE_PX;
+    const rawW = pxRect.width / GRID_SIZE_PX;
+    const rawH = pxRect.height / GRID_SIZE_PX;
+
+    const x = Math.round(rawX);
+    const y = Math.round(rawY);
+    const w = Math.max(1, Math.round(rawW));
+    const h = Math.max(1, Math.round(rawH));
+
+    return {
+      x: Math.min(Math.max(0, x), Math.max(0, cols - w)),
+      y: Math.min(Math.max(0, y), Math.max(0, rows - h)),
+      w,
+      h,
+      cols,
+      rows,
+    };
+  }
+
+  function clampPxRectToContainer(containerEl, pxRect) {
+    const { rect } = getContainerMetrics(containerEl);
+    const width = Math.min(pxRect.width, rect.width);
+    const height = Math.min(pxRect.height, rect.height);
+    const maxLeft = rect.left + rect.width - width;
+    const maxTop = rect.top + rect.height - height;
+    return {
+      ...pxRect,
+      width,
+      height,
+      left: Math.min(Math.max(pxRect.left, rect.left), maxLeft),
+      top: Math.min(Math.max(pxRect.top, rect.top), maxTop),
+    };
+  }
+
+  function isGridElement(target) {
+    return Boolean(target && target.closest && target.closest('.cms-grid-node, #cms-nodes-layer'));
+  }
+
+  function createGridNode(type, gridRect, parentId) {
+    const nodeId = `grid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const node = {
+      id: nodeId,
+      type,
+      parentId,
+      gridRect,
+      children: [],
+      props: type === 'text' ? { text: 'Text' } : { background: 'bg-white' },
+    };
+    gridState.nodes.set(nodeId, node);
+    const parent = gridState.nodes.get(parentId || gridState.rootId);
+    if (parent) {
+      parent.children.push(nodeId);
+    }
+    renderGridNode(nodeId);
+    selectGridNode(nodeId);
+    if (type === 'text') {
+      const nodeEl = gridState.nodeElements.get(nodeId);
+      if (nodeEl) {
+        const textEl = nodeEl.querySelector('.cms-grid-node__text');
+        if (textEl) {
+          textEl.contentEditable = 'true';
+          textEl.focus({ preventScroll: true });
+          textEl.addEventListener('blur', () => {
+            node.props.text = textEl.textContent || 'Text';
+            textEl.contentEditable = 'false';
+            scheduleLayoutPersist();
+          }, { once: true });
+        }
+      }
+    }
+    scheduleLayoutPersist();
+    return node;
+  }
+
+  function renderGridNode(nodeId) {
+    const node = gridState.nodes.get(nodeId);
+    if (!node) return;
+    let nodeEl = gridState.nodeElements.get(nodeId);
+    if (!nodeEl) {
+      nodeEl = document.createElement('div');
+      nodeEl.dataset.nodeId = node.id;
+      nodeEl.dataset.nodeType = node.type;
+      nodeEl.className = `cms-grid-node cms-grid-node--${node.type}`;
+      if (node.type === 'rect') {
+        nodeEl.classList.add('border', 'border-dashed', 'border-gray-300', 'bg-white');
+        const childrenLayer = document.createElement('div');
+        childrenLayer.className = 'cms-grid-node__children';
+        nodeEl.appendChild(childrenLayer);
+      } else {
+        nodeEl.classList.add('text-sm', 'text-gray-700');
+        const textEl = document.createElement('div');
+        textEl.className = 'cms-grid-node__text';
+        textEl.textContent = node.props?.text || 'Text';
+        nodeEl.appendChild(textEl);
+      }
+      gridState.nodeElements.set(nodeId, nodeEl);
+      const parentLayer = getContainerLayer(node.parentId || gridState.rootId);
+      parentLayer.appendChild(nodeEl);
+    }
+    if (node.type === 'text') {
+      const textEl = nodeEl.querySelector('.cms-grid-node__text');
+      if (textEl) {
+        textEl.textContent = node.props?.text || 'Text';
+      }
+    }
+    const containerEl = getContainerLayer(node.parentId || gridState.rootId);
+    const pxRect = gridUnitsToPx(containerEl, node.gridRect);
+    nodeEl.style.left = `${pxRect.left}px`;
+    nodeEl.style.top = `${pxRect.top}px`;
+    nodeEl.style.width = `${pxRect.width}px`;
+    nodeEl.style.height = `${pxRect.height}px`;
+    nodeEl.classList.toggle('is-selected', nodeId === gridState.selectedNodeId);
+  }
+
+  function renderAllGridNodes() {
+    if (!gridState) return;
+    gridState.nodes.forEach((node) => {
+      if (node.id !== gridState.rootId) {
+        renderGridNode(node.id);
+      }
+    });
+  }
+
+  function selectGridNode(nodeId) {
+    gridState.selectedNodeId = nodeId;
+    gridState.nodeElements.forEach((element, id) => {
+      element.classList.toggle('is-selected', id === nodeId);
+      if (id === nodeId) {
+        ensureResizeHandles(element);
+      } else {
+        removeResizeHandles(element);
+      }
+    });
+  }
+
+  function clearGridSelection() {
+    gridState.selectedNodeId = null;
+    gridState.nodeElements.forEach((element) => {
+      element.classList.remove('is-selected');
+      removeResizeHandles(element);
+    });
+  }
+
+  function ensureResizeHandles(nodeEl) {
+    if (nodeEl.querySelector('.cms-grid-handle')) return;
+    ['nw', 'ne', 'sw', 'se'].forEach((handle) => {
+      const handleEl = document.createElement('span');
+      handleEl.className = `cms-grid-handle cms-grid-handle--${handle}`;
+      handleEl.dataset.handle = handle;
+      nodeEl.appendChild(handleEl);
+    });
+  }
+
+  function removeResizeHandles(nodeEl) {
+    nodeEl.querySelectorAll('.cms-grid-handle').forEach((handle) => handle.remove());
+  }
+
+  function findDropContainerAtPoint(x, y, draggedId) {
     const el = document.elementFromPoint(x, y);
-    if (!el || isCmsUi(el) || isForbiddenElement(el)) return null;
-    if (isLayoutContainer(el)) return el;
-    const explicit = el.closest ? el.closest('[data-layout-container="true"], .cms-layout-container') : null;
-    if (explicit) return explicit;
-    const heuristic = el.closest ? el.closest('.grid, .flex') : null;
-    if (heuristic) {
-      markLayoutContainer(heuristic);
-      return heuristic;
+    if (!el) return gridState.rootId;
+    const candidate = el.closest ? el.closest('.cms-grid-node') : null;
+    if (!candidate) return gridState.rootId;
+    const nodeId = candidate.dataset.nodeId;
+    if (!nodeId || nodeId === draggedId) return gridState.rootId;
+    if (isDescendantNode(draggedId, nodeId)) return gridState.rootId;
+    const node = gridState.nodes.get(nodeId);
+    if (node?.type === 'rect') return nodeId;
+    return gridState.rootId;
+  }
+
+  function isDescendantNode(parentId, nodeId) {
+    if (!parentId || !nodeId) return false;
+    let current = gridState.nodes.get(nodeId);
+    while (current?.parentId) {
+      if (current.parentId === parentId) return true;
+      current = gridState.nodes.get(current.parentId);
     }
-    return null;
+    return false;
   }
 
-  function ensureSectionContainerLayoutWrappers(root, insertPoint) {
-    const section = document.createElement('section');
-    section.className = 'bg-white py-10 px-4';
-    const container = document.createElement('div');
-    container.className = 'max-w-6xl mx-auto';
-    const layout = document.createElement('div');
-    layout.className = 'flex flex-col gap-6';
-    markLayoutContainer(layout);
-    section.appendChild(container);
-    container.appendChild(layout);
-    if (insertPoint && insertPoint.parentNode === root) {
-      root.insertBefore(section, insertPoint);
-    } else {
-      root.appendChild(section);
-    }
-    return layout;
-  }
-
-  function getMinHeightClass(height) {
-    if (height < 80) return 'min-h-12';
-    if (height < 160) return 'min-h-24';
-    return 'min-h-40';
-  }
-
-  function createBoxNodeFromRect(rect, parentLayoutEl) {
-    const box = document.createElement('div');
-    box.dataset.nodeId = `node-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    box.className = 'border border-dashed border-gray-300 bg-transparent';
-    const placeholder = document.createElement('div');
-    placeholder.className = 'text-xs text-gray-400 italic pointer-events-none';
-    placeholder.textContent = 'Drop content here';
-    box.appendChild(placeholder);
-    applySnapSizing(box, rect, parentLayoutEl);
-    return box;
-  }
-
-  function applySnapSizing(boxEl, rect, parentLayoutEl) {
-    const layoutType = getLayoutType(parentLayoutEl);
-    const minHeight = getMinHeightClass(rect.height || 1);
-    boxEl.classList.remove('min-h-12', 'min-h-24', 'min-h-40');
-    boxEl.classList.add(minHeight);
-
-    if (layoutType === 'grid-12') {
-      removeColSpanClasses(boxEl);
-      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
-      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
-      const span = Math.min(12, Math.max(1, Math.round(ratio * 12)));
-      boxEl.classList.add('col-span-12', `md:col-span-${span}`);
-    } else if (layoutType === 'grid-2') {
-      removeColSpanClasses(boxEl);
-      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
-      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
-      const span = ratio > 0.6 ? 2 : 1;
-      if (span > 1) {
-        boxEl.classList.add(`md:col-span-${span}`);
-      } else {
-        boxEl.classList.remove('md:col-span-2');
+  function highlightDropZone(containerId) {
+    if (activeDropZone && activeDropZone !== containerId) {
+      const prevEl = gridState.nodeElements.get(activeDropZone);
+      if (prevEl) {
+        prevEl.classList.remove('ring-2', 'ring-blue-400', 'opacity-70');
       }
-    } else if (layoutType === 'grid-3') {
-      removeColSpanClasses(boxEl);
-      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
-      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
-      const span = ratio > 0.75 ? 3 : ratio > 0.45 ? 2 : 1;
-      if (span > 1) {
-        boxEl.classList.add(`md:col-span-${span}`);
-      } else {
-        boxEl.classList.remove('md:col-span-2', 'md:col-span-3');
+    }
+    activeDropZone = containerId;
+    if (activeDropZone && activeDropZone !== gridState.rootId) {
+      const nodeEl = gridState.nodeElements.get(activeDropZone);
+      if (nodeEl) {
+        nodeEl.classList.add('ring-2', 'ring-blue-400', 'opacity-70');
       }
-    } else if (layoutType === 'stack') {
-      removeColSpanClasses(boxEl);
-      boxEl.classList.add('w-full');
-    } else {
-      removeColSpanClasses(boxEl);
-      boxEl.classList.remove('w-full');
-    }
-  }
-
-  function highlightDropZone(containerEl) {
-    if (activeDropZone && activeDropZone !== containerEl) {
-      activeDropZone.classList.remove('ring-2', 'ring-blue-400');
-    }
-    activeDropZone = containerEl;
-    if (activeDropZone) {
-      activeDropZone.classList.add('ring-2', 'ring-blue-400');
     }
   }
 
   function clearDropZoneHighlight() {
     if (!activeDropZone) return;
-    activeDropZone.classList.remove('ring-2', 'ring-blue-400');
+    const nodeEl = gridState.nodeElements.get(activeDropZone);
+    if (nodeEl) {
+      nodeEl.classList.remove('ring-2', 'ring-blue-400', 'opacity-70');
+    }
     activeDropZone = null;
   }
 
-  const DrawModeController = {
-    enable() {
-      if (drawModeEnabled) return;
-      if (!editMode) {
-        showToast('Enable Edit mode to use Draw Mode.', 'error');
-        if (drawToggleButton) {
-          drawToggleButton.classList.remove('is-active');
-          drawToggleButton.setAttribute('aria-pressed', 'false');
-        }
-        return;
-      }
-      drawModeEnabled = true;
-      document.body.classList.add('cms-draw-mode');
-      const surface = getDesignSurface();
-      surface.style.cursor = 'crosshair';
-      surface.addEventListener('mousedown', this.handleMouseDown);
-      surface.addEventListener('mousemove', this.handleMouseMove);
-      window.addEventListener('mouseup', this.handleMouseUp);
-    },
-    disable() {
-      if (!drawModeEnabled) return;
-      drawModeEnabled = false;
-      const surface = getDesignSurface();
-      surface.style.cursor = '';
-      surface.removeEventListener('mousedown', this.handleMouseDown);
-      surface.removeEventListener('mousemove', this.handleMouseMove);
-      window.removeEventListener('mouseup', this.handleMouseUp);
-      document.body.classList.remove('cms-draw-mode');
-      this.cleanup();
-    },
-    toggle() {
-      if (drawModeEnabled) {
-        this.disable();
-      } else {
-        this.enable();
-      }
-    },
-    cleanup() {
-      if (drawState?.overlay && drawState.overlay.parentNode) {
-        drawState.overlay.remove();
-      }
-      drawState = null;
-      clearDropZoneHighlight();
-    },
-    handleMouseDown(event) {
-      if (!drawModeEnabled) return;
-      if (event.button !== 0) return;
-      const surface = getDesignSurface();
-      if (!surface.contains(event.target) || isCmsUi(event.target)) return;
+  function handleGridMouseDown(event) {
+    if (!editMode) return;
+    ensureGridLayers();
+    if (!gridState.nodesLayer.contains(event.target)) return;
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    const handle = event.target.closest('.cms-grid-handle');
+    const nodeEl = event.target.closest('.cms-grid-node');
+
+    if (gridState.drawTool !== 'none') {
+      if (nodeEl) return;
       event.preventDefault();
-      event.stopPropagation();
+      hideLayoutMenu();
+      const containerId = findDropContainerAtPoint(event.clientX, event.clientY);
+      const containerEl = getContainerLayer(containerId);
+      const { rect } = getContainerMetrics(containerEl);
+      const startX = event.clientX - rect.left;
+      const startY = event.clientY - rect.top;
       const overlay = document.createElement('div');
-      overlay.className = 'pointer-events-none border border-blue-400 bg-blue-200/30';
-      overlay.style.position = 'fixed';
-      overlay.style.left = `${event.clientX}px`;
-      overlay.style.top = `${event.clientY}px`;
-      overlay.style.width = '0px';
-      overlay.style.height = '0px';
-      overlay.style.zIndex = '9998';
-      document.body.appendChild(overlay);
-      drawState = {
+      overlay.className = 'cms-grid-draw-overlay';
+      containerEl.appendChild(overlay);
+      gridState.drawState = {
+        containerId,
+        containerEl,
+        startX,
+        startY,
+        overlay,
+      };
+      return;
+    }
+
+    if (nodeEl && handle) {
+      event.preventDefault();
+      hideLayoutMenu();
+      const nodeId = nodeEl.dataset.nodeId;
+      const node = gridState.nodes.get(nodeId);
+      const containerEl = getContainerLayer(node.parentId || gridState.rootId);
+      const pxRect = nodeEl.getBoundingClientRect();
+      gridState.dragState = {
+        type: 'resize',
+        handle: handle.dataset.handle,
+        nodeId,
+        containerEl,
         startX: event.clientX,
         startY: event.clientY,
-        overlay,
-        rect: { left: event.clientX, top: event.clientY, width: 0, height: 0 },
+        startRect: pxRect,
       };
-    },
-    handleMouseMove(event) {
-      if (!drawModeEnabled || !drawState) return;
-      const x = Math.min(drawState.startX, event.clientX);
-      const y = Math.min(drawState.startY, event.clientY);
-      const width = Math.abs(event.clientX - drawState.startX);
-      const height = Math.abs(event.clientY - drawState.startY);
-      drawState.rect = { left: x, top: y, width, height };
-      drawState.overlay.style.left = `${x}px`;
-      drawState.overlay.style.top = `${y}px`;
-      drawState.overlay.style.width = `${Math.max(width, 2)}px`;
-      drawState.overlay.style.height = `${Math.max(height, 2)}px`;
-      const container = findValidContainerAtPoint(event.clientX, event.clientY);
-      highlightDropZone(container);
-    },
-    handleMouseUp(event) {
-      if (!drawModeEnabled || !drawState) return;
-      const surface = getDesignSurface();
-      if (!surface.contains(event.target)) {
-        DrawModeController.cleanup();
-        return;
+      selectGridNode(nodeId);
+      return;
+    }
+
+    if (nodeEl) {
+      event.preventDefault();
+      hideLayoutMenu();
+      const nodeId = nodeEl.dataset.nodeId;
+      const node = gridState.nodes.get(nodeId);
+      const containerEl = getContainerLayer(node.parentId || gridState.rootId);
+      const pxRect = nodeEl.getBoundingClientRect();
+      gridState.dragState = {
+        type: 'move',
+        nodeId,
+        containerEl,
+        startX: event.clientX,
+        startY: event.clientY,
+        startRect: pxRect,
+      };
+      selectGridNode(nodeId);
+    } else {
+      clearGridSelection();
+    }
+  }
+
+  function handleGridMouseMove(event) {
+    if (!gridState || !editMode) return;
+    if (gridState.drawState) {
+      const { containerEl, startX, startY, overlay } = gridState.drawState;
+      const { rect } = getContainerMetrics(containerEl);
+      const currentX = Math.max(0, event.clientX - rect.left);
+      const currentY = Math.max(0, event.clientY - rect.top);
+      const left = Math.min(startX, currentX);
+      const top = Math.min(startY, currentY);
+      const width = Math.max(GRID_SIZE_PX, Math.abs(currentX - startX));
+      const height = Math.max(GRID_SIZE_PX, Math.abs(currentY - startY));
+      const snapRect = {
+        left: rect.left + left,
+        top: rect.top + top,
+        width,
+        height,
+      };
+      const gridRect = pxToGridUnits(containerEl, snapRect);
+      overlay.style.left = `${gridRect.x * GRID_SIZE_PX}px`;
+      overlay.style.top = `${gridRect.y * GRID_SIZE_PX}px`;
+      overlay.style.width = `${gridRect.w * GRID_SIZE_PX}px`;
+      overlay.style.height = `${gridRect.h * GRID_SIZE_PX}px`;
+      const dropId = findDropContainerAtPoint(event.clientX, event.clientY);
+      highlightDropZone(dropId);
+      return;
+    }
+
+    if (!gridState.dragState) return;
+    const { type, nodeId, startX, startY, startRect, containerEl, handle } = gridState.dragState;
+    const nodeEl = gridState.nodeElements.get(nodeId);
+    if (!nodeEl) return;
+
+    const deltaX = event.clientX - startX;
+    const deltaY = event.clientY - startY;
+    let nextRect = {
+      left: startRect.left + deltaX,
+      top: startRect.top + deltaY,
+      width: startRect.width,
+      height: startRect.height,
+    };
+
+    if (type === 'resize') {
+      const rect = { ...nextRect };
+      if (handle.includes('e')) {
+        rect.width = Math.max(GRID_SIZE_PX, startRect.width + deltaX);
       }
-      const rect = drawState.rect;
-      DrawModeController.cleanup();
-      const container = findValidContainerAtPoint(event.clientX, event.clientY);
-      const parentLayout = container || ensureSectionContainerLayoutWrappers(surface, null);
-      const box = createBoxNodeFromRect(rect, parentLayout);
-      parentLayout.appendChild(box);
+      if (handle.includes('s')) {
+        rect.height = Math.max(GRID_SIZE_PX, startRect.height + deltaY);
+      }
+      if (handle.includes('w')) {
+        rect.width = Math.max(GRID_SIZE_PX, startRect.width - deltaX);
+        rect.left = startRect.left + deltaX;
+      }
+      if (handle.includes('n')) {
+        rect.height = Math.max(GRID_SIZE_PX, startRect.height - deltaY);
+        rect.top = startRect.top + deltaY;
+      }
+      nextRect = rect;
+    }
+
+    nextRect = clampPxRectToContainer(containerEl, nextRect);
+
+    if (gridState.snapEnabled) {
+      const gridRect = pxToGridUnits(containerEl, nextRect);
+      const node = gridState.nodes.get(nodeId);
+      node.gridRect = { x: gridRect.x, y: gridRect.y, w: gridRect.w, h: gridRect.h };
+      renderGridNode(nodeId);
+    } else {
+      nodeEl.style.left = `${nextRect.left - containerEl.getBoundingClientRect().left}px`;
+      nodeEl.style.top = `${nextRect.top - containerEl.getBoundingClientRect().top}px`;
+      nodeEl.style.width = `${nextRect.width}px`;
+      nodeEl.style.height = `${nextRect.height}px`;
+    }
+    const dropId = findDropContainerAtPoint(event.clientX, event.clientY, nodeId);
+    highlightDropZone(dropId);
+  }
+
+  function handleGridMouseUp(event) {
+    if (!gridState || !editMode) return;
+    if (gridState.drawState) {
+      const { containerEl, overlay } = gridState.drawState;
+      const overlayRect = overlay.getBoundingClientRect();
+      const gridRect = pxToGridUnits(containerEl, overlayRect);
+      overlay.remove();
+      const parentId = gridState.drawState.containerId || gridState.rootId;
+      const nodeType = gridState.drawTool === 'text' ? 'text' : 'rect';
+      createGridNode(nodeType, { x: gridRect.x, y: gridRect.y, w: gridRect.w, h: gridRect.h }, parentId);
+      gridState.drawState = null;
+      clearDropZoneHighlight();
+      return;
+    }
+
+    if (gridState.dragState) {
+      const { nodeId, containerEl } = gridState.dragState;
+      const nodeEl = gridState.nodeElements.get(nodeId);
+      if (nodeEl && !gridState.snapEnabled) {
+        const gridRect = pxToGridUnits(containerEl, nodeEl.getBoundingClientRect());
+        const node = gridState.nodes.get(nodeId);
+        node.gridRect = { x: gridRect.x, y: gridRect.y, w: gridRect.w, h: gridRect.h };
+        renderGridNode(nodeId);
+      }
+      const dropId = findDropContainerAtPoint(event.clientX, event.clientY, nodeId);
+      if (dropId && dropId !== gridState.rootId) {
+        moveNodeToContainer(nodeId, dropId, event.clientX, event.clientY);
+      }
+      gridState.dragState = null;
+      clearDropZoneHighlight();
       scheduleLayoutPersist();
-    },
-  };
+    }
+  }
+
+  function moveNodeToContainer(nodeId, containerId, clientX, clientY) {
+    const node = gridState.nodes.get(nodeId);
+    if (!node || node.parentId === containerId) return;
+    if (isDescendantNode(nodeId, containerId)) return;
+    const prevParent = gridState.nodes.get(node.parentId);
+    if (prevParent) {
+      prevParent.children = prevParent.children.filter((id) => id !== nodeId);
+    }
+    node.parentId = containerId;
+    const nextParent = gridState.nodes.get(containerId);
+    if (nextParent) {
+      nextParent.children.push(nodeId);
+    }
+    const containerEl = getContainerLayer(containerId);
+    const gridRect = pxToGridUnits(containerEl, {
+      left: clientX,
+      top: clientY,
+      width: node.gridRect.w * GRID_SIZE_PX,
+      height: node.gridRect.h * GRID_SIZE_PX,
+    });
+    node.gridRect = { x: gridRect.x, y: gridRect.y, w: gridRect.w, h: gridRect.h };
+    const nodeEl = gridState.nodeElements.get(nodeId);
+    if (nodeEl) {
+      containerEl.appendChild(nodeEl);
+    }
+    renderGridNode(nodeId);
+  }
+
+  function compileGridHtml() {
+    if (!gridState) return '';
+    const root = gridState.nodes.get(gridState.rootId);
+    if (!root) return '';
+    const build = (nodeId, containerCols) => {
+      const node = gridState.nodes.get(nodeId);
+      if (!node) return null;
+      const el = document.createElement(node.type === 'text' ? 'p' : 'div');
+      el.dataset.nodeId = node.id;
+      if (node.type === 'text') {
+        el.textContent = node.props?.text || 'Text';
+      } else {
+        el.className = 'border border-dashed border-gray-300 bg-white';
+      }
+      if (nodeId !== gridState.rootId) {
+        const colSpan = Math.min(
+          OUTPUT_GRID_COLS,
+          Math.max(1, Math.round((node.gridRect.w / containerCols) * OUTPUT_GRID_COLS)),
+        );
+        el.classList.add('col-span-12', `md:col-span-${colSpan}`);
+      }
+      if (node.children.length) {
+        el.classList.add('grid', `grid-cols-${OUTPUT_GRID_COLS}`, 'gap-4');
+        const metrics = getContainerMetrics(getContainerLayer(nodeId));
+        const sortedChildren = [...node.children].sort((a, b) => {
+          const nodeA = gridState.nodes.get(a);
+          const nodeB = gridState.nodes.get(b);
+          if (!nodeA || !nodeB) return 0;
+          if (nodeA.gridRect.y !== nodeB.gridRect.y) return nodeA.gridRect.y - nodeB.gridRect.y;
+          return nodeA.gridRect.x - nodeB.gridRect.x;
+        });
+        sortedChildren.forEach((childId) => {
+          const childEl = build(childId, metrics.cols);
+          if (childEl) {
+            el.appendChild(childEl);
+          }
+        });
+      }
+      return el;
+    };
+
+    const container = document.createElement('div');
+    container.className = `grid grid-cols-${OUTPUT_GRID_COLS} gap-4`;
+    const metrics = getContainerMetrics(gridState.nodesLayer);
+    root.children.forEach((childId) => {
+      const childEl = build(childId, metrics.cols);
+      if (childEl) {
+        container.appendChild(childEl);
+      }
+    });
+    return container.outerHTML;
+  }
+
+  function getDesignedHtml() {
+    ensureGridLayers();
+    const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
+    const clone = document.documentElement.cloneNode(true);
+    const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
+    if (surface) {
+      surface.innerHTML = compileGridHtml();
+    }
+    return `${docType}${clone.outerHTML}`;
+  }
+
+  window.getDesignedHtml = getDesignedHtml;
 
   function generateWireframeKey(base) {
     return ensureUniqueKey(`wireframe.${base}`);
@@ -2065,6 +2456,12 @@
 
   function getFullHtmlPayload() {
     const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
+    if (typeof window.getDesignedHtml === 'function') {
+      const designedHtml = window.getDesignedHtml();
+      if (designedHtml) {
+        return designedHtml;
+      }
+    }
     return `${docType}${document.documentElement.outerHTML}`;
   }
 
@@ -2084,7 +2481,7 @@
   }
 
   function handleHover(e) {
-    if (!editMode || drawModeEnabled) return;
+    if (!editMode || (gridState && isGridElement(e.target))) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) {
@@ -2101,6 +2498,9 @@
     toggleButton.textContent = editMode ? 'Done' : 'Edit';
     sidebar.classList.toggle('open', editMode);
     outline.style.display = editMode ? 'block' : 'none';
+    if (editMode) {
+      ensureGridLayers();
+    }
     if (!editMode) {
       clearInlineEditing();
       selectedElement = null;
@@ -2110,13 +2510,21 @@
       hideResizeOverlay();
       hideQuickColorMenu();
       hideLayoutMenu();
-      if (drawModeEnabled) {
-        DrawModeController.disable();
-        if (drawToggleButton) {
-          drawToggleButton.classList.remove('is-active');
-          drawToggleButton.setAttribute('aria-pressed', 'false');
-        }
+      if (gridState) {
+        clearGridSelection();
+        clearDropZoneHighlight();
+        gridState.drawTool = 'none';
+        setGridOverlayEnabled(false);
+        gridState.snapEnabled = false;
       }
+      gridOverlayToggleButton?.classList.remove('is-active');
+      gridOverlayToggleButton?.setAttribute('aria-pressed', 'false');
+      snapToggleButton?.classList.remove('is-active');
+      snapToggleButton?.setAttribute('aria-pressed', 'false');
+      drawRectButton?.classList.remove('is-active');
+      drawRectButton?.setAttribute('aria-pressed', 'false');
+      drawTextButton?.classList.remove('is-active');
+      drawTextButton?.setAttribute('aria-pressed', 'false');
       document.body.classList.remove('cms-layout-mode');
     }
     publishShortcutButton.disabled = editMode;
@@ -3242,7 +3650,7 @@
   }
 
   function handleClick(e) {
-    if (!editMode || drawModeEnabled) return;
+    if (!editMode || (gridState && isGridElement(e.target))) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) return;
@@ -3267,7 +3675,7 @@
   }
 
   function handleDoubleClick(e) {
-    if (!editMode || drawModeEnabled) return;
+    if (!editMode || (gridState && isGridElement(e.target))) return;
     const target = getElementTarget(e.target);
     if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) return;
@@ -3387,11 +3795,44 @@
   publishShortcutButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishShortcutButton);
   });
-  if (drawToggleButton) {
-    drawToggleButton.addEventListener('click', () => {
-      DrawModeController.toggle();
-      drawToggleButton.classList.toggle('is-active', drawModeEnabled);
-      drawToggleButton.setAttribute('aria-pressed', String(drawModeEnabled));
+  if (gridOverlayToggleButton) {
+    gridOverlayToggleButton.addEventListener('click', () => {
+      ensureGridLayers();
+      const next = !gridState.overlayEnabled;
+      setGridOverlayEnabled(next);
+      gridOverlayToggleButton.classList.toggle('is-active', next);
+      gridOverlayToggleButton.setAttribute('aria-pressed', String(next));
+    });
+  }
+  if (snapToggleButton) {
+    snapToggleButton.addEventListener('click', () => {
+      ensureGridLayers();
+      const next = !gridState.snapEnabled;
+      setSnapEnabled(next);
+      snapToggleButton.classList.toggle('is-active', next);
+      snapToggleButton.setAttribute('aria-pressed', String(next));
+    });
+  }
+  if (drawRectButton) {
+    drawRectButton.addEventListener('click', () => {
+      ensureGridLayers();
+      const nextTool = gridState.drawTool === 'rect' ? 'none' : 'rect';
+      setDrawTool(nextTool);
+      drawRectButton.classList.toggle('is-active', nextTool === 'rect');
+      drawTextButton?.classList.remove('is-active');
+      drawRectButton.setAttribute('aria-pressed', String(nextTool === 'rect'));
+      if (drawTextButton) drawTextButton.setAttribute('aria-pressed', 'false');
+    });
+  }
+  if (drawTextButton) {
+    drawTextButton.addEventListener('click', () => {
+      ensureGridLayers();
+      const nextTool = gridState.drawTool === 'text' ? 'none' : 'text';
+      setDrawTool(nextTool);
+      drawTextButton.classList.toggle('is-active', nextTool === 'text');
+      drawRectButton?.classList.remove('is-active');
+      drawTextButton.setAttribute('aria-pressed', String(nextTool === 'text'));
+      if (drawRectButton) drawRectButton.setAttribute('aria-pressed', 'false');
     });
   }
   layoutMenu.addEventListener('click', handleLayoutMenuClick);

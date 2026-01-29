@@ -92,6 +92,11 @@
   border-color: transparent;
 }
 
+.cms-floating-menu__tools {
+  display: flex;
+  gap: 8px;
+}
+
 .cms-floating-menu__button svg {
   width: 18px;
   height: 18px;
@@ -1102,6 +1107,106 @@ body.cms-editing #cms-toggle::after {
   border-radius: 8px;
   padding: 6px;
   font-size: 12px;
+}
+
+.cms-grid-surface {
+  position: relative;
+}
+
+.cms-grid-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.35) 1px, transparent 1px);
+  background-size: var(--cms-grid-size) var(--cms-grid-size);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  z-index: 1;
+}
+
+.cms-grid-layer.is-visible {
+  opacity: 1;
+}
+
+.cms-nodes-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cms-editing .cms-nodes-layer {
+  pointer-events: auto;
+}
+
+.cms-grid-node {
+  position: absolute;
+  border-radius: 6px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.cms-grid-node.is-selected {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.cms-grid-node.opacity-70 {
+  opacity: 0.7;
+}
+
+.ring-2.ring-blue-400 {
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.9);
+}
+
+.cms-grid-node__children {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cms-grid-node__text {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+}
+
+.cms-grid-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #2563eb;
+  border-radius: 999px;
+  border: 2px solid #fff;
+}
+
+.cms-grid-handle--nw {
+  top: -6px;
+  left: -6px;
+}
+
+.cms-grid-handle--ne {
+  top: -6px;
+  right: -6px;
+}
+
+.cms-grid-handle--sw {
+  bottom: -6px;
+  left: -6px;
+}
+
+.cms-grid-handle--se {
+  bottom: -6px;
+  right: -6px;
+}
+
+.cms-grid-draw-overlay {
+  position: absolute;
+  border: 2px dashed #2563eb;
+  background: rgba(59, 130, 246, 0.15);
+  pointer-events: none;
 }
 
 .cms-wireframe .cms-reorder-before {
