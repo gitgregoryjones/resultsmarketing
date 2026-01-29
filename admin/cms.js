@@ -1551,6 +1551,11 @@
     return Boolean(target && target.closest && target.closest('.cms-grid-node, #cms-nodes-layer'));
   }
 
+  function createGridCmsKey(type) {
+    const base = type === 'text' ? 'grid.text' : 'grid.bg';
+    return ensureUniqueKey(base);
+  }
+
   function createGridNode(type, gridRect, parentId) {
     const nodeId = `grid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const node = {
@@ -1559,7 +1564,9 @@
       parentId,
       gridRect,
       children: [],
-      props: type === 'text' ? { text: 'Text' } : { background: 'bg-white' },
+      props: type === 'text'
+        ? { text: 'Text', cmsKey: createGridCmsKey('text') }
+        : { background: 'bg-white', cmsKey: createGridCmsKey('bg') },
     };
     gridState.nodes.set(nodeId, node);
     const parent = gridState.nodes.get(parentId || gridState.rootId);
@@ -1568,19 +1575,20 @@
     }
     renderGridNode(nodeId);
     selectGridNode(nodeId);
+    const nodeEl = gridState.nodeElements.get(nodeId);
+    if (nodeEl) {
+      selectElement(nodeEl);
+    }
     if (type === 'text') {
-      const nodeEl = gridState.nodeElements.get(nodeId);
-      if (nodeEl) {
-        const textEl = nodeEl.querySelector('.cms-grid-node__text');
-        if (textEl) {
-          textEl.contentEditable = 'true';
-          textEl.focus({ preventScroll: true });
-          textEl.addEventListener('blur', () => {
-            node.props.text = textEl.textContent || 'Text';
-            textEl.contentEditable = 'false';
-            scheduleLayoutPersist();
-          }, { once: true });
-        }
+      const textEl = nodeEl?.querySelector('.cms-grid-node__text');
+      if (textEl) {
+        textEl.contentEditable = 'true';
+        textEl.focus({ preventScroll: true });
+        textEl.addEventListener('blur', () => {
+          node.props.text = textEl.textContent || 'Text';
+          textEl.contentEditable = 'false';
+          scheduleLayoutPersist();
+        }, { once: true });
       }
     }
     scheduleLayoutPersist();
@@ -1598,11 +1606,17 @@
       nodeEl.className = `cms-grid-node cms-grid-node--${node.type}`;
       if (node.type === 'rect') {
         nodeEl.classList.add('border', 'border-dashed', 'border-gray-300', 'bg-white');
+        if (node.props?.cmsKey) {
+          nodeEl.setAttribute('data-cms-bg', node.props.cmsKey);
+        }
         const childrenLayer = document.createElement('div');
         childrenLayer.className = 'cms-grid-node__children';
         nodeEl.appendChild(childrenLayer);
       } else {
         nodeEl.classList.add('text-sm', 'text-gray-700');
+        if (node.props?.cmsKey) {
+          nodeEl.setAttribute('data-cms-text', node.props.cmsKey);
+        }
         const textEl = document.createElement('div');
         textEl.className = 'cms-grid-node__text';
         textEl.textContent = node.props?.text || 'Text';
@@ -1766,6 +1780,7 @@
         startRect: pxRect,
       };
       selectGridNode(nodeId);
+      selectElement(nodeEl);
       return;
     }
 
@@ -1785,8 +1800,11 @@
         startRect: pxRect,
       };
       selectGridNode(nodeId);
+      selectElement(nodeEl);
     } else {
       clearGridSelection();
+      removeOutlines();
+      selectedElement = null;
     }
   }
 
@@ -1939,9 +1957,15 @@
       const el = document.createElement(node.type === 'text' ? 'p' : 'div');
       el.dataset.nodeId = node.id;
       if (node.type === 'text') {
+        if (node.props?.cmsKey) {
+          el.setAttribute('data-cms-text', node.props.cmsKey);
+        }
         el.textContent = node.props?.text || 'Text';
       } else {
         el.className = 'border border-dashed border-gray-300 bg-white';
+        if (node.props?.cmsKey) {
+          el.setAttribute('data-cms-bg', node.props.cmsKey);
+        }
       }
       if (nodeId !== gridState.rootId) {
         const colSpan = Math.min(
@@ -2481,7 +2505,7 @@
   }
 
   function handleHover(e) {
-    if (!editMode || (gridState && isGridElement(e.target))) return;
+    if (!editMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) {
@@ -3650,7 +3674,16 @@
   }
 
   function handleClick(e) {
-    if (!editMode || (gridState && isGridElement(e.target))) return;
+    if (!editMode) return;
+    if (gridState && isGridElement(e.target)) {
+      const target = getElementTarget(e.target);
+      if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectElement(target);
+      }
+      return;
+    }
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) return;
@@ -3675,7 +3708,16 @@
   }
 
   function handleDoubleClick(e) {
-    if (!editMode || (gridState && isGridElement(e.target))) return;
+    if (!editMode) return;
+    if (gridState && isGridElement(e.target)) {
+      const target = getElementTarget(e.target);
+      if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        selectElement(target);
+      }
+      return;
+    }
     const target = getElementTarget(e.target);
     if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) return;
