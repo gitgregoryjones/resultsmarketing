@@ -1475,6 +1475,7 @@
   function setSnapEnabled(enabled) {
     ensureGridLayers();
     gridState.snapEnabled = enabled;
+    updateGridInteractionState();
   }
 
   function setDrawTool(tool) {
@@ -1483,6 +1484,12 @@
     if (gridState.nodesLayer) {
       gridState.nodesLayer.style.cursor = tool === 'none' ? '' : 'crosshair';
     }
+    updateGridInteractionState();
+  }
+
+  function updateGridInteractionState() {
+    const isActive = Boolean(gridState && (gridState.snapEnabled || gridState.drawTool !== 'none'));
+    document.body.classList.toggle('cms-grid-active', isActive);
   }
 
   function getContainerLayer(nodeId) {
@@ -2541,6 +2548,7 @@
         setGridOverlayEnabled(false);
         gridState.snapEnabled = false;
       }
+      document.body.classList.remove('cms-grid-active');
       gridOverlayToggleButton?.classList.remove('is-active');
       gridOverlayToggleButton?.setAttribute('aria-pressed', 'false');
       snapToggleButton?.classList.remove('is-active');

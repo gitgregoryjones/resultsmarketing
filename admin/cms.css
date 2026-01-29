@@ -1137,7 +1137,7 @@ body.cms-editing #cms-toggle::after {
   pointer-events: none;
 }
 
-.cms-editing .cms-nodes-layer {
+.cms-grid-active .cms-nodes-layer {
   pointer-events: auto;
 }
 
