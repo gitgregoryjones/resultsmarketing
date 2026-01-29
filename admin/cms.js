@@ -2017,6 +2017,8 @@
     ensureGridLayers();
     const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
     const clone = document.documentElement.cloneNode(true);
+    clone.querySelectorAll('#cms-grid-layer, #cms-nodes-layer').forEach((el) => el.remove());
+    clone.body?.classList.remove('cms-grid-active');
     const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
     if (surface) {
       surface.innerHTML = compileGridHtml();
