@@ -1426,6 +1426,7 @@
       drawLayer: null,
       dragState: null,
       drawState: null,
+      originalElements: [],
     };
   }
 
@@ -1488,7 +1489,7 @@
     });
     elements.forEach((element) => {
       const textContent = element.textContent?.trim();
-      const type = textContent ? 'text' : 'rect';
+      const type = 'rect';
       const gridRect = pxToGridUnits(surface, element.getBoundingClientRect());
       const node = createGridNode(type, {
         x: gridRect.x,
@@ -1496,11 +1497,15 @@
         w: gridRect.w,
         h: gridRect.h,
       }, gridState.rootId);
-      if (type === 'text' && node?.props) {
-        node.props.text = textContent || 'Text';
+      if (node?.props) {
+        node.props.sourceElement = element;
+        node.props.isOriginal = true;
+        if (textContent) {
+          node.props.text = textContent;
+        }
       }
       element.dataset.gridSource = node.id;
-      element.style.display = 'none';
+      gridState.originalElements.push({ element, nodeId: node.id });
     });
     renderAllGridNodes();
   }
@@ -1532,6 +1537,36 @@
   function updateGridInteractionState() {
     const isActive = Boolean(gridState && (gridState.snapEnabled || gridState.drawTool !== 'none'));
     document.body.classList.toggle('cms-grid-active', isActive);
+    if (gridState?.nodesLayer) {
+      gridState.nodesLayer.style.display = isActive ? 'block' : 'none';
+    }
+    if (isActive) {
+      attachOriginalElementsToNodes();
+    } else {
+      detachOriginalElementsFromNodes();
+    }
+  }
+
+  function attachOriginalElementsToNodes() {
+    if (!gridState) return;
+    gridState.originalElements.forEach(({ element, nodeId }) => {
+      const nodeEl = gridState.nodeElements.get(nodeId);
+      if (!nodeEl || nodeEl.contains(element)) return;
+      element.style.display = '';
+      const slot = nodeEl.querySelector('.cms-grid-node__children') || nodeEl;
+      slot.appendChild(element);
+    });
+  }
+
+  function detachOriginalElementsFromNodes() {
+    if (!gridState || !gridState.surface || !gridState.gridLayer) return;
+    const insertBeforeTarget = gridState.gridLayer;
+    gridState.originalElements.forEach(({ element }) => {
+      if (!gridState.surface.contains(element)) return;
+      if (element.parentElement === gridState.surface) return;
+      element.style.display = '';
+      gridState.surface.insertBefore(element, insertBeforeTarget);
+    });
   }
 
   function getContainerLayer(nodeId) {
@@ -1999,9 +2034,14 @@
     const build = (nodeId, containerCols) => {
       const node = gridState.nodes.get(nodeId);
       if (!node) return null;
-      const el = document.createElement(node.type === 'text' ? 'p' : 'div');
+      const sourceEl = node.props?.sourceElement;
+      const el = document.createElement('div');
       el.dataset.nodeId = node.id;
-      if (node.type === 'text') {
+      if (sourceEl) {
+        const clone = sourceEl.cloneNode(true);
+        clone.removeAttribute('data-grid-source');
+        el.appendChild(clone);
+      } else if (node.type === 'text') {
         if (node.props?.cmsKey) {
           el.setAttribute('data-cms-text', node.props.cmsKey);
         }
@@ -2064,7 +2104,9 @@
     clone.body?.classList.remove('cms-grid-active');
     const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
     if (surface) {
-      surface.querySelectorAll('[data-grid-source]').forEach((el) => el.remove());
+      surface.querySelectorAll('[data-grid-source]').forEach((el) => {
+        el.removeAttribute('data-grid-source');
+      });
       surface.innerHTML = compileGridHtml();
     }
     return `${docType}${clone.outerHTML}`;
@@ -2595,6 +2637,7 @@
         gridState.snapEnabled = false;
       }
       document.body.classList.remove('cms-grid-active');
+      detachOriginalElementsFromNodes();
       gridOverlayToggleButton?.classList.remove('is-active');
       gridOverlayToggleButton?.setAttribute('aria-pressed', 'false');
       snapToggleButton?.classList.remove('is-active');
