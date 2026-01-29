@@ -86,6 +86,12 @@
   cursor: not-allowed;
 }
 
+.cms-floating-menu__button.is-active {
+  background: #2563eb;
+  color: #fff;
+  border-color: transparent;
+}
+
 .cms-floating-menu__button svg {
   width: 18px;
   height: 18px;
@@ -1032,6 +1038,70 @@ body.cms-editing #cms-toggle::after {
   border: none;
   background: transparent;
   padding: 0;
+}
+
+.cms-layout-menu {
+  position: absolute;
+  display: none;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid var(--cms-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+  z-index: 9999;
+  min-width: 220px;
+}
+
+.cms-layout-menu.is-visible {
+  display: grid;
+}
+
+.cms-layout-menu__section {
+  display: grid;
+  gap: 6px;
+}
+
+.cms-layout-menu__title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cms-gray);
+}
+
+.cms-layout-menu__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cms-layout-menu__row button {
+  border: 1px solid var(--cms-border);
+  background: #f8fafc;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.cms-layout-menu__row button:hover {
+  background: #e2e8f0;
+}
+
+.cms-layout-menu__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--cms-gray);
+}
+
+.cms-layout-menu__row select {
+  border: 1px solid var(--cms-border);
+  border-radius: 8px;
+  padding: 6px;
+  font-size: 12px;
 }
 
 .cms-wireframe .cms-reorder-before {
