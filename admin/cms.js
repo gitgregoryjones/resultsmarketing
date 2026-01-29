@@ -1468,10 +1468,41 @@
       children: [],
     });
 
+    bootstrapExistingElements(surface);
+
     drawLayer.addEventListener('mousedown', handleGridDrawStart);
     surface.addEventListener('mousedown', handleGridMouseDown);
     window.addEventListener('mousemove', handleGridMouseMove);
     window.addEventListener('mouseup', handleGridMouseUp);
+  }
+
+  function bootstrapExistingElements(surface) {
+    if (gridState.nodes.size > 1) return;
+    const elements = Array.from(surface.children).filter((child) => {
+      if (!(child instanceof HTMLElement)) return false;
+      if (child.id === 'cms-grid-layer' || child.id === 'cms-nodes-layer' || child.id === 'cms-draw-layer') {
+        return false;
+      }
+      if (child.classList.contains('cms-ui')) return false;
+      return true;
+    });
+    elements.forEach((element) => {
+      const textContent = element.textContent?.trim();
+      const type = textContent ? 'text' : 'rect';
+      const gridRect = pxToGridUnits(surface, element.getBoundingClientRect());
+      const node = createGridNode(type, {
+        x: gridRect.x,
+        y: gridRect.y,
+        w: gridRect.w,
+        h: gridRect.h,
+      }, gridState.rootId);
+      if (type === 'text' && node?.props) {
+        node.props.text = textContent || 'Text';
+      }
+      element.dataset.gridSource = node.id;
+      element.style.display = 'none';
+    });
+    renderAllGridNodes();
   }
 
   function setGridOverlayEnabled(enabled) {
@@ -2028,6 +2059,7 @@
     clone.body?.classList.remove('cms-grid-active');
     const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
     if (surface) {
+      surface.querySelectorAll('[data-grid-source]').forEach((el) => el.remove());
       surface.innerHTML = compileGridHtml();
     }
     return `${docType}${clone.outerHTML}`;
