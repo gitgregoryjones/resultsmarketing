@@ -31,6 +31,14 @@
   let isMenuDragging = false;
   let menuDragOffsetX = 0;
   let menuDragOffsetY = 0;
+  let layoutMenuTarget = null;
+  let layoutSpanTarget = null;
+  let drawModeEnabled = false;
+  let drawState = null;
+  let activeDropZone = null;
+  const DESIGN_SURFACE_SELECTOR = '#designSurface, #canvas, [data-design-surface="true"]';
+  const FLOATING_MENU_SELECTOR = '#cms-floating-menu';
+  const DRAW_TOGGLE_SELECTOR = '#cms-draw-toggle';
 
   const COLOR_SWATCHES = [
     { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
@@ -51,7 +59,7 @@
   document.body.appendChild(floatingActions);
 
   const floatingMenu = document.createElement('div');
-  floatingMenu.id = 'cms-floating-menu';
+  floatingMenu.id = FLOATING_MENU_SELECTOR.replace('#', '');
   floatingMenu.className = 'cms-floating-menu cms-ui';
   floatingMenu.innerHTML = `
     <button type="button" class="cms-floating-menu__minimize" aria-label="Minimize menu">–</button>
@@ -70,6 +78,7 @@
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
       <button type="button" class="cms-floating-menu__button" id="cms-settings-button">Settings</button>
       <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-draw-toggle" aria-pressed="false">Draw Mode</button>
       <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M14.5 3c3.1 0 6.5 1.4 6.5 4.5 0 3.2-2.2 6.9-6.4 9.8l-2.2-2.2c2.5-1.8 4.1-4.3 4.1-6.4 0-.9-.3-1.7-.9-2.3-.6-.6-1.4-.9-2.3-.9-2.1 0-4.6 1.6-6.4 4.1L4.7 7.4C7.6 3.2 11.3 1 14.5 1v2zM6.2 12.5 3 15.7V21h5.3l3.2-3.2-2.3-2.3-2 2H6v-1.2l2-2-1.8-1.8zM14 6.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
@@ -428,6 +437,41 @@
   `;
   document.body.appendChild(quickColorMenu);
 
+  const layoutMenu = document.createElement('div');
+  layoutMenu.className = 'cms-layout-menu cms-ui';
+  layoutMenu.innerHTML = `
+    <div class="cms-layout-menu__section">
+      <div class="cms-layout-menu__title">Layout</div>
+      <div class="cms-layout-menu__row">
+        <button type="button" data-layout-type="stack">Stack</button>
+        <button type="button" data-layout-type="row">Flex Row</button>
+        <button type="button" data-layout-type="grid-2">Grid 2</button>
+        <button type="button" data-layout-type="grid-3">Grid 3</button>
+        <button type="button" data-layout-type="grid-12">Grid 12</button>
+      </div>
+    </div>
+    <div class="cms-layout-menu__section">
+      <div class="cms-layout-menu__title">Gap</div>
+      <div class="cms-layout-menu__row">
+        <button type="button" data-layout-gap="gap-4">Gap 4</button>
+        <button type="button" data-layout-gap="gap-6">Gap 6</button>
+        <button type="button" data-layout-gap="gap-8">Gap 8</button>
+      </div>
+    </div>
+    <div class="cms-layout-menu__section cms-layout-menu__span" data-layout-span="true">
+      <div class="cms-layout-menu__title">Grid 12 span</div>
+      <div class="cms-layout-menu__row">
+        <label>
+          <span>md:col-span</span>
+          <select id="cms-layout-span">
+            ${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(layoutMenu);
+
   const pagesToggleButton = floatingMenu.querySelector('#cms-pages-toggle');
   const pagesDropdown = floatingMenu.querySelector('#cms-pages-dropdown');
   const pagesSelect = floatingMenu.querySelector('#cms-pages-select');
@@ -438,6 +482,7 @@
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
+  const drawToggleButton = floatingMenu.querySelector(DRAW_TOGGLE_SELECTOR);
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
   const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
   const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
@@ -462,6 +507,8 @@
   quickColorPicker.setAttribute('aria-hidden', 'true');
   quickColorPicker.tabIndex = -1;
   document.body.appendChild(quickColorPicker);
+  const layoutSpanSelect = layoutMenu.querySelector('#cms-layout-span');
+  const layoutSpanSection = layoutMenu.querySelector('[data-layout-span="true"]');
   const valueInput = sidebar.querySelector('#cms-value');
   const linkInput = sidebar.querySelector('#cms-link');
   const typeInputs = sidebar.querySelectorAll('input[name="cms-type"]');
@@ -778,6 +825,12 @@
     if (!pagesDropdown.classList.contains('is-open')) return;
     if (floatingMenu.contains(event.target)) return;
     togglePagesDropdown(false);
+  }
+
+  function handleLayoutMenuDismiss(event) {
+    if (!layoutMenu.classList.contains('is-visible')) return;
+    if (layoutMenu.contains(event.target)) return;
+    hideLayoutMenu();
   }
 
   function handleSettingsDialogClick(event) {
@@ -1133,6 +1186,423 @@
   function isWireframeEnabled() {
     return document.body.classList.contains('cms-wireframe');
   }
+
+  function getDesignSurface() {
+    return document.querySelector(DESIGN_SURFACE_SELECTOR) || document.body;
+  }
+
+  function isLayoutContainer(element) {
+    return Boolean(
+      element
+        && element.matches
+        && (element.matches('[data-layout-container="true"]') || element.classList.contains('cms-layout-container')),
+    );
+  }
+
+  function markLayoutContainer(element) {
+    if (!element) return;
+    element.dataset.layoutContainer = 'true';
+    element.classList.add('cms-layout-container');
+  }
+
+  function getLayoutContainerFromSelection(element) {
+    if (!element) return null;
+    if (isLayoutContainer(element)) return element;
+    const explicit = element.closest ? element.closest('[data-layout-container="true"], .cms-layout-container') : null;
+    if (explicit) return explicit;
+    const heuristic = element.closest ? element.closest('.grid, .flex') : null;
+    if (heuristic) {
+      markLayoutContainer(heuristic);
+      return heuristic;
+    }
+    return null;
+  }
+
+  function clearLayoutTypeClasses(element) {
+    if (!element) return;
+    const layoutClasses = [
+      'flex',
+      'grid',
+      'flex-col',
+      'md:flex-row',
+      'md:flex-wrap',
+      'grid-cols-1',
+      'grid-cols-12',
+      'md:grid-cols-2',
+      'md:grid-cols-3',
+    ];
+    layoutClasses.forEach((name) => element.classList.remove(name));
+    Array.from(element.classList)
+      .filter((name) => name.startsWith('grid-cols-') || name.startsWith('md:grid-cols-'))
+      .forEach((name) => element.classList.remove(name));
+  }
+
+  function removeGapClasses(element) {
+    if (!element) return;
+    ['gap-4', 'gap-6', 'gap-8'].forEach((name) => element.classList.remove(name));
+  }
+
+  function removeColSpanClasses(element) {
+    if (!element) return;
+    Array.from(element.classList)
+      .filter((name) => name.startsWith('col-span-') || name.startsWith('md:col-span-'))
+      .forEach((name) => element.classList.remove(name));
+  }
+
+  function getLayoutType(element) {
+    if (!element) return 'stack';
+    if (element.classList.contains('grid') && element.classList.contains('grid-cols-12')) return 'grid-12';
+    if (element.classList.contains('grid') && element.classList.contains('md:grid-cols-3')) return 'grid-3';
+    if (element.classList.contains('grid') && element.classList.contains('md:grid-cols-2')) return 'grid-2';
+    if (element.classList.contains('flex') && element.classList.contains('md:flex-row')) return 'row';
+    if (element.classList.contains('flex') && element.classList.contains('flex-col')) return 'stack';
+    return 'stack';
+  }
+
+  function setLayoutType(element, type) {
+    if (!element) return;
+    markLayoutContainer(element);
+    clearLayoutTypeClasses(element);
+    if (type === 'row') {
+      element.classList.add('flex', 'flex-col', 'md:flex-row', 'md:flex-wrap');
+    } else if (type === 'grid-2') {
+      element.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2');
+    } else if (type === 'grid-3') {
+      element.classList.add('grid', 'grid-cols-1', 'md:grid-cols-3');
+    } else if (type === 'grid-12') {
+      element.classList.add('grid', 'grid-cols-12');
+    } else {
+      element.classList.add('flex', 'flex-col');
+    }
+
+    const children = Array.from(element.children || []);
+    if (type === 'grid-12') {
+      children.forEach((child) => {
+        removeColSpanClasses(child);
+        child.classList.remove('w-full');
+        child.classList.add('col-span-12', 'md:col-span-6');
+      });
+    } else if (type === 'stack') {
+      children.forEach((child) => {
+        removeColSpanClasses(child);
+        child.classList.add('w-full');
+      });
+    } else {
+      children.forEach((child) => {
+        removeColSpanClasses(child);
+        child.classList.remove('w-full');
+      });
+    }
+    scheduleLayoutPersist();
+  }
+
+  function setLayoutGap(element, gapClass) {
+    if (!element || !gapClass) return;
+    removeGapClasses(element);
+    element.classList.add(gapClass);
+    scheduleLayoutPersist();
+  }
+
+  function getLayoutMenuAnchor(element) {
+    if (!element || !element.getBoundingClientRect) return null;
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left + window.scrollX,
+      top: rect.bottom + window.scrollY + 8,
+    };
+  }
+
+  function showLayoutMenu(anchorEl) {
+    const anchor = getLayoutMenuAnchor(anchorEl);
+    if (!anchor) return;
+    layoutMenu.style.left = `${anchor.left}px`;
+    layoutMenu.style.top = `${anchor.top}px`;
+    layoutMenu.classList.add('is-visible');
+  }
+
+  function hideLayoutMenu() {
+    layoutMenu.classList.remove('is-visible');
+    layoutMenuTarget = null;
+    layoutSpanTarget = null;
+  }
+
+  function updateLayoutMenu() {
+    if (!editMode || !selectedElement) {
+      hideLayoutMenu();
+      return;
+    }
+    const isContainer =
+      selectedElement
+      && selectedElement.tagName === 'DIV'
+      && !selectedElement.hasAttribute('data-cms-text')
+      && !selectedElement.hasAttribute('data-cms-image')
+      && !selectedElement.hasAttribute('data-cms-bg');
+
+    layoutMenuTarget = isContainer ? selectedElement : null;
+    layoutSpanTarget = getLayoutContainerFromSelection(selectedElement);
+
+    const canShowLayout = Boolean(layoutMenuTarget);
+    const canShowSpan = Boolean(
+      layoutSpanTarget
+      && selectedElement !== layoutSpanTarget
+      && getLayoutType(layoutSpanTarget) === 'grid-12',
+    );
+
+    layoutMenu.querySelectorAll('[data-layout-type]').forEach((button) => {
+      button.disabled = !canShowLayout;
+    });
+    layoutMenu.querySelectorAll('[data-layout-gap]').forEach((button) => {
+      button.disabled = !canShowLayout;
+    });
+    if (layoutSpanSection) {
+      layoutSpanSection.style.display = canShowSpan ? 'block' : 'none';
+    }
+
+    if (canShowSpan && layoutSpanSelect && selectedElement) {
+      const currentSpan = Array.from(selectedElement.classList).find((name) => name.startsWith('md:col-span-'));
+      const value = currentSpan ? currentSpan.replace('md:col-span-', '') : '12';
+      layoutSpanSelect.value = value;
+    }
+
+    if (!canShowLayout && !canShowSpan) {
+      hideLayoutMenu();
+      return;
+    }
+
+    const anchor = layoutMenuTarget || selectedElement;
+    showLayoutMenu(anchor);
+  }
+
+  function handleLayoutMenuClick(event) {
+    const button = event.target.closest('button');
+    if (!button) return;
+    const { layoutType, layoutGap } = button.dataset;
+    if (layoutType && layoutMenuTarget) {
+      setLayoutType(layoutMenuTarget, layoutType);
+      updateLayoutMenu();
+      return;
+    }
+    if (layoutGap && layoutMenuTarget) {
+      setLayoutGap(layoutMenuTarget, layoutGap);
+      updateLayoutMenu();
+    }
+  }
+
+  function handleLayoutSpanChange() {
+    if (!layoutSpanTarget || !selectedElement) return;
+    if (selectedElement === layoutSpanTarget) return;
+    if (getLayoutType(layoutSpanTarget) !== 'grid-12') return;
+    const spanValue = Number.parseInt(layoutSpanSelect.value, 10);
+    if (Number.isNaN(spanValue)) return;
+    removeColSpanClasses(selectedElement);
+    selectedElement.classList.add('col-span-12', `md:col-span-${spanValue}`);
+    scheduleLayoutPersist();
+  }
+
+  function findValidContainerAtPoint(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el || isCmsUi(el) || isForbiddenElement(el)) return null;
+    if (isLayoutContainer(el)) return el;
+    const explicit = el.closest ? el.closest('[data-layout-container="true"], .cms-layout-container') : null;
+    if (explicit) return explicit;
+    const heuristic = el.closest ? el.closest('.grid, .flex') : null;
+    if (heuristic) {
+      markLayoutContainer(heuristic);
+      return heuristic;
+    }
+    return null;
+  }
+
+  function ensureSectionContainerLayoutWrappers(root, insertPoint) {
+    const section = document.createElement('section');
+    section.className = 'bg-white py-10 px-4';
+    const container = document.createElement('div');
+    container.className = 'max-w-6xl mx-auto';
+    const layout = document.createElement('div');
+    layout.className = 'flex flex-col gap-6';
+    markLayoutContainer(layout);
+    section.appendChild(container);
+    container.appendChild(layout);
+    if (insertPoint && insertPoint.parentNode === root) {
+      root.insertBefore(section, insertPoint);
+    } else {
+      root.appendChild(section);
+    }
+    return layout;
+  }
+
+  function getMinHeightClass(height) {
+    if (height < 80) return 'min-h-12';
+    if (height < 160) return 'min-h-24';
+    return 'min-h-40';
+  }
+
+  function createBoxNodeFromRect(rect, parentLayoutEl) {
+    const box = document.createElement('div');
+    box.dataset.nodeId = `node-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    box.className = 'border border-dashed border-gray-300 bg-transparent';
+    const placeholder = document.createElement('div');
+    placeholder.className = 'text-xs text-gray-400 italic pointer-events-none';
+    placeholder.textContent = 'Drop content here';
+    box.appendChild(placeholder);
+    applySnapSizing(box, rect, parentLayoutEl);
+    return box;
+  }
+
+  function applySnapSizing(boxEl, rect, parentLayoutEl) {
+    const layoutType = getLayoutType(parentLayoutEl);
+    const minHeight = getMinHeightClass(rect.height || 1);
+    boxEl.classList.remove('min-h-12', 'min-h-24', 'min-h-40');
+    boxEl.classList.add(minHeight);
+
+    if (layoutType === 'grid-12') {
+      removeColSpanClasses(boxEl);
+      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
+      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
+      const span = Math.min(12, Math.max(1, Math.round(ratio * 12)));
+      boxEl.classList.add('col-span-12', `md:col-span-${span}`);
+    } else if (layoutType === 'grid-2') {
+      removeColSpanClasses(boxEl);
+      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
+      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
+      const span = ratio > 0.6 ? 2 : 1;
+      if (span > 1) {
+        boxEl.classList.add(`md:col-span-${span}`);
+      } else {
+        boxEl.classList.remove('md:col-span-2');
+      }
+    } else if (layoutType === 'grid-3') {
+      removeColSpanClasses(boxEl);
+      const containerWidth = parentLayoutEl.getBoundingClientRect().width;
+      const ratio = containerWidth > 0 ? rect.width / containerWidth : 1;
+      const span = ratio > 0.75 ? 3 : ratio > 0.45 ? 2 : 1;
+      if (span > 1) {
+        boxEl.classList.add(`md:col-span-${span}`);
+      } else {
+        boxEl.classList.remove('md:col-span-2', 'md:col-span-3');
+      }
+    } else if (layoutType === 'stack') {
+      removeColSpanClasses(boxEl);
+      boxEl.classList.add('w-full');
+    } else {
+      removeColSpanClasses(boxEl);
+      boxEl.classList.remove('w-full');
+    }
+  }
+
+  function highlightDropZone(containerEl) {
+    if (activeDropZone && activeDropZone !== containerEl) {
+      activeDropZone.classList.remove('ring-2', 'ring-blue-400');
+    }
+    activeDropZone = containerEl;
+    if (activeDropZone) {
+      activeDropZone.classList.add('ring-2', 'ring-blue-400');
+    }
+  }
+
+  function clearDropZoneHighlight() {
+    if (!activeDropZone) return;
+    activeDropZone.classList.remove('ring-2', 'ring-blue-400');
+    activeDropZone = null;
+  }
+
+  const DrawModeController = {
+    enable() {
+      if (drawModeEnabled) return;
+      if (!editMode) {
+        showToast('Enable Edit mode to use Draw Mode.', 'error');
+        if (drawToggleButton) {
+          drawToggleButton.classList.remove('is-active');
+          drawToggleButton.setAttribute('aria-pressed', 'false');
+        }
+        return;
+      }
+      drawModeEnabled = true;
+      document.body.classList.add('cms-draw-mode');
+      const surface = getDesignSurface();
+      surface.style.cursor = 'crosshair';
+      surface.addEventListener('mousedown', this.handleMouseDown);
+      surface.addEventListener('mousemove', this.handleMouseMove);
+      window.addEventListener('mouseup', this.handleMouseUp);
+    },
+    disable() {
+      if (!drawModeEnabled) return;
+      drawModeEnabled = false;
+      const surface = getDesignSurface();
+      surface.style.cursor = '';
+      surface.removeEventListener('mousedown', this.handleMouseDown);
+      surface.removeEventListener('mousemove', this.handleMouseMove);
+      window.removeEventListener('mouseup', this.handleMouseUp);
+      document.body.classList.remove('cms-draw-mode');
+      this.cleanup();
+    },
+    toggle() {
+      if (drawModeEnabled) {
+        this.disable();
+      } else {
+        this.enable();
+      }
+    },
+    cleanup() {
+      if (drawState?.overlay && drawState.overlay.parentNode) {
+        drawState.overlay.remove();
+      }
+      drawState = null;
+      clearDropZoneHighlight();
+    },
+    handleMouseDown(event) {
+      if (!drawModeEnabled) return;
+      if (event.button !== 0) return;
+      const surface = getDesignSurface();
+      if (!surface.contains(event.target) || isCmsUi(event.target)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const overlay = document.createElement('div');
+      overlay.className = 'pointer-events-none border border-blue-400 bg-blue-200/30';
+      overlay.style.position = 'fixed';
+      overlay.style.left = `${event.clientX}px`;
+      overlay.style.top = `${event.clientY}px`;
+      overlay.style.width = '0px';
+      overlay.style.height = '0px';
+      overlay.style.zIndex = '9998';
+      document.body.appendChild(overlay);
+      drawState = {
+        startX: event.clientX,
+        startY: event.clientY,
+        overlay,
+        rect: { left: event.clientX, top: event.clientY, width: 0, height: 0 },
+      };
+    },
+    handleMouseMove(event) {
+      if (!drawModeEnabled || !drawState) return;
+      const x = Math.min(drawState.startX, event.clientX);
+      const y = Math.min(drawState.startY, event.clientY);
+      const width = Math.abs(event.clientX - drawState.startX);
+      const height = Math.abs(event.clientY - drawState.startY);
+      drawState.rect = { left: x, top: y, width, height };
+      drawState.overlay.style.left = `${x}px`;
+      drawState.overlay.style.top = `${y}px`;
+      drawState.overlay.style.width = `${Math.max(width, 2)}px`;
+      drawState.overlay.style.height = `${Math.max(height, 2)}px`;
+      const container = findValidContainerAtPoint(event.clientX, event.clientY);
+      highlightDropZone(container);
+    },
+    handleMouseUp(event) {
+      if (!drawModeEnabled || !drawState) return;
+      const surface = getDesignSurface();
+      if (!surface.contains(event.target)) {
+        DrawModeController.cleanup();
+        return;
+      }
+      const rect = drawState.rect;
+      DrawModeController.cleanup();
+      const container = findValidContainerAtPoint(event.clientX, event.clientY);
+      const parentLayout = container || ensureSectionContainerLayoutWrappers(surface, null);
+      const box = createBoxNodeFromRect(rect, parentLayout);
+      parentLayout.appendChild(box);
+      scheduleLayoutPersist();
+    },
+  };
 
   function generateWireframeKey(base) {
     return ensureUniqueKey(`wireframe.${base}`);
@@ -1614,7 +2084,7 @@
   }
 
   function handleHover(e) {
-    if (!editMode) return;
+    if (!editMode || drawModeEnabled) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) {
@@ -1639,6 +2109,14 @@
       removeOutlines();
       hideResizeOverlay();
       hideQuickColorMenu();
+      hideLayoutMenu();
+      if (drawModeEnabled) {
+        DrawModeController.disable();
+        if (drawToggleButton) {
+          drawToggleButton.classList.remove('is-active');
+          drawToggleButton.setAttribute('aria-pressed', 'false');
+        }
+      }
       document.body.classList.remove('cms-layout-mode');
     }
     publishShortcutButton.disabled = editMode;
@@ -2450,6 +2928,7 @@
     updateResizeOverlay(el);
     updateGroupControls();
     renderQuickStyles();
+    updateLayoutMenu();
     deleteButton.disabled = false;
     updateCloneState();
   }
@@ -2711,6 +3190,7 @@
       selectedElement = null;
       clearForm();
       removeOutlines();
+      hideLayoutMenu();
       applyStoredTags(storedTags);
       applyContent();
       refreshList();
@@ -2762,7 +3242,7 @@
   }
 
   function handleClick(e) {
-    if (!editMode) return;
+    if (!editMode || drawModeEnabled) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) return;
@@ -2787,7 +3267,7 @@
   }
 
   function handleDoubleClick(e) {
-    if (!editMode) return;
+    if (!editMode || drawModeEnabled) return;
     const target = getElementTarget(e.target);
     if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) return;
@@ -2885,6 +3365,7 @@
   document.addEventListener('dblclick', handleDoubleClick, true);
   document.addEventListener('click', handleQuickMenuDismiss, true);
   document.addEventListener('click', handleMenuDismiss, true);
+  document.addEventListener('click', handleLayoutMenuDismiss, true);
   document.addEventListener('click', handleLinkNavigation);
   document.addEventListener('dragstart', handleDragStart, true);
   document.addEventListener('dragover', handleDragOver, true);
@@ -2906,6 +3387,17 @@
   publishShortcutButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishShortcutButton);
   });
+  if (drawToggleButton) {
+    drawToggleButton.addEventListener('click', () => {
+      DrawModeController.toggle();
+      drawToggleButton.classList.toggle('is-active', drawModeEnabled);
+      drawToggleButton.setAttribute('aria-pressed', String(drawModeEnabled));
+    });
+  }
+  layoutMenu.addEventListener('click', handleLayoutMenuClick);
+  if (layoutSpanSelect) {
+    layoutSpanSelect.addEventListener('change', handleLayoutSpanChange);
+  }
   tabs.forEach((tab) => {
     tab.addEventListener('click', () => activateTab(tab.dataset.tab));
   });
