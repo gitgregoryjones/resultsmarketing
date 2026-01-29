@@ -31,6 +31,10 @@
   let isMenuDragging = false;
   let menuDragOffsetX = 0;
   let menuDragOffsetY = 0;
+  let drawMode = false;
+  let drawState = null;
+  let drawOverlayEl = null;
+  let drawDropHighlightEl = null;
 
   const COLOR_SWATCHES = [
     { hex: '#111827', textClass: 'text-gray-900', bgClass: 'bg-gray-900' },
@@ -69,6 +73,7 @@
       </div>
       <button type="button" class="cms-floating-menu__button" id="cms-effects-button">Effects</button>
       <button type="button" class="cms-floating-menu__button" id="cms-settings-button">Settings</button>
+      <button type="button" class="cms-floating-menu__button" id="cms-draw-button">Draw</button>
       <button type="button" class="cms-floating-menu__button" id="cms-xray-button">X-ray</button>
       <button type="button" class="cms-floating-menu__button" id="cms-publish-button">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -79,6 +84,22 @@
     </div>
   `;
   document.body.appendChild(floatingMenu);
+
+  const drawStyles = document.createElement('style');
+  drawStyles.textContent = `
+    .cms-draw-overlay {
+      position: fixed;
+      border: 2px dashed #60a5fa;
+      background: rgba(96, 165, 250, 0.12);
+      pointer-events: none;
+      z-index: 999999;
+    }
+    .cms-draw-dropzone {
+      outline: 2px solid #60a5fa;
+      outline-offset: 2px;
+    }
+  `;
+  document.head.appendChild(drawStyles);
 
   const toast = document.createElement('div');
   toast.id = 'cms-toast';
@@ -436,6 +457,7 @@
   const pageDeleteButton = floatingMenu.querySelector('#cms-page-delete');
   const effectsButton = floatingMenu.querySelector('#cms-effects-button');
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
+  const drawButton = floatingMenu.querySelector('#cms-draw-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
@@ -1231,6 +1253,200 @@
     return !isTextElement(element) && !isImageElement(element);
   }
 
+  function ensureBoxPlaceholder(box) {
+    if (!box) return;
+    const placeholder = box.querySelector('[data-cms-box-placeholder="true"]');
+    const hasContent = Array.from(box.childNodes).some((node) => {
+      if (node === placeholder) return false;
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent.trim().length > 0;
+      return node.nodeType === Node.ELEMENT_NODE;
+    });
+    if (hasContent) {
+      if (placeholder) {
+        placeholder.remove();
+      }
+      return;
+    }
+    if (!placeholder) {
+      const nextPlaceholder = document.createElement('div');
+      nextPlaceholder.textContent = 'Drop content here';
+      nextPlaceholder.className = 'text-xs text-gray-400 p-2';
+      nextPlaceholder.setAttribute('data-cms-box-placeholder', 'true');
+      box.appendChild(nextPlaceholder);
+    }
+  }
+
+  function setDropZoneHighlight(element) {
+    if (drawDropHighlightEl === element) return;
+    if (drawDropHighlightEl) {
+      drawDropHighlightEl.classList.remove('cms-draw-dropzone');
+    }
+    drawDropHighlightEl = element;
+    if (drawDropHighlightEl) {
+      drawDropHighlightEl.classList.add('cms-draw-dropzone');
+    }
+  }
+
+  function clearDropZoneHighlight() {
+    if (drawDropHighlightEl) {
+      drawDropHighlightEl.classList.remove('cms-draw-dropzone');
+      drawDropHighlightEl = null;
+    }
+  }
+
+  function findValidDrawContainerAtPoint(x, y) {
+    let target = document.elementFromPoint(x, y);
+    while (target) {
+      if (isCmsUi(target) || isForbiddenElement(target)) {
+        target = target.parentElement;
+        continue;
+      }
+      if (target === document.body || target === document.documentElement) {
+        return document.body;
+      }
+      if ((supportsGridLayout(target) || target.hasAttribute('data-cms-group') || isWireframeSection(target))
+        && !isTextElement(target)
+        && !isImageElement(target)) {
+        return target;
+      }
+      target = target.parentElement;
+    }
+    return document.body;
+  }
+
+  function applyBoxSnapSizing(box, rect, parent) {
+    if (!box || !parent) return;
+    const parentClasses = Array.from(parent.classList || []);
+    const gridColumns = getGridColumnCount(parent);
+    const isGrid = parentClasses.includes('grid') || parentClasses.some((name) => name.startsWith('grid-cols-'));
+    const computed = window.getComputedStyle(parent);
+    const isFlex = parent.style.display === 'flex' || computed.display === 'flex';
+    if (isGrid && gridColumns === 12) {
+      box.classList.add('col-span-12');
+      Array.from(box.classList)
+        .filter((name) => name.startsWith('md:col-span-'))
+        .forEach((name) => box.classList.remove(name));
+      const containerWidth = parent.getBoundingClientRect().width || 1;
+      const spanRatio = rect.width / containerWidth;
+      const mdSpan = Math.max(1, Math.min(12, Math.round(spanRatio * 12)));
+      box.classList.add(`md:col-span-${mdSpan}`);
+    } else if (!isGrid && (isFlex || parent === document.body)) {
+      box.classList.add('w-full');
+    } else if (!isGrid && !isFlex) {
+      box.classList.add('w-full');
+    }
+    Array.from(box.classList)
+      .filter((name) => name.startsWith('min-h-'))
+      .forEach((name) => box.classList.remove(name));
+    if (rect.height < 80) {
+      box.classList.add('min-h-12');
+    } else if (rect.height < 160) {
+      box.classList.add('min-h-24');
+    } else {
+      box.classList.add('min-h-40');
+    }
+  }
+
+  function setDrawMode(enabled) {
+    if (enabled && !editMode) {
+      setEditMode(true);
+    }
+    drawMode = enabled;
+    if (drawButton) {
+      drawButton.classList.toggle('is-active', drawMode);
+    }
+    if (!drawMode) {
+      drawState = null;
+      if (drawOverlayEl) {
+        drawOverlayEl.remove();
+        drawOverlayEl = null;
+      }
+      clearDropZoneHighlight();
+    }
+  }
+
+  function handleDrawMouseDown(event) {
+    if (!editMode || !drawMode) return;
+    if (event.button !== 0) return;
+    const target = getElementTarget(event.target);
+    if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
+    drawState = {
+      startX: event.clientX,
+      startY: event.clientY,
+      isDrawing: true,
+    };
+    if (drawOverlayEl) {
+      drawOverlayEl.remove();
+    }
+    drawOverlayEl = document.createElement('div');
+    drawOverlayEl.className = 'cms-draw-overlay cms-ui';
+    drawOverlayEl.style.left = `${event.clientX}px`;
+    drawOverlayEl.style.top = `${event.clientY}px`;
+    drawOverlayEl.style.width = '0px';
+    drawOverlayEl.style.height = '0px';
+    document.body.appendChild(drawOverlayEl);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleDrawMouseMove(event) {
+    if (!editMode || !drawMode || !drawState?.isDrawing || !drawOverlayEl) return;
+    const currentX = event.clientX;
+    const currentY = event.clientY;
+    const left = Math.min(drawState.startX, currentX);
+    const top = Math.min(drawState.startY, currentY);
+    const width = Math.abs(currentX - drawState.startX);
+    const height = Math.abs(currentY - drawState.startY);
+    drawOverlayEl.style.left = `${left}px`;
+    drawOverlayEl.style.top = `${top}px`;
+    drawOverlayEl.style.width = `${width}px`;
+    drawOverlayEl.style.height = `${height}px`;
+    const container = findValidDrawContainerAtPoint(currentX, currentY);
+    drawState.container = container;
+    setDropZoneHighlight(container);
+  }
+
+  function handleDrawMouseUp(event) {
+    if (!editMode || !drawMode || !drawState?.isDrawing) return;
+    const currentX = event.clientX;
+    const currentY = event.clientY;
+    const rect = {
+      left: Math.min(drawState.startX, currentX),
+      top: Math.min(drawState.startY, currentY),
+      width: Math.abs(currentX - drawState.startX),
+      height: Math.abs(currentY - drawState.startY),
+    };
+    if (drawOverlayEl) {
+      drawOverlayEl.remove();
+      drawOverlayEl = null;
+    }
+    const container = drawState.container || findValidDrawContainerAtPoint(currentX, currentY);
+    clearDropZoneHighlight();
+    drawState = null;
+
+    const box = document.createElement('div');
+    box.className = 'cms-box cms-wireframe-resizable border border-dashed border-gray-300 bg-white/0 min-h-12';
+    box.setAttribute('data-wireframe-created', 'true');
+    box.dataset.boxId = `box-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    if (isLayoutModeEnabled()) {
+      box.setAttribute('draggable', 'true');
+    }
+    ensureBoxPlaceholder(box);
+
+    let dropContainer = document.body;
+    if (container && isWireframeSection(container)) {
+      dropContainer = container.querySelector('.cms-wireframe-section__content') || container;
+    } else if (container) {
+      dropContainer = getDropContainer(container);
+    }
+    dropContainer.appendChild(box);
+    applyBoxSnapSizing(box, rect, dropContainer);
+    scheduleLayoutPersist();
+    selectElement(box);
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function getGridColumnCount(element) {
     if (!element || !element.classList) return 0;
     const match = Array.from(element.classList).find((name) => name.startsWith('grid-cols-'));
@@ -1457,6 +1673,9 @@
     }
     clearDropTarget();
     clearReorderIndicator();
+    if (draggedElement?.classList?.contains('cms-box')) {
+      ensureBoxPlaceholder(draggedElement);
+    }
     persistLayout();
   }
 
@@ -1640,6 +1859,7 @@
       hideResizeOverlay();
       hideQuickColorMenu();
       document.body.classList.remove('cms-layout-mode');
+      setDrawMode(false);
     }
     publishShortcutButton.disabled = editMode;
     deleteButton.disabled = !editMode || !selectedElement;
@@ -2450,6 +2670,9 @@
     updateResizeOverlay(el);
     updateGroupControls();
     renderQuickStyles();
+    if (el.classList.contains('cms-box')) {
+      ensureBoxPlaceholder(el);
+    }
     deleteButton.disabled = false;
     updateCloneState();
   }
@@ -2763,6 +2986,7 @@
 
   function handleClick(e) {
     if (!editMode) return;
+    if (drawMode) return;
     const target = getElementTarget(e.target);
     if (!target) return;
     if (isCmsUi(target) || isForbiddenElement(target)) return;
@@ -2788,6 +3012,7 @@
 
   function handleDoubleClick(e) {
     if (!editMode) return;
+    if (drawMode) return;
     const target = getElementTarget(e.target);
     if (!target || isCmsUi(target) || isForbiddenElement(target)) return;
     if (target === document.body || target === document.documentElement) return;
@@ -2890,6 +3115,15 @@
   document.addEventListener('dragover', handleDragOver, true);
   document.addEventListener('drop', handleDrop, true);
   document.addEventListener('dragend', handleDragEnd, true);
+  document.addEventListener('mousedown', handleDrawMouseDown, true);
+  document.addEventListener('mousemove', handleDrawMouseMove, true);
+  document.addEventListener('mouseup', handleDrawMouseUp, true);
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    if (drawMode && !drawState?.isDrawing) {
+      setDrawMode(false);
+    }
+  });
   saveButton.addEventListener('click', (event) => {
     event.preventDefault();
     saveSelection();
@@ -3225,6 +3459,11 @@
   settingsMenuButton.addEventListener('click', () => {
     openSettingsDialog();
   });
+  if (drawButton) {
+    drawButton.addEventListener('click', () => {
+      setDrawMode(!drawMode);
+    });
+  }
   xrayButton.addEventListener('click', () => {
     activateTab(isWireframeEnabled() ? 'content' : 'wireframe');
   });
