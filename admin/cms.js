@@ -597,6 +597,7 @@
       clearReorderIndicator();
       return;
     }
+    applyDropGridLayout();
     updateResizeOverlay(selectedElement);
   }
 
@@ -1253,6 +1254,38 @@
     return !isTextElement(element) && !isImageElement(element);
   }
 
+  function setDropGridLayout(element) {
+    if (!element || !supportsGridLayout(element)) return;
+    element.dataset.cmsDropGrid = 'true';
+    element.style.display = 'grid';
+    element.style.gridTemplateColumns = 'repeat(12, minmax(0, 1fr))';
+    element.style.gridTemplateRows = 'repeat(12, minmax(0, 1fr))';
+  }
+
+  function applyDropGridLayout() {
+    const nodes = [document.body, ...document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)')];
+    nodes.forEach((node) => {
+      setDropGridLayout(node);
+    });
+  }
+
+  function snapElementToGrid(element, container, clientX, clientY, sizeOverride) {
+    if (!element || !container || container.dataset.cmsDropGrid !== 'true') return;
+    const containerRect = container.getBoundingClientRect();
+    const width = containerRect.width || 1;
+    const height = containerRect.height || 1;
+    const offsetX = clientX - containerRect.left;
+    const offsetY = clientY - containerRect.top;
+    const column = Math.max(1, Math.min(12, Math.round((offsetX / width) * 12) || 1));
+    const row = Math.max(1, Math.min(12, Math.round((offsetY / height) * 12) || 1));
+    const sizeWidth = sizeOverride?.width ?? element.getBoundingClientRect().width;
+    const sizeHeight = sizeOverride?.height ?? element.getBoundingClientRect().height;
+    const colSpan = Math.max(1, Math.min(12, Math.round((sizeWidth / width) * 12) || 1));
+    const rowSpan = Math.max(1, Math.min(12, Math.round((sizeHeight / height) * 12) || 1));
+    element.style.gridColumn = `${column} / span ${colSpan}`;
+    element.style.gridRow = `${row} / span ${rowSpan}`;
+  }
+
   function ensureBoxPlaceholder(box) {
     if (!box) return;
     const placeholder = box.querySelector('[data-cms-box-placeholder="true"]');
@@ -1441,6 +1474,7 @@
     }
     dropContainer.appendChild(box);
     applyBoxSnapSizing(box, rect, dropContainer);
+    snapElementToGrid(box, dropContainer, rect.left + rect.width / 2, rect.top + rect.height / 2, rect);
     scheduleLayoutPersist();
     selectElement(box);
     event.preventDefault();
@@ -1669,6 +1703,9 @@
       const dropContainer = resolveSectionContainer(dropTarget) || dropTarget;
       if (dropContainer && dropContainer !== draggedElement.parentNode) {
         dropContainer.appendChild(draggedElement);
+      }
+      if (dropContainer) {
+        snapElementToGrid(draggedElement, dropContainer, event.clientX, event.clientY);
       }
     }
     clearDropTarget();
