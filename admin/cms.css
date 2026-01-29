@@ -1137,8 +1137,16 @@ body.cms-editing #cms-toggle::after {
   pointer-events: none;
 }
 
-.cms-grid-active .cms-nodes-layer {
+.cms-draw-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.cms-draw-layer.is-active {
   pointer-events: auto;
+  cursor: crosshair;
 }
 
 .cms-grid-node {
@@ -1146,6 +1154,7 @@ body.cms-editing #cms-toggle::after {
   border-radius: 6px;
   background: #fff;
   box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .cms-grid-node.is-selected {

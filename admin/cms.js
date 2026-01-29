@@ -1423,6 +1423,7 @@
       surface: null,
       gridLayer: null,
       nodesLayer: null,
+      drawLayer: null,
       dragState: null,
       drawState: null,
     };
@@ -1447,11 +1448,17 @@
     nodesLayer.id = 'cms-nodes-layer';
     nodesLayer.className = 'cms-nodes-layer';
 
+    const drawLayer = document.createElement('div');
+    drawLayer.id = 'cms-draw-layer';
+    drawLayer.className = 'cms-draw-layer';
+
     surface.appendChild(gridLayer);
     surface.appendChild(nodesLayer);
+    surface.appendChild(drawLayer);
 
     gridState.gridLayer = gridLayer;
     gridState.nodesLayer = nodesLayer;
+    gridState.drawLayer = drawLayer;
 
     gridState.nodes.set(gridState.rootId, {
       id: gridState.rootId,
@@ -1461,7 +1468,8 @@
       children: [],
     });
 
-    nodesLayer.addEventListener('mousedown', handleGridMouseDown);
+    drawLayer.addEventListener('mousedown', handleGridDrawStart);
+    surface.addEventListener('mousedown', handleGridMouseDown);
     window.addEventListener('mousemove', handleGridMouseMove);
     window.addEventListener('mouseup', handleGridMouseUp);
   }
@@ -1483,6 +1491,9 @@
     gridState.drawTool = tool;
     if (gridState.nodesLayer) {
       gridState.nodesLayer.style.cursor = tool === 'none' ? '' : 'crosshair';
+    }
+    if (gridState.drawLayer) {
+      gridState.drawLayer.classList.toggle('is-active', tool !== 'none');
     }
     updateGridInteractionState();
   }
@@ -1739,36 +1750,36 @@
     activeDropZone = null;
   }
 
-  function handleGridMouseDown(event) {
-    if (!editMode) return;
-    ensureGridLayers();
-    if (!gridState.nodesLayer.contains(event.target)) return;
+  function handleGridDrawStart(event) {
+    if (!editMode || !gridState || gridState.drawTool === 'none') return;
     if (event.button !== 0) return;
+    event.preventDefault();
     event.stopPropagation();
-    const handle = event.target.closest('.cms-grid-handle');
-    const nodeEl = event.target.closest('.cms-grid-node');
+    hideLayoutMenu();
+    const containerId = findDropContainerAtPoint(event.clientX, event.clientY);
+    const containerEl = getContainerLayer(containerId);
+    const { rect } = getContainerMetrics(containerEl);
+    const startX = event.clientX - rect.left;
+    const startY = event.clientY - rect.top;
+    const overlay = document.createElement('div');
+    overlay.className = 'cms-grid-draw-overlay';
+    containerEl.appendChild(overlay);
+    gridState.drawState = {
+      containerId,
+      containerEl,
+      startX,
+      startY,
+      overlay,
+    };
+  }
 
-    if (gridState.drawTool !== 'none') {
-      if (nodeEl) return;
-      event.preventDefault();
-      hideLayoutMenu();
-      const containerId = findDropContainerAtPoint(event.clientX, event.clientY);
-      const containerEl = getContainerLayer(containerId);
-      const { rect } = getContainerMetrics(containerEl);
-      const startX = event.clientX - rect.left;
-      const startY = event.clientY - rect.top;
-      const overlay = document.createElement('div');
-      overlay.className = 'cms-grid-draw-overlay';
-      containerEl.appendChild(overlay);
-      gridState.drawState = {
-        containerId,
-        containerEl,
-        startX,
-        startY,
-        overlay,
-      };
-      return;
-    }
+  function handleGridMouseDown(event) {
+    if (!editMode || !gridState) return;
+    if (event.button !== 0) return;
+    const handle = event.target.closest?.('.cms-grid-handle');
+    const nodeEl = event.target.closest?.('.cms-grid-node');
+    if (!handle && !nodeEl) return;
+    event.stopPropagation();
 
     if (nodeEl && handle) {
       event.preventDefault();
@@ -1808,10 +1819,6 @@
       };
       selectGridNode(nodeId);
       selectElement(nodeEl);
-    } else {
-      clearGridSelection();
-      removeOutlines();
-      selectedElement = null;
     }
   }
 
@@ -2017,7 +2024,7 @@
     ensureGridLayers();
     const docType = document.doctype ? `<!DOCTYPE ${document.doctype.name}>` : '';
     const clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll('#cms-grid-layer, #cms-nodes-layer').forEach((el) => el.remove());
+    clone.querySelectorAll('#cms-grid-layer, #cms-nodes-layer, #cms-draw-layer').forEach((el) => el.remove());
     clone.body?.classList.remove('cms-grid-active');
     const surface = clone.querySelector(DESIGN_SURFACE_SELECTOR);
     if (surface) {
