@@ -107,6 +107,36 @@
         .employee-card:hover .view-bio-btn {
             display: inline-block;
         }
+
+        .mobile-scroll-hint {
+            display: none;
+        }
+
+        @media (max-width: 767px) {
+            .mobile-scroll-hint {
+                display: block;
+                margin: 0 1rem 0.75rem;
+                color: #4b5563;
+                font-size: 0.875rem;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+            }
+
+            .team-cards-grid {
+                display: flex;
+                gap: 1rem;
+                overflow-x: auto;
+                padding: 0 1rem 1rem;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .team-cards-grid > * {
+                flex: 0 0 85vw;
+                min-width: 85vw;
+                scroll-snap-align: start;
+            }
+        }
     </style>
     <link rel="stylesheet" href="cms.css">
 <meta name="leadership" itemtype="GET" content="" itemprop="https://public-api.wordpress.com/rest/v1.1/sites/fredfireman.wordpress.com/posts?category=Leadership">
@@ -144,7 +174,7 @@ ministries at Word of Faith Family Worship Center.</p>
     </div>
 
 <div class="flex justify-center bg-black" draggable="true">
-    <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] bg-white max-w-md lg:max-w-[1440px]" draggable="true">
+    <div class="w-full flex flex-col md:gap-0 lg:px-20 nobg-[#F5F6F8] bg-white" draggable="true">
         
         <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link" draggable="true">
     
@@ -320,7 +350,8 @@ ministries at Word of Faith Family Worship Center.</p>
       <div class="text-black text-2xl md:text-3xl lg:text-4xl font-bold font-['Merriweather'] leading-7 md:leading-9 lg:leading-[48px] max-w-4xl" draggable="true">
         We Tirelessly Work To Help You Win</div>
     </div>
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
+<p class="mobile-scroll-hint" draggable="true">Swipe left or right to view more cards.</p>
+<div class="team-cards-grid grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
 
   
   
@@ -890,6 +921,25 @@ organizational transformation.
         
         // Add click handlers to all employee cards
         const employeeCards = document.querySelectorAll('.employee-card');
+
+        const normalizeText = (value) => value ? value.replace(/\s+/g, ' ').trim() : '';
+
+        employeeCards.forEach(card => {
+            const desktopTitle = normalizeText(card.querySelector('.hidden.md\\:block')?.textContent);
+            const desktopBio = normalizeText(card.querySelector('.bio-short')?.textContent);
+            const mobileTitle = card.querySelector('.md\\:hidden.text-white.text-2xl');
+            const mobileBio = card.querySelector('.md\\:hidden.text-white.text-sm');
+
+            if (mobileTitle && desktopTitle) {
+                mobileTitle.textContent = desktopTitle;
+            }
+
+            if (mobileBio && desktopBio) {
+                mobileBio.textContent = desktopBio;
+            }
+        });
+
+
         employeeCards.forEach(card => {
             // Click handler is already in the onclick attribute
             // Add hover effects programmatically if needed
