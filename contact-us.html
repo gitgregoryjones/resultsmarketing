@@ -165,13 +165,13 @@
                     }
                 });
 
-                document.querySelectorAll('a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
+                /*document.querySelectorAll('a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
                     link.addEventListener("click", (event) => {
                         event.stopPropagation();
                         event.preventDefault();
                         openComingSoon();
                     });
-                });
+                });*/
 
                 comingSoonOverlay?.addEventListener("click", (event) => {
                     if (event.target === comingSoonOverlay) {
@@ -339,7 +339,7 @@
                         </div>
 
                         
-                        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="hidden bg-white rounded-2xl shadow-lg overflow-hidden">
                             <div class="h-64 bg-gradient-to-br from-gray-100 to-gray-300 relative">
                                 <div class="absolute inset-0 flex items-center justify-center">
                                     <div class="text-center">
