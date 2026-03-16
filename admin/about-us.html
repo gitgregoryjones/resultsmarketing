@@ -836,7 +836,9 @@ organizational transformation.
     
     function openBioModal(employeeCard) {
         // Get employee data from the card's data attributes
-        const name = employeeCard.getAttribute('data-employee-name');
+        const cardTitleElement = employeeCard.querySelector('.hidden.md\\:block');
+        const fallbackName = employeeCard.getAttribute('data-employee-name') || '';
+        const name = cardTitleElement ? cardTitleElement.textContent.trim() : fallbackName;
         const bio = employeeCard.querySelector('.bio-full').innerHTML;
         const cardImageElement = employeeCard.querySelector('[style*="background-image"]');
         const imageUrl = cardImageElement ? window.getComputedStyle(cardImageElement).backgroundImage : '';
