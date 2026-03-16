@@ -107,6 +107,45 @@
         .employee-card:hover .view-bio-btn {
             display: inline-block;
         }
+
+        .mobile-employee-scroll {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 0 1rem 1rem;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-scroll-card {
+            flex: 0 0 85vw;
+            min-width: 85vw;
+            scroll-snap-align: start;
+        }
+
+        .mobile-scroll-hint {
+            margin: 0 1rem 1rem;
+            color: #4b5563;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        @media (min-width: 768px) {
+            .mobile-employee-scroll {
+                display: block;
+                overflow-x: visible;
+                padding: 0;
+            }
+
+            .mobile-scroll-card {
+                min-width: 0;
+            }
+
+            .mobile-scroll-hint {
+                display: none;
+            }
+        }
     </style>
     <link rel="stylesheet" href="cms.css">
 <meta name="leadership" itemtype="GET" content="" itemprop="https://public-api.wordpress.com/rest/v1.1/sites/fredfireman.wordpress.com/posts?category=Leadership">
@@ -890,6 +929,44 @@ organizational transformation.
         
         // Add click handlers to all employee cards
         const employeeCards = document.querySelectorAll('.employee-card');
+
+        const normalizeText = (value) => value ? value.replace(/\s+/g, ' ').trim() : '';
+
+        employeeCards.forEach(card => {
+            const desktopTitle = normalizeText(card.querySelector('.hidden.md\\:block')?.textContent);
+            const desktopBio = normalizeText(card.querySelector('.bio-short')?.textContent);
+            const mobileTitle = card.querySelector('.md\\:hidden.text-white.text-2xl');
+            const mobileBio = card.querySelector('.md\\:hidden.text-white.text-sm');
+
+            if (mobileTitle && desktopTitle) {
+                mobileTitle.textContent = desktopTitle;
+            }
+
+            if (mobileBio && desktopBio) {
+                mobileBio.textContent = desktopBio;
+            }
+        });
+
+        if (window.matchMedia('(max-width: 767px)').matches && employeeCards.length) {
+            const parent = employeeCards[0].parentElement;
+            if (parent && !parent.querySelector('.mobile-employee-scroll')) {
+                const scrollHint = document.createElement('p');
+                scrollHint.className = 'mobile-scroll-hint';
+                scrollHint.textContent = 'Swipe left or right to view more team members.';
+
+                const scrollTrack = document.createElement('div');
+                scrollTrack.className = 'mobile-employee-scroll';
+
+                employeeCards.forEach((card) => {
+                    card.classList.add('mobile-scroll-card');
+                    scrollTrack.appendChild(card);
+                });
+
+                parent.appendChild(scrollHint);
+                parent.appendChild(scrollTrack);
+            }
+        }
+
         employeeCards.forEach(card => {
             // Click handler is already in the onclick attribute
             // Add hover effects programmatically if needed
