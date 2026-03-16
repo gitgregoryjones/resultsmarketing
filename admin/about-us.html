@@ -838,7 +838,8 @@ organizational transformation.
         // Get employee data from the card's data attributes
         const name = employeeCard.getAttribute('data-employee-name');
         const bio = employeeCard.querySelector('.bio-full').innerHTML;
-        const imageUrl = employeeCard.getAttribute('data-employee-image');
+        const cardImageElement = employeeCard.querySelector('[style*="background-image"]');
+        const imageUrl = cardImageElement ? window.getComputedStyle(cardImageElement).backgroundImage : '';
         
         // Set modal content
         document.getElementById('modalEmployeeName').textContent = name;
@@ -846,8 +847,8 @@ organizational transformation.
         
         // Set image if available
         const modalImage = document.getElementById('modalEmployeeImage');
-        if (imageUrl) {
-            modalImage.style.backgroundImage = `url('${imageUrl}')`;
+        if (imageUrl && imageUrl !== 'none') {
+            modalImage.style.backgroundImage = imageUrl;
             modalImage.style.display = 'block';
         } else {
             modalImage.style.display = 'none';
