@@ -1,4 +1,4 @@
-# WordPress Published Page Templates
+# WordPress Published Page Templates (Uploadable Theme Package)
 
 These templates are based on the published files in the repository root:
 
@@ -7,13 +7,26 @@ These templates are based on the published files in the repository root:
 - `contact-us.html`
 - `services.html`
 
-## Installation (recommended)
+This folder now includes required WordPress theme files (`style.css`, `index.php`) so it can be uploaded as a theme zip on WordPress.com / WordPress.org.
 
-1. Copy the `page-*.php` files into your active theme root (`wp-content/themes/<theme>/`).
-2. In the same theme, create a `published-html/` directory.
-3. Copy the four published HTML files above into `published-html/`.
-4. Copy any required assets (for example `images/`) so relative references match your published HTML.
-5. In WP Admin, assign each page template to the corresponding page.
+## WordPress.com install steps (theme name: `results1.0`)
+
+1. Keep this folder name as `results1.0` before zipping (or rename after unzipping in your local machine).
+2. Inside the theme folder, create `published-html/`.
+3. Copy these files into `published-html/`:
+   - `index.html`
+   - `news.html`
+   - `contact-us.html`
+   - `services.html`
+4. Copy the full `images/` folder to: `results1.0/published-html/images/`.
+5. Zip the `results1.0` folder.
+6. In WordPress.com: **Appearance → Themes → Upload Theme** and upload the zip.
+7. Activate the theme.
+8. In WP Admin, assign each page template to the matching page.
+
+## Why you saw “missing style.css”
+
+WordPress only accepts uploads that are complete themes. A valid theme requires `style.css` with a theme header. This package now includes that file.
 
 ## How rendering works
 
