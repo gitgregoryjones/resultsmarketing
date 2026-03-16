@@ -108,42 +108,33 @@
             display: inline-block;
         }
 
-        .mobile-employee-scroll {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            padding: 0 1rem 1rem;
-            scroll-snap-type: x mandatory;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .mobile-scroll-card {
-            flex: 0 0 85vw;
-            min-width: 85vw;
-            scroll-snap-align: start;
-        }
-
         .mobile-scroll-hint {
-            margin: 0 1rem 1rem;
-            color: #4b5563;
-            font-size: 0.875rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
+            display: none;
         }
 
-        @media (min-width: 768px) {
-            .mobile-employee-scroll {
-                display: block;
-                overflow-x: visible;
-                padding: 0;
-            }
-
-            .mobile-scroll-card {
-                min-width: 0;
-            }
-
+        @media (max-width: 767px) {
             .mobile-scroll-hint {
-                display: none;
+                display: block;
+                margin: 0 1rem 0.75rem;
+                color: #4b5563;
+                font-size: 0.875rem;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+            }
+
+            .team-cards-grid {
+                display: flex;
+                gap: 1rem;
+                overflow-x: auto;
+                padding: 0 1rem 1rem;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .team-cards-grid > * {
+                flex: 0 0 85vw;
+                min-width: 85vw;
+                scroll-snap-align: start;
             }
         }
     </style>
@@ -359,7 +350,8 @@ ministries at Word of Faith Family Worship Center.</p>
       <div class="text-black text-2xl md:text-3xl lg:text-4xl font-bold font-['Merriweather'] leading-7 md:leading-9 lg:leading-[48px] max-w-4xl" draggable="true">
         We Tirelessly Work To Help You Win</div>
     </div>
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
+<p class="mobile-scroll-hint" draggable="true">Swipe left or right to view more cards.</p>
+<div class="team-cards-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
 
   
   
@@ -947,25 +939,6 @@ organizational transformation.
             }
         });
 
-        if (window.matchMedia('(max-width: 767px)').matches && employeeCards.length) {
-            const parent = employeeCards[0].parentElement;
-            if (parent && !parent.querySelector('.mobile-employee-scroll')) {
-                const scrollHint = document.createElement('p');
-                scrollHint.className = 'mobile-scroll-hint';
-                scrollHint.textContent = 'Swipe left or right to view more team members.';
-
-                const scrollTrack = document.createElement('div');
-                scrollTrack.className = 'mobile-employee-scroll';
-
-                employeeCards.forEach((card) => {
-                    card.classList.add('mobile-scroll-card');
-                    scrollTrack.appendChild(card);
-                });
-
-                parent.appendChild(scrollHint);
-                parent.appendChild(scrollTrack);
-            }
-        }
 
         employeeCards.forEach(card => {
             // Click handler is already in the onclick attribute
