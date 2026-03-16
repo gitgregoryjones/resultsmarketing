@@ -689,12 +689,12 @@ async function publishSite() {
       html = await applyStylesToHtml(html);
       if (siteName) {
         const root = parse(html);
-        root.querySelectorAll('[data-cms-image]').forEach((el) => {
+        root.querySelectorAll('[data-cms-image], [data-cms-bg]').forEach((el) => {
           const src = el.getAttribute('src') || '';
           if (!src) return;
           el.setAttribute('src', prefixAssetPath(src, siteName));
         });
-        root.querySelectorAll('[data-cms-bg]').forEach((el) => {
+        root.querySelectorAll('[data-cms-image], [data-cms-bg]').forEach((el) => {
           const style = el.getAttribute('style') || '';
           const current = extractBackgroundImage(style);
           if (!current) return;
