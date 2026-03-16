@@ -305,6 +305,70 @@ function updateBackgroundStyle(style = '', value = '') {
   return parts.join('; ');
 }
 
+function extensionForImageMime(mimeSubtype = '') {
+  const normalized = String(mimeSubtype || '').toLowerCase();
+  if (normalized === 'jpeg' || normalized === 'jpg') return '.jpg';
+  if (normalized === 'svg+xml') return '.svg';
+  if (normalized === 'x-icon' || normalized === 'vnd.microsoft.icon') return '.ico';
+  if (normalized === 'webp') return '.webp';
+  if (normalized === 'gif') return '.gif';
+  return '.png';
+}
+
+async function writeBase64ImageToDisk(dataUrl, baseName = 'embedded') {
+  if (typeof dataUrl !== 'string') return dataUrl;
+  const trimmed = dataUrl.trim();
+  const match = trimmed.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=\s]+)$/i);
+  if (!match) return dataUrl;
+
+  await fs.mkdir(IMAGES_DIR, { recursive: true });
+  const extension = extensionForImageMime(match[1]);
+  const safeBase = String(baseName || 'embedded').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
+  const filename = `${safeBase || 'embedded'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${extension}`;
+  const targetPath = path.join(IMAGES_DIR, filename);
+  const base64Payload = match[2].replace(/\s+/g, '');
+  await fs.writeFile(targetPath, Buffer.from(base64Payload, 'base64'));
+  return `/images/${filename}`;
+}
+
+async function localizeEmbeddedImagesInHtml(html, fileName = 'page') {
+  if (!html || !html.includes('data:image/')) return html;
+  const root = parse(html);
+  const fileBase = path.basename(fileName, path.extname(fileName)) || 'page';
+  let changed = false;
+
+  const allElements = root.querySelectorAll('*');
+  for (const element of allElements) {
+    const src = element.getAttribute('src');
+    if (typeof src === 'string' && src.trim().startsWith('data:image/')) {
+      const persistedSrc = await writeBase64ImageToDisk(src, fileBase);
+      if (persistedSrc !== src) {
+        element.setAttribute('src', persistedSrc);
+        changed = true;
+      }
+    }
+
+    const style = element.getAttribute('style');
+    if (typeof style === 'string' && style.includes('data:image/')) {
+      const matches = [...style.matchAll(/url\((['"]?)(data:image\/[a-zA-Z0-9.+-]+;base64,[^\s'"\)]+)\1\)/gi)];
+      let nextStyle = style;
+      for (const [, quote, dataUrl] of matches) {
+        const persistedSrc = await writeBase64ImageToDisk(dataUrl, fileBase);
+        if (persistedSrc !== dataUrl) {
+          const wrapped = `url(${quote || ''}${persistedSrc}${quote || ''})`;
+          nextStyle = nextStyle.replace(`url(${quote || ''}${dataUrl}${quote || ''})`, wrapped);
+          changed = true;
+        }
+      }
+      if (nextStyle !== style) {
+        element.setAttribute('style', nextStyle);
+      }
+    }
+  }
+
+  return changed ? root.toString() : html;
+}
+
 function extractContentFromHtml(html) {
   const root = parse(html);
   const values = {};
@@ -616,6 +680,11 @@ async function publishSite() {
   for (const file of files) {
     try {
       let html = await fs.readFile(htmlPathFor(file), 'utf8');
+      const localizedHtml = await localizeEmbeddedImagesInHtml(html, file);
+      if (localizedHtml !== html) {
+        await fs.writeFile(htmlPathFor(file), localizedHtml);
+      }
+      html = localizedHtml;
       html = await applyComponentsToHtml(html);
       html = await applyStylesToHtml(html);
       if (siteName) {
@@ -1390,6 +1459,8 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
             storedValue = `/images/${filename}`;
           }
 
+          storedValue = await writeBase64ImageToDisk(storedValue, targetFile.replace('.html', ''));
+
           if (image && image.sourceType === 'url' && image.url) {
             storedValue = image.url;
           }
@@ -1446,11 +1517,12 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
         }
 
         const cleanedHtml = stripContentEditable(currentHtml);
-        await persistComponentSources(cleanedHtml);
-        await persistStyleSources(cleanedHtml);
-        await fs.writeFile(htmlPath, cleanedHtml);
+        const localizedHtml = await localizeEmbeddedImagesInHtml(cleanedHtml, targetFile);
+        await persistComponentSources(localizedHtml);
+        await persistStyleSources(localizedHtml);
+        await fs.writeFile(htmlPath, localizedHtml);
 
-        const { values, siteName: persistedSiteName } = extractContentFromHtml(cleanedHtml);
+        const { values, siteName: persistedSiteName } = extractContentFromHtml(localizedHtml);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ content: values, tags: {}, siteName: persistedSiteName || finalSiteName }));
