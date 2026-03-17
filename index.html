@@ -65,9 +65,15 @@
         
     <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link">
     
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="max-w-7xl mx-auto relative flex items-center justify-start md:justify-between">
             
-            <div class="w-[147px] h-[69px] flex items-center justify-center rounded">
+            <button class="md:hidden hamburger w-6 h-6 flex flex-col justify-center items-start gap-1 mb-4 md:mb-1" id="hamburger">
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+            </button>
+
+            <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]">
                 <a href="index.html" style="color: inherit; text-decoration: none"><img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/resultsmarketing/images/resultslogo-1767007084921.png" data-link="index.html"></a>
             </div>
 
@@ -85,12 +91,7 @@
                 
             </div>
 
-            
-            <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger">
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
-            </button>
+
         </div>
 
         
@@ -276,10 +277,10 @@
                         
                     </div>
                 </div><div class="w-full lg:w-[37%] h-auto lg:h-full bg-black p-6 lg:p-12 flex flex-col justify-center">
-                    <div class="max-w-full lg:max-w-[480px]">
+                    <div class="max-w-full lg:max-w-[480px] text-center md:text-start">
                         
                         <h1 class="text-white text-3xl  md:text-4xl lg:text-6xl font-semibold font-['Oswald'] leading-tight lg:leading-[64px] mb-4 lg:mb-6">
-                            <span data-cms-text="headline" class style="font-size: 60px;">Every Brand Deserves A</span>
+                            <span data-cms-text="headline" class="text-3xl ">Every Brand Deserves A</span>
                             <span class="block lg:inline bg-blue-600 text-purple-600" data-cms-text="hero.headline.emphasis" style="background-color: rgb(2, 11, 29); color: rgb(250, 44, 55);">Champion</span>
                         </h1>
 
@@ -314,7 +315,7 @@
             
             <div data-json-source="todos" class="flex-1 min-w-[300px] bg-[#F4483A] p-8 flex flex-col justify-center" style="color: rgb(51, 108, 83); background-color: rgb(250, 44, 55);">
               <div data-template-item="stat">
-                <div class="text-center md:text-center text-white text-4xl md:text-3xl font-bold font-manrope mb-5" style="color: rgb(255, 255, 255); display: flex; flex-direction: row;" data-cms-text="docwatch-2-2" pdata-server-text="todos.3.todo" data-cms-image="docwatch-2">Results Matter</div>
+                <div class="text-center md:text-center text-white text-2xl md:text-4xl md:text-3xl font-bold font-manrope mb-5" style="color: rgb(255, 255, 255); display: flex; flex-direction: row;" data-cms-text="docwatch-2-2" pdata-server-text="todos.3.todo" data-cms-image="docwatch-2">Results Matter</div>
                 <div class="text-white text-xl md:text-2xl font-semibold font-manrope leading-8" data-cms-text="div.we-grow-brands-across-beauty-personal-care-and-specialty-retail-with-the-same-conviction-care-and-commitment-we-ve-brought-to-multicultural-and-independent-founders-for-decades">
                     We grow brands across beauty, personal care, and specialty retail — with the same conviction, care, and commitment we've brought to multicultural and independent founders for decades</div>
               </div>
@@ -425,16 +426,16 @@
  <div class="flex grid md:grid-cols-12  zmax-w-7xl mx-auto ">      
 <div class="w-full inline-flex md:col-span-7 flex-col justify-start items-center gap-2.5 py-10 px-8 md:px-24" data-cms-text="div.retail-readiness-is-in-our-dna-emerging-brands-for-large-scaling-brands-for-beauty-and-speciality-brands">
   
-  <div class=" text-center justify-start text-white text-3xl font-semibold font-['Inter'] pb-6">Retail Readiness:  Our Superpower</div>
+  <div class=" text-center justify-start text-white text-2xl md:text-3xl font-semibold font-['Inter'] pb-6">Retail Readiness:  Our Superpower</div>
   <div class="w-full flex flex-col justify-start items-start gap-2.5 ">
     
     <div class="w-full border border-white rounded-lg accordion-header w-full h-20 relative flex justify-between items-center cursor-pointer transition-all duration-300" data-accordion="emerging-brands">
       
-      <div class="flex items-center text-white text-xl font-semibold font-['Inter'] pl-6">
+      <div class="flex items-center text-white text-lg md:text-2xl font-semibold font-['Inter'] pl-6">
         Emerging Brands
       </div>
       <div class="accordion-icon pr-6">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" fill="#F4483A" class style="background-color: rgb(250, 44, 55);"></rect>
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" stroke="white"></rect>
           <path d="M12 18L24 30L36 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -451,11 +452,11 @@
     
     <div class="border border-white rounded-lg accordion-header w-full h-20 relative flex justify-between items-center cursor-pointer transition-all duration-300" data-accordion="large-scaling-brands">
       
-      <div class="flex items-center text-white text-2xl font-semibold font-['Inter'] pl-6">
+      <div class="flex items-center text-white text-lg md:text-2xl font-semibold font-['Inter'] pl-6">
         For Large, scaling Brands
       </div>
       <div class="accordion-icon pr-6">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" fill="#F4483A"></rect>
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" stroke="white"></rect>
           <path d="M12 18L24 30L36 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -471,11 +472,11 @@
     
     <div class="border border-white rounded-lg accordion-header w-full h-20 relative flex justify-between items-center cursor-pointer transition-all duration-300" data-accordion="for-beauty-and-speciality-brands">
       
-      <div class="flex items-center text-white text-2xl font-semibold font-['Inter'] pl-6">
+      <div class="flex items-center text-white text-lg md:text-2xl font-semibold font-['Inter'] pl-6">
         For Beauty And Speciality Brands
       </div>
       <div class="accordion-icon pr-6">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" fill="#F4483A"></rect>
           <rect x="0.5" y="0.5" width="47" height="47" rx="4.5" stroke="white"></rect>
           <path d="M12 18L24 30L36 18" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -527,10 +528,10 @@
         
        </div>
     </div>
-    <div class="bg-white md:p-12 zmax-w-7xl w-full md:px-24 px-4" data-component-id="missing-piece" data-cms-text="div.we-re-the-missing-piece-of-your-growth-puzzle-your-champion-at-every-phase-of-the-journey-assessment-growth-planning-sell-in-sell-through-analytics-clear-eyed-truth-market-reality-insights-that-protect-your-next-move-read-more-about-our-services-strategic-roadmap-for-sustainable-growth-we-build-actionable-plans-that-drive-results-learn-more-about-growth-planning-driving-consumer-demand-and-purchase-we-create-campaigns-that-convert-interest-into-sales-explore-sell-through-strategies-data-driven-insights-and-performance-tracking-we-measure-what-matters-to-optimize-your-growth-see-our-analytics-capabilities-assessment-clear-eyed-truth-market-reality-insights-that-protect-your-next-move-read-more-about-our-services-growth-planning-strategic-roadmap-for-sustainable-growth-we-build-actionable-plans-that-drive-results-learn-more-about-growth-planning-sell-in-effective-channel-strategy-and-distribution-we-ensure-your-products-reach-the-right-markets-discover-our-sell-in-approach-sell-through-driving-consumer-demand-and-purchase-we-create-campaigns-that-convert-interest-into-sales-explore-sell-through-strategies-analytics-data-driven-insights-and-performance-tracking-we-measure-what-matters-to-optimize-your-growth-see-our-analytics-capabilities-we-don-t-just-show-up-we-stand-tall-guide-the-strategy-manage-the-execution-and-stay-accountable-to-results-that-last-">
+    <div class="bg-white md:p-12 zmax-w-7xl w-full md:px-24 px-4" xdata-component-id="missing-piece" data-cms-text="div.we-re-the-missing-piece-of-your-growth-puzzle-your-champion-at-every-phase-of-the-journey-assessment-growth-planning-sell-in-sell-through-analytics-clear-eyed-truth-market-reality-insights-that-protect-your-next-move-read-more-about-our-services-strategic-roadmap-for-sustainable-growth-we-build-actionable-plans-that-drive-results-learn-more-about-growth-planning-driving-consumer-demand-and-purchase-we-create-campaigns-that-convert-interest-into-sales-explore-sell-through-strategies-data-driven-insights-and-performance-tracking-we-measure-what-matters-to-optimize-your-growth-see-our-analytics-capabilities-assessment-clear-eyed-truth-market-reality-insights-that-protect-your-next-move-read-more-about-our-services-growth-planning-strategic-roadmap-for-sustainable-growth-we-build-actionable-plans-that-drive-results-learn-more-about-growth-planning-sell-in-effective-channel-strategy-and-distribution-we-ensure-your-products-reach-the-right-markets-discover-our-sell-in-approach-sell-through-driving-consumer-demand-and-purchase-we-create-campaigns-that-convert-interest-into-sales-explore-sell-through-strategies-analytics-data-driven-insights-and-performance-tracking-we-measure-what-matters-to-optimize-your-growth-see-our-analytics-capabilities-we-don-t-just-show-up-we-stand-tall-guide-the-strategy-manage-the-execution-and-stay-accountable-to-results-that-last-">
         
-        <div class="mb-8 md:mb-12 text-center md:text-left">
-            <h1 class="text-4xl font-bold mb-4 leading-tight text-red-500" data-cms-text="h1.we-re-the-missing-piece-of-your-growth-puzzle">We Champion at Every Phase</h1>
+        <div class="mb-8 mt-4 md:mb-12 text-center md:text-left">
+            <h1 class="text-2xl md:text-4xl font-bold mb-4 leading-tight text-red-500" data-cms-text="h1.we-re-the-missing-piece-of-your-growth-puzzle">We Champion at Every Phase</h1>
             <p class="hidden text-2xl md:text-3xl lg:text-3xl font-semibold leading-snug text-white" data-cms-text="p.your-champion-at-every-phase-of-the-journey">We Champion at Every Phase
             </p>
         </div>
@@ -773,7 +774,7 @@
 
         
         <div class="mt-8 md:mt-12 text-center md:text-left">
-            <p class="text-2xl md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-relaxed" data-cms-text="p.we-don-t-just-show-up-we-stand-tall-guide-the-strategy-manage-the-execution-and-stay-accountable-to-results-that-last-">We take a full-service approach to your business.
+            <p class="text-base my-4 md:text-3xl lg:text-3xl font-semibold text-gray-800 leading-relaxed" data-cms-text="p.we-don-t-just-show-up-we-stand-tall-guide-the-strategy-manage-the-execution-and-stay-accountable-to-results-that-last-">We take a full-service approach to your business.
  No matter the scope, every assignment is an opportunity to exceed expectations.</p>
         </div>
     </div>
