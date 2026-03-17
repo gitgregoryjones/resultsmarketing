@@ -1,8 +1,14 @@
 <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link" draggable="true">
     
-        <div class="max-w-7xl mx-auto flex justify-between items-center" draggable="true">
+        <div class="max-w-7xl mx-auto relative flex items-center justify-start md:justify-between" draggable="true">
             
-            <div class="w-[147px] h-[69px] flex items-center justify-center rounded" draggable="true">
+            <button class="md:hidden hamburger w-10 h-10 flex flex-col justify-center items-start gap-2" id="hamburger" draggable="true">
+                <span class="hamburger-line w-10 h-[3px] bg-gray-700 rounded-sm" draggable="true"></span>
+                <span class="hamburger-line w-10 h-[3px] bg-gray-700 rounded-sm" draggable="true"></span>
+                <span class="hamburger-line w-10 h-[3px] bg-gray-700 rounded-sm" draggable="true"></span>
+            </button>
+
+            <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]" draggable="true">
                 <img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/images/resultslogo-1767007084921.png" data-link="index.html" draggable="true">
             </div>
 
@@ -20,12 +26,7 @@
                 
             </div>
 
-            
-            <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger" draggable="true">
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-            </button>
+
         </div>
 
         
