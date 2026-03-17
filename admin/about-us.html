@@ -114,7 +114,7 @@
 
         @media (max-width: 767px) {
             .mobile-scroll-hint {
-                display: block;
+                display: none;
                 margin: 0 1rem 0.75rem;
                 color: #4b5563;
                 font-size: 0.875rem;
@@ -123,18 +123,56 @@
             }
 
             .team-cards-grid {
-                display: flex;
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
                 gap: 1rem;
-                overflow-x: auto;
-                padding: 0 1rem 1rem;
-                scroll-snap-type: x mandatory;
-                -webkit-overflow-scrolling: touch;
+                padding: 0 0.5rem 1rem;
             }
 
             .team-cards-grid > * {
-                flex: 0 0 85vw;
-                min-width: 85vw;
-                scroll-snap-align: start;
+                min-width: 0;
+            }
+
+            .employee-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                padding: 0;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .employee-card > div:first-child {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                height: auto;
+                border-radius: 9999px;
+                overflow: hidden;
+                align-self: center;
+                padding: 0;
+            }
+
+            .employee-card .md\:hidden,
+            .employee-card .bio-short,
+            .employee-card .view-bio-btn,
+            .employee-card .w-full.md\:flex-1 {
+                display: none;
+            }
+
+            .employee-card::after {
+                content: attr(data-mobile-name);
+                white-space: pre-line;
+                text-align: center;
+                font-size: 0.7rem;
+                line-height: 1.2;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            .mobile-hide-apostrophe-card {
+                display: none;
             }
         }
     </style>
@@ -930,12 +968,30 @@ organizational transformation.
             const mobileTitle = card.querySelector('.md\\:hidden.text-white.text-2xl');
             const mobileBio = card.querySelector('.md\\:hidden.text-white.text-sm');
 
+            if (desktopTitle) {
+                const nameParts = desktopTitle.split('-').map(part => part.trim()).filter(Boolean);
+                const firstName = nameParts[0] ? nameParts[0].split(' ')[0] : '';
+                const title = nameParts[1] || '';
+                const mobileLabel = [firstName, title].filter(Boolean).join('\n');
+                if (mobileLabel) {
+                    card.setAttribute('data-mobile-name', mobileLabel);
+                }
+            }
+
             if (mobileTitle && desktopTitle) {
                 mobileTitle.textContent = desktopTitle;
             }
 
             if (mobileBio && desktopBio) {
                 mobileBio.textContent = desktopBio;
+            }
+        });
+
+        const testimonialCards = document.querySelectorAll('[data-component-id="demo-testimonial"]');
+        testimonialCards.forEach(card => {
+            const text = normalizeText(card.textContent);
+            if (/['’]/.test(text)) {
+                card.classList.add('mobile-hide-apostrophe-card');
             }
         });
 
