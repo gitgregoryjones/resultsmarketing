@@ -114,7 +114,7 @@
 
         @media (max-width: 767px) {
             .mobile-scroll-hint {
-                display: block;
+                display: none;
                 margin: 0 1rem 0.75rem;
                 color: #4b5563;
                 font-size: 0.875rem;
@@ -123,18 +123,56 @@
             }
 
             .team-cards-grid {
-                display: flex;
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
                 gap: 1rem;
-                overflow-x: auto;
-                padding: 0 1rem 1rem;
-                scroll-snap-type: x mandatory;
-                -webkit-overflow-scrolling: touch;
+                padding: 0 0.5rem 1rem;
             }
 
             .team-cards-grid > * {
-                flex: 0 0 85vw;
-                min-width: 85vw;
-                scroll-snap-align: start;
+                min-width: 0;
+            }
+
+            .employee-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 0.5rem;
+                padding: 0;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .employee-card > div:first-child {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                height: auto;
+                border-radius: 9999px;
+                overflow: hidden;
+                align-self: center;
+                padding: 0;
+            }
+
+            .employee-card .md\:hidden,
+            .employee-card .bio-short,
+            .employee-card .view-bio-btn,
+            .employee-card .w-full.md\:flex-1 {
+                display: none;
+            }
+
+            .employee-card::after {
+                content: attr(data-mobile-name);
+                white-space: pre-line;
+                text-align: center;
+                font-size: 0.7rem;
+                line-height: 1.2;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            .mobile-hide-apostrophe-card {
+                display: none;
             }
         }
     </style>
@@ -351,12 +389,12 @@ ministries at Word of Faith Family Worship Center.</p>
         We Tirelessly Work To Help You Win</div>
     </div>
 <p class="mobile-scroll-hint" draggable="true">Swipe left or right to view more cards.</p>
-<div class="team-cards-grid grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
+<div class="team-cards-grid grid grid-cols-3 xl:grid-cols-2 gap-4 md:gap-2" draggable="true">
 
   
   
 
-  <div class="w-full h-72 relative bg-white" data-component-id="demo-testimonial" data-cms-text="div.-p-elsie-and-team-literally-saved-our-business-during-covid-p-garison-james-ceo-anderson-haircare-2" draggable="true">
+  <div class="hidden m:flex w-full h-72 relative bg-white" xdata-component-id="demo-testimonial" data-cms-text="div.-p-elsie-and-team-literally-saved-our-business-during-covid-p-garison-james-ceo-anderson-haircare-2" draggable="true">
   <div data-svg-wrapper="" class="left-[48px] top-0 absolute" draggable="true">
     <svg width="144" height="137" viewBox="0 0 144 137" fill="none" xmlns="http://www.w3.org/2000/svg" draggable="true">
     <path d="M143.1 1.35L139.8 26.25C131.6 25.65 125.4 27.25 121.2 31.05C117 34.85 114.3 40.05 113.1 46.65C111.9 53.25 111.6 60.55 112.2 68.55H143.1V136.35H84.3V59.55C84.3 38.55 89.4 22.75 99.6 12.15C110 1.35 124.5 -2.25 143.1 1.35ZM58.8 1.35L55.5 26.25C47.3 25.65 41.1 27.25 36.9 31.05C32.7 34.85 30 40.05 28.8 46.65C27.6 53.25 27.3 60.55 27.9 68.55H58.8V136.35H0V59.55C0 38.55 5.1 22.75 15.3 12.15C25.7 1.35 40.2 -2.25 58.8 1.35Z" fill="var(--Option-7-brand-10, #2930B9)" fill-opacity="0.1" draggable="true"></path>
@@ -456,7 +494,7 @@ ministries at Word of Faith Family Worship Center.</p>
   
   
 
-<div class="w-full h-72 relative bg-white" data-component-id="demo-testimonial" data-cms-text="div.-p-elsie-and-team-literally-saved-our-business-during-covid-p-garison-james-ceo-anderson-haircare-2" draggable="true">
+<div class="hidden m:flex w-full h-72 relative bg-white" xdata-component-id="demo-testimonial" data-cms-text="div.-p-elsie-and-team-literally-saved-our-business-during-covid-p-garison-james-ceo-anderson-haircare-2" draggable="true">
   <div data-svg-wrapper="" class="left-[48px] top-0 absolute" draggable="true">
     <svg width="144" height="137" viewBox="0 0 144 137" fill="none" xmlns="http://www.w3.org/2000/svg" draggable="true">
     <path d="M143.1 1.35L139.8 26.25C131.6 25.65 125.4 27.25 121.2 31.05C117 34.85 114.3 40.05 113.1 46.65C111.9 53.25 111.6 60.55 112.2 68.55H143.1V136.35H84.3V59.55C84.3 38.55 89.4 22.75 99.6 12.15C110 1.35 124.5 -2.25 143.1 1.35ZM58.8 1.35L55.5 26.25C47.3 25.65 41.1 27.25 36.9 31.05C32.7 34.85 30 40.05 28.8 46.65C27.6 53.25 27.3 60.55 27.9 68.55H58.8V136.35H0V59.55C0 38.55 5.1 22.75 15.3 12.15C25.7 1.35 40.2 -2.25 58.8 1.35Z" fill="var(--Option-7-brand-10, #2930B9)" fill-opacity="0.1" draggable="true"></path>
@@ -930,12 +968,30 @@ organizational transformation.
             const mobileTitle = card.querySelector('.md\\:hidden.text-white.text-2xl');
             const mobileBio = card.querySelector('.md\\:hidden.text-white.text-sm');
 
+            if (desktopTitle) {
+                const nameParts = desktopTitle.split('-').map(part => part.trim()).filter(Boolean);
+                const firstName = nameParts[0] ? nameParts[0].split(' ')[0] : '';
+                const title = nameParts[1] || '';
+                const mobileLabel = [firstName, title].filter(Boolean).join('\n');
+                if (mobileLabel) {
+                    card.setAttribute('data-mobile-name', mobileLabel);
+                }
+            }
+
             if (mobileTitle && desktopTitle) {
                 mobileTitle.textContent = desktopTitle;
             }
 
             if (mobileBio && desktopBio) {
                 mobileBio.textContent = desktopBio;
+            }
+        });
+
+        const testimonialCards = document.querySelectorAll('[data-component-id="demo-testimonial"]');
+        testimonialCards.forEach(card => {
+            const text = normalizeText(card.textContent);
+            if (/['’]/.test(text)) {
+                card.classList.add('mobile-hide-apostrophe-card');
             }
         });
 
