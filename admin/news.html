@@ -66,9 +66,15 @@
         
     <nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link" draggable="true">
     
-        <div class="max-w-7xl mx-auto flex justify-between items-center" draggable="true">
+        <div class="max-w-7xl mx-auto relative flex items-center justify-start md:justify-between" draggable="true">
             
-            <div class="w-[147px] h-[69px] flex items-center justify-center rounded" draggable="true">
+            <button class="md:hidden hamburger w-6 h-6 flex flex-col justify-center items-start gap-1 mb-4 md:mb-1" id="hamburger" draggable="true">
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm" draggable="true"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm" draggable="true"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm" draggable="true"></span>
+            </button>
+
+            <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]" draggable="true">
                 <img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/images/resultslogo-1767007084921.png" data-link="index.html" draggable="true">
             </div>
 
@@ -76,22 +82,17 @@
             <div class="hidden md:flex flex-1 justify-center items-center" draggable="true">
                 <div class="flex justify-start items-center gap-6 lg:gap-8" draggable="true">
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.home" data-link="index.html" style="" draggable="true">Home</a>
-                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="about-us.html" draggable="true">About Us</a>
+                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="about-us.html" style="color: rgb(220, 38, 38);" draggable="true">About Us</a>
                     <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">News</a>
-                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="color: rgb(220, 38, 38);" draggable="true">Our Services</a>
+                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="" draggable="true">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.contact-us" data-link="contact-us.html" style="" draggable="true">Contact Us</a>
                 </div>
             </div>
-             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-image:url('/images/powerbi2-1766477317452.png')" images="" powerbi2-1766477317452.png')"="" http:="" www="" .resultssalesmarketing="" .com="" wp-content="" themes="" resultssalesmarketing="" logo="" .png="" )="" data-cms-bg="auto.div-2-2" data-link="https://powerbi.com" draggable="true">
+             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-image:url('/images/powerbi2-1766477317452.png')" images="" powerbi2-1766477317452="" .png="" )="" http:="" www="" .resultssalesmarketing="" .com="" wp-content="" themes="" resultssalesmarketing="" logo="" data-cms-image="auto.div-2-2" draggable="true">
                 
             </div>
 
-            
-            <button class="md:hidden hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="hamburger" draggable="true">
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-                <span class="hamburger-line w-6 h-0.5 bg-gray-700" draggable="true"></span>
-            </button>
+
         </div>
 
         
@@ -108,9 +109,9 @@
             
             <div class="flex flex-col space-y-6" draggable="true">
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Home</a>
-                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">About Us</a>
+                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="color: rgb(220, 38, 38);" draggable="true">About Us</a>
                 <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link="" style="" draggable="true">News</a>
-                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="color: rgb(220, 38, 38);" draggable="true">Our Services</a>
+                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Contact Us</a>
                 
                 
@@ -184,13 +185,13 @@
                     }
                 });
 
-                document.querySelectorAll('a[href="contact-us.html"]').forEach((link) => {
+                /*document.querySelectorAll('a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
                     link.addEventListener("click", (event) => {
                         event.stopPropagation();
                         event.preventDefault();
                         openComingSoon();
                     });
-                });
+                });*/
 
                 comingSoonOverlay?.addEventListener("click", (event) => {
                     if (event.target === comingSoonOverlay) {
@@ -205,7 +206,7 @@
         </script>
     </nav>
 
-        <div class="w-full relative min-h-[498px] md:h-[498px] overflow-hidden" draggable="true">
+        <div class="w-full relative  md:h-[498px] overflow-hidden" draggable="true">
             
             
 
@@ -269,7 +270,7 @@
             <div class="w-full h-full flex flex-col lg:flex-row" draggable="true">
                 
                 
-                <div class="w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300 overflow-hidden cms-dragging" data-cms-bg="hero.image" style="background-image:url('&quot;/images/chart-1769477560884.png&quot;'); background-size:cover; background-position:center;" draggable="true">
+                <div class="hidden md:flex w-full lg:w-[63%] h-[250px] lg:h-full relative border border-red-500/30 bg-gradient-to-br from-gray-100 to-gray-300 overflow-hidden cms-dragging" data-cms-bg="hero.image" style="background-image:url('&quot;/images/chart-1769477560884.png&quot;'); background-size:cover; background-position:center;" draggable="true">
                     <div class="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 cms-outlined" style="background-size: cover; background-image: url(&quot;https://i.postimg.cc/FFWnGWrq/news.png&quot;);" data-cms-bg="auto.div-2" draggable="true">
             
         </div>
@@ -280,15 +281,16 @@
                     <div class="max-w-full lg:max-w-[480px]" draggable="true">
                         
                         <h1 class="text-white text-3xl  md:text-4xl lg:text-6xl font-semibold font-['Oswald'] leading-tight lg:leading-[64px] mb-4 lg:mb-6" draggable="true">
-                            <span data-cms-text="headline" class="" style="font-size: 45px;" draggable="true">Results In The News</span>
-                            <span class="block lg:inline bg-blue-600 text-red-500" data-cms-text="hero.headline.emphasis" style="background-color: rgb(2, 11, 29); font-size: 45px;" draggable="true">Making a Difference</span>
+                            <span data-cms-text="headline" class="md:text-[45px]"  draggable="true">Results In The News</span>
+                            <span class="block lg:inline bg-blue-600 text-red-500 md:text-[45px]" data-cms-text="hero.headline.emphasis" style="background-color: rgb(2, 11, 29); " draggable="true">Making a Difference</span>
                         </h1>
 
                         
-                        <p class="text-white text-lg md:text-xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed lg:leading-8 mb-6 lg:mb-10" data-cms-text="hero.supporting" draggable="true">See the latest news below</p>
+                        <p class="hidden md:flex text-white text-lg md:text-xl lg:text-3xl font-normal font-['Oswald'] leading-relaxed lg:leading-8 mb-6 lg:mb-10" data-cms-text="hero.supporting" draggable="true">See the latest news below</p>
+                        <div class="md:hidden text-white text-lg w-full flex flex-col font-normal font-['Oswald'] mb-6 sm:flex-row gap-4" draggable="true">We Network At The Biggest Expos and Events in The World</div>
 
                         
-                        <button class="group w-full px-6 py-4 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300 text-red-500 bg-red-500" data-cms-text="button.let-s-talk-results" draggable="true">
+                        <button class="hidden md:flex   group w-full px-6 py-4 hover:bg-red-600 rounded-[10px] outline outline-1 outline-white inline-flex justify-center items-center gap-3 transition-all duration-300 text-red-500 bg-red-500" data-cms-text="button.let-s-talk-results" draggable="true">
                             <span class="text-white text-sm sm:text-base font-extrabold font-['Inter']" data-cms-text="cta.primary" draggable="true">
                                 Let's Talk RESULTS
                             </span>
@@ -317,7 +319,7 @@
             
            <div class="flex gap-2 flex-col w-full bg-white p-6" draggable="true">
         <div class="text-red-500 text-xs md:text-base font-medium font-inter uppercase leading-6 tracking-widest" data-cms-text="div.our-expertise" draggable="true">NEWS</div>
-        <div class="self-stretch justify-center text-center text-Option-5-typography-text-primary text-4xl font-bold font-['Merriweather'] mb-12  " draggable="true">We Network At The Biggest Expos and Events in The World</div>
+        <div class="hidden md:flex self-stretch justify-center text-center text-Option-5-typography-text-primary text-4xl font-bold font-['Merriweather'] mb-12  " draggable="true">We Network At The Biggest Expos and Events in The World</div>
         
 <div class="news-story w-full max-w-7xl mx-auto bg-white rounded-xl shadow-xl p-6 md:p-10 font-sans mb-8" draggable="true">
   <div class="story-container grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start" draggable="true">
