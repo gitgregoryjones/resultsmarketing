@@ -124,6 +124,34 @@
   sidebar.classList.add('cms-ui');
   const POSITION_STORAGE_KEY = 'cmsSidebarPosition';
   const WIREFRAME_STORAGE_KEY = 'cmsWireframeEnabled';
+  const adminCtaRedirectLabels = [
+    "let's talk results",
+    'let us be your champion',
+    'start the conversation',
+  ];
+
+  function normalizeCtaText(value) {
+    return (value || '')
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function bindAdminCtaRedirects() {
+    document.addEventListener('click', (event) => {
+      const clickable = event.target.closest('a, button');
+      if (!clickable) return;
+
+      const label = normalizeCtaText(clickable.textContent);
+      const shouldRedirect = adminCtaRedirectLabels.some((ctaLabel) => label.includes(ctaLabel));
+      if (!shouldRedirect) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = 'contact-us.html';
+    });
+  }
+
   sidebar.innerHTML = `
     <div class="cms-sidebar__header">
       <div class="cms-sidebar__header-row">
@@ -3288,6 +3316,7 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
+    bindAdminCtaRedirects();
     loadFiles();
     loadComponentOptions();
     applySidebarPosition();
