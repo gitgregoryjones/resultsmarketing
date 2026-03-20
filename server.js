@@ -563,6 +563,19 @@ function stripDraggableAttributes(html) {
   return html;
 }
 
+function stripHiddenCmsElements(html) {
+  try {
+    const root = parse(html);
+    root.querySelectorAll('[data-cms-hidden="true"]').forEach((el) => {
+      el.remove();
+    });
+    return root.toString();
+  } catch (err) {
+    console.warn('Unable to strip hidden CMS elements from HTML', err);
+  }
+  return html;
+}
+
 function ensureAnchorStyles(element) {
   const styleAttr = element.getAttribute('style') || '';
   const declarations = styleAttr
@@ -708,6 +721,7 @@ async function publishSite() {
         html = root.toString();
       }
       html = wrapDataLinks(html);
+      html = stripHiddenCmsElements(html);
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);

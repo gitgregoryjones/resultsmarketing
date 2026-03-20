@@ -561,20 +561,13 @@
   }
 
   function applyHiddenStateToElement(el) {
-    if (!el || !el.style) return;
+    if (!el) return;
     const hidden = isElementHidden(el);
     el.classList.toggle('cms-hidden-preview', hidden && editMode);
+    el.classList.toggle('cms-hidden-collapsed', hidden && !editMode);
     if (!hidden) {
-      if (el.dataset.cmsHiddenDisplay !== undefined) {
-        el.style.display = el.dataset.cmsHiddenDisplay;
-        delete el.dataset.cmsHiddenDisplay;
-      }
       return;
     }
-    if (el.dataset.cmsHiddenDisplay === undefined) {
-      el.dataset.cmsHiddenDisplay = el.style.display || '';
-    }
-    el.style.display = editMode ? (el.dataset.cmsHiddenDisplay || '') : 'none';
   }
 
   function applyHiddenStateToAllElements() {
