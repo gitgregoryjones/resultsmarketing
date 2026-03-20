@@ -1771,3 +1771,33 @@ body.cms-editing #cms-toggle::after {
 .cms-gallery-open {
   overflow: hidden;
 }
+
+html.compact-admin-hero .hero-image-collapsed {
+  display: none !important;
+}
+
+html.compact-admin-hero .hero-layout-collapsed {
+  display: block !important;
+}
+
+html.compact-admin-hero .hero-layout-collapsed [data-cms-text="hero.headline.prefix"],
+html.compact-admin-hero .hero-layout-collapsed [data-cms-text="hero.headline.emphasis"] {
+  display: inline !important;
+  font-size: clamp(1.125rem, 2.4vw, 1.75rem) !important;
+  line-height: 1.25 !important;
+}
+
+html.compact-admin-hero .hero-layout-collapsed [data-cms-text="hero.supporting"],
+html.compact-admin-hero .hero-layout-collapsed .hero-supporting-compact {
+  display: block !important;
+  margin-top: 0.5rem !important;
+  margin-bottom: 0 !important;
+  font-size: 0.95rem !important;
+  line-height: 1.45 !important;
+  color: #374151 !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+html.compact-admin-hero .hero-layout-collapsed [data-cms-text^="hero.headline"] {
+  color: #111827 !important;
+}

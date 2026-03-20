@@ -9,6 +9,24 @@
     return trimmed.toLowerCase().endsWith('.html') ? trimmed : `${trimmed}.html`;
   })();
   const currentFile = params.get('file') || pathFile;
+  const currentFileName = currentFile.split('/').pop().toLowerCase();
+  const isAdminIndexPage = currentFileName === 'index.html';
+  if (!isAdminIndexPage) {
+    document.documentElement.classList.add('compact-admin-hero');
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-cms-bg="hero.image"]').forEach((heroImage) => {
+        heroImage.classList.add('hero-image-collapsed');
+        const heroLayout = heroImage.parentElement;
+        if (heroLayout) {
+          heroLayout.classList.add('hero-layout-collapsed');
+          const heroSupportingText = heroLayout.querySelector('[data-cms-text="hero.supporting"]');
+          if (heroSupportingText) {
+            heroSupportingText.classList.add('hero-supporting-compact');
+          }
+        }
+      });
+    });
+  }
   let mergedContent = {};
   let storedTags = {};
   let editMode = false;
