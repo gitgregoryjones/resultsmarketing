@@ -1588,6 +1588,13 @@ body.cms-editing #cms-toggle::after {
   outline-offset: 4px;
 }
 
+.cms-hidden-preview {
+  filter: blur(3px);
+  opacity: 0.65;
+  outline: 2px dashed rgba(124, 58, 237, 0.8);
+  outline-offset: 4px;
+}
+
 .cms-sidebar__list-title {
   margin: 10px 0 6px;
   font-size: 13px;

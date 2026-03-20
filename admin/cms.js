@@ -316,6 +316,7 @@
         </div>
         <div class="grid grid-cols-2 gap-4 mt-4">
           <button id="cms-clone" type="button">Clone</button>
+          <button id="cms-toggle-hidden" type="button">Hide</button>
           <button id="cms-delete" type="button">Delete</button>
         </div>
         <div id="cms-message"></div>
@@ -499,6 +500,7 @@
   const imagePreviewDelete = sidebar.querySelector('.cms-image-preview__delete');
   const saveButton = sidebar.querySelector('#cms-save');
   const cloneButton = sidebar.querySelector('#cms-clone');
+  const toggleHiddenButton = sidebar.querySelector('#cms-toggle-hidden');
   const reorderToggle = sidebar.querySelector('#cms-reorder-toggle');
   const gridDecreaseButton = sidebar.querySelector('#cms-grid-decrease');
   const gridIncreaseButton = sidebar.querySelector('#cms-grid-increase');
@@ -550,8 +552,50 @@
   let lastComponentId = '';
   deleteButton.disabled = true;
   cloneButton.disabled = true;
+  toggleHiddenButton.disabled = true;
   loadQuickStyleHistory();
   renderQuickStyles();
+
+  function isElementHidden(el) {
+    return Boolean(el && el.getAttribute && el.getAttribute('data-cms-hidden') === 'true');
+  }
+
+  function applyHiddenStateToElement(el) {
+    if (!el) return;
+    const hidden = isElementHidden(el);
+    el.classList.toggle('cms-hidden-preview', hidden && editMode);
+    el.classList.toggle('hidden', hidden && !editMode);
+  }
+
+  function applyHiddenStateToAllElements() {
+    document.querySelectorAll('[data-cms-hidden="true"]').forEach((el) => applyHiddenStateToElement(el));
+  }
+
+  function updateHiddenToggleState() {
+    if (!toggleHiddenButton) return;
+    const canToggle = Boolean(editMode && selectedElement && !isCmsUi(selectedElement));
+    toggleHiddenButton.disabled = !canToggle;
+    toggleHiddenButton.textContent = canToggle && isElementHidden(selectedElement) ? 'Unhide' : 'Hide';
+  }
+
+  function toggleHiddenSelection() {
+    if (!selectedElement) {
+      messageEl.textContent = 'Select an element to hide or unhide.';
+      messageEl.style.color = '#ef4444';
+      return;
+    }
+    const shouldHide = !isElementHidden(selectedElement);
+    if (shouldHide) {
+      selectedElement.setAttribute('data-cms-hidden', 'true');
+    } else {
+      selectedElement.removeAttribute('data-cms-hidden');
+    }
+    applyHiddenStateToElement(selectedElement);
+    updateHiddenToggleState();
+    scheduleLayoutPersist();
+    messageEl.textContent = shouldHide ? 'Element hidden outside edit mode.' : 'Element unhidden.';
+    messageEl.style.color = '#16a34a';
+  }
 
   function handleBackendKeyChange(event) {
     if (!backendToggle.checked) return;
@@ -654,6 +698,7 @@
     textValueDirty = false;
     updateGridControls(null);
     updateCloneState();
+    updateHiddenToggleState();
     updateGroupControls();
   }
 
@@ -1672,8 +1717,10 @@
     publishShortcutButton.disabled = editMode;
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
+    updateHiddenToggleState();
     updateGroupControls();
     updateLayoutMode();
+    applyHiddenStateToAllElements();
   }
 
   function toggleEdit() {
@@ -2480,6 +2527,7 @@
     renderQuickStyles();
     deleteButton.disabled = false;
     updateCloneState();
+    updateHiddenToggleState();
   }
 
   function activateTab(tabName) {
@@ -2930,6 +2978,10 @@
     event.preventDefault();
     cloneSelection();
   });
+  toggleHiddenButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    toggleHiddenSelection();
+  });
   publishButton.addEventListener('click', publishStaticSite);
   publishShortcutButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishShortcutButton);
@@ -3327,6 +3379,7 @@
     populateServiceSelect();
     setBackendMode(false);
     updateServiceFormVisibility();
+    applyHiddenStateToAllElements();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
