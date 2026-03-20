@@ -564,10 +564,7 @@
     if (!el) return;
     const hidden = isElementHidden(el);
     el.classList.toggle('cms-hidden-preview', hidden && editMode);
-    el.classList.toggle('cms-hidden-collapsed', hidden && !editMode);
-    if (!hidden) {
-      return;
-    }
+    el.classList.toggle('hidden', hidden && !editMode);
   }
 
   function applyHiddenStateToAllElements() {

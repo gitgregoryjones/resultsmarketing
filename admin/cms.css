@@ -1595,23 +1595,6 @@ body.cms-editing #cms-toggle::after {
   outline-offset: 4px;
 }
 
-.cms-hidden-collapsed {
-  width: 0 !important;
-  height: 0 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-width: 0 !important;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  font-size: 0 !important;
-  line-height: 0 !important;
-  overflow: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
 .cms-sidebar__list-title {
   margin: 10px 0 6px;
   font-size: 13px;
