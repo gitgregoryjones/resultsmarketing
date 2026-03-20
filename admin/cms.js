@@ -14,16 +14,39 @@
   if (!isAdminIndexPage) {
     document.documentElement.classList.add('compact-admin-hero');
     document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('[data-cms-bg="hero.image"]').forEach((heroImage) => {
-        heroImage.classList.add('hero-image-collapsed');
-        const heroLayout = heroImage.parentElement;
-        if (heroLayout) {
-          heroLayout.classList.add('hero-layout-collapsed');
-          const heroSupportingText = heroLayout.querySelector('[data-cms-text="hero.supporting"]');
-          if (heroSupportingText) {
-            heroSupportingText.classList.add('hero-supporting-compact');
-          }
+      document.querySelectorAll('[data-cms-bg="hero.image"]').forEach((heroImage, index) => {
+        const heroSection = heroImage.closest('section');
+        if (!heroSection || heroSection.dataset.heroCompacted === 'true') return;
+
+        const headlinePrefix = heroSection.querySelector('[data-cms-text="hero.headline.prefix"]')?.textContent?.trim() || '';
+        const headlineEmphasis = heroSection.querySelector('[data-cms-text="hero.headline.emphasis"]')?.textContent?.trim() || '';
+        const supportingText = heroSection.querySelector('[data-cms-text="hero.supporting"]')?.textContent?.trim() || '';
+        const compactHeadline = [headlinePrefix, headlineEmphasis].filter(Boolean).join(' ').trim() || 'Highlights';
+
+        const compactSummary = document.createElement('section');
+        compactSummary.className = 'hero-compact-summary';
+        compactSummary.setAttribute('data-component-id', `hero-compact-summary-${index + 1}`);
+
+        const compactSummaryInner = document.createElement('div');
+        compactSummaryInner.className = 'hero-compact-summary__inner';
+
+        const compactSummaryTitle = document.createElement('p');
+        compactSummaryTitle.className = 'hero-compact-summary__title';
+        compactSummaryTitle.textContent = compactHeadline;
+        compactSummaryInner.appendChild(compactSummaryTitle);
+
+        if (supportingText) {
+          const compactSummarySupporting = document.createElement('p');
+          compactSummarySupporting.className = 'hero-compact-summary__supporting';
+          compactSummarySupporting.textContent = supportingText;
+          compactSummaryInner.appendChild(compactSummarySupporting);
         }
+
+        compactSummary.appendChild(compactSummaryInner);
+
+        heroSection.insertAdjacentElement('beforebegin', compactSummary);
+        heroSection.classList.add('hero-section-collapsed');
+        heroSection.dataset.heroCompacted = 'true';
       });
     });
   }
