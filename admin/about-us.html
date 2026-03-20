@@ -155,18 +155,21 @@
                 justify-content: flex-start;
                 gap: 0.5rem;
                 padding: 0;
-                background: transparent;
+                background: transparent !important;
                 box-shadow: none;
             }
 
             .employee-card > div:first-child {
                 width: 100%;
+                max-width: 9rem;
                 aspect-ratio: 1 / 1;
                 height: auto;
-                border-radius: 9999px;
+                border-radius: 9999px !important;
                 overflow: hidden;
                 align-self: center;
+                flex-shrink: 0;
                 padding: 0;
+                background-color: transparent !important;
             }
 
             .employee-card .md\:hidden,
