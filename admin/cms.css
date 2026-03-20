@@ -1771,3 +1771,33 @@ body.cms-editing #cms-toggle::after {
 .cms-gallery-open {
   overflow: hidden;
 }
+
+html.compact-admin-hero .hero-section-collapsed {
+  display: none !important;
+}
+
+html.compact-admin-hero .hero-compact-summary {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+html.compact-admin-hero .hero-compact-summary__inner {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+html.compact-admin-hero .hero-compact-summary__title {
+  margin: 0;
+  color: #111827;
+  font-weight: 700;
+  font-size: clamp(1.05rem, 2.1vw, 1.35rem);
+  line-height: 1.2;
+}
+
+html.compact-admin-hero .hero-compact-summary__supporting {
+  margin: 0.25rem 0 0;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
