@@ -398,34 +398,18 @@
                 <div class="absolute right-0 top-0 bottom-0 w-12 md:w-24 bg-gradient-to-l from-[#F5F6F8] to-transparent z-10 pointer-events-none" draggable="true"></div>
                 
                 
-                <div class="flex animate-scroll" draggable="true">
-                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set" data-cms-text="auto.div-3" draggable="true">
-                      <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-32" src="/images/index-1773627047966-1nz8u0.png" draggable="true">
-                        <img alt="Walmart" class="h-[50px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-33" src="/images/cvs-1769482088604.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-34" src="/images/ulta-1769482193989.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto  object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-35" src="/images/cosmoprof-1769481718454.jpg" draggable="true">
-                      
-                      </div>
-                   <div class="flex items-center gap-6 md:gap-12 px-4 logo-set" data-cms-text="auto.div-3" draggable="true">
-                       
+                <div class="logo-track animate-scroll" data-logo-track draggable="true">
+                    <div class="logo-set" data-logo-sequence data-cms-text="auto.div-3" draggable="true">
+                        <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-32" src="/images/index-1773627047966-1nz8u0.png" draggable="true">
+                        <img alt="CVS" class="h-[50px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-33" src="/images/cvs-1769482088604.png" draggable="true">
+                        <img alt="Ulta" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-34" src="/images/ulta-1769482193989.png" draggable="true">
+                        <img alt="Cosmoprof" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-35" src="/images/cosmoprof-1769481718454.jpg" draggable="true">
                         <img alt="Marmaxx" class="h-[50px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-2" src="/images/marmaxx-1769481445166.jpg" draggable="true">
                         <img alt="Sally" class="h-[50px] w-auto max-w object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-4" src="/images/sally-1769481011475.png" draggable="true">
                         <img alt="Target" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-5" src="/images/target-1769501708173.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-30" src="/images/saloncentric-1769481902773.png" draggable="true">
+                        <img alt="SalonCentric" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-30" src="/images/saloncentric-1769481902773.png" draggable="true">
                         <img alt="Walgreens" class="h-[50px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-89" src="/images/index-1773627047967-281icp.png" draggable="true">
-                       
                     </div>
-                    
-                     
-                    <div class="flex items-center gap-6 md:gap-12 px-4 logo-set" data-cms-text="auto.div-3" draggable="true">
-                      <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-320" src="/images/index-1773627047968-p96vxm.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-330" src="/images/cvs-1769482088604.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-340" src="/images/ulta-1769482193989.png" draggable="true">
-                        <img alt="Walmart" class="h-[100px] w-auto  object-contain opacity-80 hover:opacity-100 transition-opacity" data-cms-image="auto.img-350" src="/images/cosmoprof-1769481718454.jpg" draggable="true">
-                      
-                      </div>
-                    
-                    
                 </div>
             </div>
         </div>
@@ -1009,56 +993,103 @@
 </div>
 
 <style>
-    @keyframes scroll {
-        0% {
+    @keyframes marquee-scroll {
+        from {
             transform: translateX(0);
         }
-        100% {
-            transform: translateX(-33.33%);
+        to {
+            transform: translateX(-50%);
         }
     }
-    
-    .animate-scroll {
-        display: flex;
-        animation: scroll 30s linear infinite;
-    }
-    
-    .scroll-container:hover .animate-scroll {
-        animation-play-state: paused;
-    }
-    
+
     .scroll-container {
+        --logo-scroll-speed: 110;
+        --logo-scroll-duration: 30s;
         -ms-overflow-style: none;
         scrollbar-width: none;
         width: 100%;
     }
-    
+
     .scroll-container::-webkit-scrollbar {
         display: none;
     }
-    
+
+    .logo-track {
+        display: flex;
+        width: max-content;
+    }
+
+    .animate-scroll {
+        animation: marquee-scroll var(--logo-scroll-duration) linear infinite;
+        will-change: transform;
+    }
+
+    .scroll-container:hover .animate-scroll {
+        animation-play-state: paused;
+    }
+
     .logo-set {
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding-inline: 1rem;
     }
-    
-    /* Responsive adjustments */
-    @media (max-width: 640px) {
+
+    @media (min-width: 768px) {
         .logo-set {
-            gap: 1.5rem !important;
-        }
-        
-        .animate-scroll {
-            animation-duration: 20s !important; /* Faster on mobile */
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .scroll-container {
-            padding-left: 0;
-            padding-right: 0;
+            gap: 3rem;
         }
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const track = document.querySelector('[data-logo-track]');
+        const sourceSequence = track?.querySelector('[data-logo-sequence]');
+
+        if (!track || !sourceSequence || track.dataset.ready === 'true') {
+            return;
+        }
+
+        const clone = sourceSequence.cloneNode(true);
+        clone.setAttribute('aria-hidden', 'true');
+        track.appendChild(clone);
+
+        const recalculateDuration = () => {
+            const speed = Number(getComputedStyle(track.closest('.scroll-container')).getPropertyValue('--logo-scroll-speed')) || 110;
+            const width = sourceSequence.scrollWidth;
+            const duration = Math.max(width / speed, 16);
+            track.style.setProperty('--logo-scroll-duration', `${duration}s`);
+        };
+
+        const logoImages = sourceSequence.querySelectorAll('img');
+        let pending = logoImages.length;
+
+        if (pending === 0) {
+            recalculateDuration();
+        }
+
+        const onAssetReady = () => {
+            pending -= 1;
+            if (pending <= 0) {
+                recalculateDuration();
+            }
+        };
+
+        logoImages.forEach((img) => {
+            if (img.complete) {
+                onAssetReady();
+                return;
+            }
+            img.addEventListener('load', onAssetReady, { once: true });
+            img.addEventListener('error', onAssetReady, { once: true });
+        });
+
+        window.addEventListener('resize', recalculateDuration);
+        track.dataset.ready = 'true';
+    });
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@200..800&family=Oswald:wght@200..700&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Public+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 </style>
