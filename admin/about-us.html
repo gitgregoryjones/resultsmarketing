@@ -57,6 +57,21 @@
             position: relative;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
+
+        @media (max-width: 767px) {
+            .bio-modal {
+                overflow-y: auto;
+            }
+
+            .bio-modal-content {
+                width: 100%;
+                max-width: none;
+                min-height: 100dvh;
+                margin: 0;
+                border-radius: 0;
+                padding: 24px 16px;
+            }
+        }
         
         .bio-modal-close {
             position: absolute;
