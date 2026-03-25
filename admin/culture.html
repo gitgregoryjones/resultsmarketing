@@ -1,0 +1,155 @@
+<html lang="en" data-site-name="resultsmarketing" class="compact-admin-hero"><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Culture - Results Marketing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .mobile-menu { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+        .mobile-menu.open { transform: translateX(0); }
+        .hamburger-line { transition: all 0.3s ease; }
+        .hamburger.open .hamburger-line:nth-child(1) { transform: rotate(45deg) translate(6px, 6px); }
+        .hamburger.open .hamburger-line:nth-child(2) { opacity: 0; }
+        .hamburger.open .hamburger-line:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+
+        .pillar-circle { transition: all .25s ease; }
+        .pillar-button.active .pillar-circle,
+        .pillar-button:hover .pillar-circle {
+            background: #dc2626;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(220,38,38,.25);
+        }
+    </style>
+    <link rel="stylesheet" href="cms.css">
+</head>
+<body>
+<div class="w-full flex flex-col bg-white">
+<nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white">
+  <div class="max-w-7xl mx-auto relative flex items-center justify-start md:justify-between">
+      <button class="md:hidden hamburger w-6 h-6 flex flex-col justify-center items-start gap-1 mb-4 md:mb-1" id="hamburger">
+          <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+          <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+          <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+      </button>
+      <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]">
+          <img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" src="/images/resultslogo-1767007084921.png" data-link="index.html">
+      </div>
+      <div class="hidden md:flex flex-1 justify-center items-center">
+          <div class="flex justify-start items-center gap-6 lg:gap-8">
+              <a href="index.html" class="nav-link text-black text-base font-bold">Home</a>
+              <a href="about-us.html" class="nav-link text-black text-base font-bold">About Us</a>
+              <a href="services.html" class="nav-link text-black text-base font-bold">Our Services</a>
+              <a href="culture.html" class="nav-link text-red-600 text-base font-bold">Our Culture</a>
+              <a href="contact-us.html" class="nav-link text-black text-base font-bold">Contact Us</a>
+          </div>
+      </div>
+  </div>
+  <div class="md:hidden mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-6" id="mobileMenu">
+      <div class="flex justify-end mb-8"><button class="hamburger w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="closeMenu"><span class="hamburger-line w-6 h-0.5 bg-gray-700"></span><span class="hamburger-line w-6 h-0.5 bg-gray-700"></span><span class="hamburger-line w-6 h-0.5 bg-gray-700"></span></button></div>
+      <div class="flex flex-col space-y-6">
+          <a href="index.html" class="text-black text-lg font-bold">Home</a>
+          <a href="about-us.html" class="text-black text-lg font-bold">About Us</a>
+          <a href="services.html" class="text-black text-lg font-bold">Our Services</a>
+          <a href="culture.html" class="text-red-600 text-lg font-bold">Our Culture</a>
+          <a href="contact-us.html" class="text-black text-lg font-bold">Contact Us</a>
+      </div>
+  </div>
+  <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay"></div>
+</nav>
+
+<section class="bg-slate-950">
+  <div class="mx-auto max-w-7xl px-6 py-8 lg:px-8 lg:py-10">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Results Values</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Our <span class="text-red-500">Culture</span></h1>
+      <p class="mt-3 max-w-3xl text-sm leading-6 text-white/80 sm:text-base">How we think, serve, and execute to create sustainable growth for every brand we represent.</p>
+  </div>
+</section>
+
+<section class="bg-white py-16 px-4 sm:px-6 lg:px-8">
+  <div class="text-center mb-10">
+      <h2 class="text-4xl font-bold text-black mb-4">OUR BUILD RIGHT CULTURE</h2>
+      <div class="h-1 w-24 bg-red-600 mx-auto mb-6"></div>
+      <p class="text-gray-700 max-w-2xl mx-auto text-lg">Ten foundational principles that shape how we deliver exceptional results for our clients.</p>
+      <div class="mt-8 text-black font-bold text-xl">B.U.I.L.D. R.I.G.H.T</div>
+  </div>
+
+  <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6" id="pillarsContainer"></div>
+
+  <div class="max-w-4xl mx-auto mt-10 bg-gray-50 border border-gray-200 rounded-xl p-6 md:p-8" id="pillarDetail">
+      <h3 class="text-2xl font-bold text-black" id="pillarTitle">Build With Integrity</h3>
+      <p class="text-gray-700 mt-3 leading-7" id="pillarDescription">We lead with honesty, accountability, and consistency in every decision.</p>
+  </div>
+</section>
+
+<section class="bg-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div class="text-red-500 uppercase tracking-widest text-sm font-semibold">Vision</div>
+      <h3 class="mt-3 text-3xl font-bold text-black">To Be The Most Trusted Growth Partner</h3>
+      <p class="mt-4 text-gray-700 leading-7">Our vision is to be the premier multicultural sales and marketing partner brands choose when they need strategic insight, disciplined execution, and measurable impact at retail.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div class="text-red-500 uppercase tracking-widest text-sm font-semibold">Mission</div>
+      <h3 class="mt-3 text-3xl font-bold text-black">Deliver Results With Purpose</h3>
+      <p class="mt-4 text-gray-700 leading-7">Our mission is to help brands win by combining category expertise, collaborative partnerships, and relentless execution that drives sustainable, profitable growth.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-gray-900 text-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <p class="text-lg font-semibold text-white">Results Sales &amp; Marketing, LLC</p>
+    <p class="text-gray-300 text-sm">Copyright © 2026 Results Sales &amp; Marketing, LLC. All Rights Reserved.</p>
+  </div>
+</footer>
+</div>
+
+<script>
+const pillars = [
+  {letter:'B', title:'Build With Integrity', description:'We lead with honesty, accountability, and consistency in every decision.'},
+  {letter:'U', title:'Unlock & Uncover', description:'We uncover opportunities others miss by asking better questions and using better data.'},
+  {letter:'I', title:'Invest Like Owners', description:'We treat client resources like our own and prioritize actions that create long-term value.'},
+  {letter:'L', title:'Lead With Insight', description:'We pair category expertise with market intelligence to guide smarter choices.'},
+  {letter:'D', title:'Deliver With Discipline', description:'We execute with operational excellence and dependable follow-through.'},
+  {letter:'R', title:'Retail With Rigor', description:'We show up strong at shelf level, in planning, and through every retail touchpoint.'},
+  {letter:'I', title:'Impact With Intention', description:'We focus on outcomes that matter and align every effort to strategic goals.'},
+  {letter:'G', title:'Grow Accountably', description:'We drive measurable growth with transparency, ownership, and clear metrics.'},
+  {letter:'H', title:'Honor Our Partners', description:'We build trust through collaboration, respect, and shared success.'},
+  {letter:'T', title:'Tenaciously Advocate', description:'We champion every brand we represent with persistence and purpose.'}
+];
+
+const container = document.getElementById('pillarsContainer');
+const titleEl = document.getElementById('pillarTitle');
+const descEl = document.getElementById('pillarDescription');
+
+pillars.forEach((pillar, idx) => {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = `pillar-button flex flex-col items-center gap-3 p-2 ${idx === 0 ? 'active' : ''}`;
+  button.innerHTML = `
+    <div class="pillar-circle w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-red-600 text-red-600 bg-white flex items-center justify-center text-2xl md:text-3xl font-bold">${pillar.letter}</div>
+    <div class="text-xs md:text-sm font-semibold text-center text-black max-w-[120px]">${pillar.title}</div>
+  `;
+  button.addEventListener('click', () => {
+    document.querySelectorAll('.pillar-button').forEach(el => el.classList.remove('active'));
+    button.classList.add('active');
+    titleEl.textContent = pillar.title;
+    descEl.textContent = pillar.description;
+  });
+  container.appendChild(button);
+});
+
+const hamburger = document.getElementById('hamburger');
+const closeMenu = document.getElementById('closeMenu');
+const mobileMenu = document.getElementById('mobileMenu');
+const overlay = document.getElementById('overlay');
+
+const openMenu = () => { mobileMenu.classList.add('open'); overlay.classList.remove('hidden'); };
+const closeMobileMenu = () => { mobileMenu.classList.remove('open'); overlay.classList.add('hidden'); };
+
+hamburger?.addEventListener('click', openMenu);
+closeMenu?.addEventListener('click', closeMobileMenu);
+overlay?.addEventListener('click', closeMobileMenu);
+</script>
+</body></html>
