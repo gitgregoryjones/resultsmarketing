@@ -1,0 +1,412 @@
+<html lang="en" data-site-name="resultsmarketing" class="compact-admin-hero"><head><meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Culture - Results Marketing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        .mobile-menu { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
+        .mobile-menu.open { transform: translateX(0); }
+        .hamburger-line { transition: all 0.3s ease; }
+        .hamburger.open .hamburger-line:nth-child(1) { transform: rotate(45deg) translate(6px, 6px); }
+        .hamburger.open .hamburger-line:nth-child(2) { opacity: 0; }
+        .hamburger.open .hamburger-line:nth-child(3) { transform: rotate(-45deg) translate(7px, -6px); }
+
+        .pillar-circle { transition: all .25s ease; }
+        .pillar-button.active .pillar-circle,
+        .pillar-button:hover .pillar-circle {
+            background: #dc2626;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(220,38,38,.25);
+        }
+    </style>
+    </head>
+<body>
+<div class="w-full flex flex-col bg-white">
+<nav class="w-full py-4 px-4 md:px-8 border-b border-gray-100 bg-white" data-component-id="navigation-component" data-cms-text="nav.home-about-us-news-our-services-contact-us-home-about-us-news-our-services-contact-us-cta-image-link">
+    
+        <div class="max-w-7xl mx-auto relative flex items-center justify-start md:justify-between">
+            
+            <button class="md:hidden hamburger w-6 h-6 flex flex-col justify-center items-start gap-1 mb-4 md:mb-1" id="hamburger">
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+                <span class="hamburger-line w-6 h-[3px] bg-red-700 rounded-sm"></span>
+            </button>
+
+            <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]">
+                <a href="index.html" style="color: inherit; text-decoration: none"><img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/resultsmarketing/images/resultslogo-1767007084921.png" data-link="index.html"></a>
+            </div>
+
+            
+            <div class="hidden md:flex flex-1 justify-center items-center">
+                <div class="flex justify-start items-center gap-6 lg:gap-8">
+                    <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.home" data-link="index.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Home</a>
+                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">About Us</a>
+                     <a href="culture.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold " data-nav-link data-cms-text="a.about-us" data-link="culture.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Our Culture</a>
+                    <a href="news.html" class="hidden nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">News</a>
+                    <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.our-services" data-link="services.html" style="color: inherit; text-decoration: none">Our Services</a>
+                    <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.contact-us" data-link="contact-us.html" style="color: inherit; text-decoration: none">Contact Us</a>
+                </div>
+            </div>
+             <a href="https://app.powerbi.com/" style="color: inherit; text-decoration: none"><div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-size:cover; background-image:url('/resultsmarketing/images/powerbi2-1766477317452.png')" images powerbi2-1766477317452 .png ) http: www .resultssalesmarketing .com wp-content themes resultssalesmarketing logo data-cms-image="auto.div-2-2" data-link="https://app.powerbi.com/">
+                
+            </div></a>
+
+
+        </div>
+
+        
+        <div class="md:hidden mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-lg z-50 p-6" id="mobileMenu">
+            
+            <div class="flex justify-end mb-8 open">
+                <button class="hamburger  w-8 h-8 flex flex-col justify-center items-center gap-1.5" id="closeMenu">
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                    <span class="hamburger-line w-6 h-0.5 bg-gray-700"></span>
+                </button>
+            </div>
+            
+            
+            <div class="flex flex-col space-y-6">
+                <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Home</a>
+                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="color: rgb(220, 38, 38);">About Us</a>
+                <a href="culture.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Our Culture</a>
+                <a href="news.html" class="hidden nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">News</a>
+                <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">Our Services</a>
+                <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">Contact Us</a>
+                
+                
+                
+            </div>
+        </div>
+
+        
+        <div class="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40 hidden" id="overlay"></div>
+        <div class="fixed inset-0 z-50 hidden items-center justify-center bg-black/70 px-4" id="comingSoonOverlay">
+            <div class="w-full max-w-md rounded-2xl border border-red-700 bg-red-700 text-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="comingSoonTitle" aria-describedby="comingSoonDescription">
+                <div class="flex items-start justify-between gap-4 border-b border-red-500 px-6 py-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.3em] text-white/70">New Feature</p>
+                        <h2 class="text-2xl font-semibold" id="comingSoonTitle">Coming Soon</h2>
+                    </div>
+                    <button class="coming-soon-close rounded-full border border-white/40 px-2.5 py-1.5 text-sm font-semibold text-white transition hover:bg-black/20" type="button" aria-label="Close coming soon dialog">Close</button>
+                </div>
+                <div class="px-6 py-5">
+                    <p class="text-base leading-relaxed text-white/90" id="comingSoonDescription">We are putting the finishing touches on this new experience. Check back soon for the launch.</p>
+                    <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <button class="coming-soon-close rounded-full bg-black px-5 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black" type="button">Got it</button>
+                        <span class="text-sm text-white/80">Thanks for your patience.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const currentFile = window.location.pathname.split("/").pop() || "index.html";
+                const comingSoonOverlay = document.getElementById("comingSoonOverlay");
+
+                const closeComingSoon = () => {
+                    comingSoonOverlay?.classList.add("hidden");
+                    comingSoonOverlay?.classList.remove("flex");
+                };
+
+                const openComingSoon = () => {
+                    comingSoonOverlay?.classList.remove("hidden");
+                    comingSoonOverlay?.classList.add("flex");
+                };
+                
+                document.querySelectorAll("[data-nav-link]").forEach((link) => {
+                    const href = link.getAttribute("href");
+                    link.classList.remove("highlight-current");
+                    link.style.color = "";
+                    link.addEventListener("mouseenter", () => {
+                        //add underline on hover with inline style and red underline offset
+                        link.style.textDecoration = "underline";
+                        link.style.textUnderlineOffset = "4px"; 
+                        link.style.color = "#DC2626";
+
+                    })
+
+                    link.addEventListener("mouseleave", () => {
+                        //remove underline on mouse leave
+                        link.style.textDecoration = "none"; 
+                        link.style.color = "";
+                    })
+                    
+                    if (!href) {
+                        return;
+                    }
+                    const linkFile = href.split("/").pop();
+                    if (linkFile === currentFile) {
+                        
+                        //link.classList.add("", "font-bold","highlight-current");
+                        link.style.color = "#DC2626";
+                    }
+                });
+
+                /*document.querySelectorAll('a[href="about-us.html"],a[href="contact-us.html"]').forEach((link) => {
+                    link.addEventListener("click", (event) => {
+                        event.stopPropagation();
+                        event.preventDefault();
+                        openComingSoon();
+                    });
+                });*/
+
+                comingSoonOverlay?.addEventListener("click", (event) => {
+                    if (event.target === comingSoonOverlay) {
+                        closeComingSoon();
+                    }
+                });
+
+                comingSoonOverlay?.querySelectorAll(".coming-soon-close").forEach((button) => {
+                    button.addEventListener("click", closeComingSoon);
+                });
+            });
+        </script>
+    </nav>
+
+<section class="bg-slate-950">
+  <div class="mx-auto max-w-7xl px-6 py-8 lg:px-8 lg:py-10">
+      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-white/70">Results Values</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">Our <span class="text-red-500">Culture</span></h1>
+      <p class="mt-3 max-w-3xl text-sm leading-6 text-white/80 sm:text-base">How we think, serve, and execute to create sustainable growth for every brand we represent.</p>
+  </div>
+</section>
+
+<section class="bg-white py-16 px-4 sm:px-6 lg:px-8">
+  <div class="text-center mb-10">
+      <h2 class="text-4xl font-bold text-black mb-4">OUR BUILD RIGHT CULTURE</h2>
+      <div class="h-1 w-24 bg-red-600 mx-auto mb-6"></div>
+      <p class="text-gray-700 max-w-2xl mx-auto text-lg">Ten foundational principles that shape how we deliver exceptional results for our clients.</p>
+      <div class="mt-8 text-black font-bold text-xl">B.U.I.L.D. R.I.G.H.T</div>
+  </div>
+
+  <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6" id="pillarsContainer"></div>
+
+  <div class="max-w-4xl mx-auto mt-10 bg-gray-50 border border-gray-200 rounded-xl p-6 md:p-8" id="pillarDetail">
+      <h3 class="text-2xl font-bold text-black" id="pillarTitle">Build With Integrity</h3>
+      <p class="text-gray-700 mt-3 leading-7" id="pillarDescription">We lead with honesty, accountability, and consistency in every decision.</p>
+  </div>
+</section>
+
+<section class="bg-gray-100 py-16 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div class="text-red-500 uppercase tracking-widest text-sm font-semibold">Vision</div>
+      <h3 class="mt-3 text-3xl font-bold text-black">To Be The Most Trusted Growth Partner</h3>
+      <p class="mt-4 text-gray-700 leading-7">Our vision is to be the premier multicultural sales and marketing partner brands choose when they need strategic insight, disciplined execution, and measurable impact at retail.</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+      <div class="text-red-500 uppercase tracking-widest text-sm font-semibold">Mission</div>
+      <h3 class="mt-3 text-3xl font-bold text-black">Deliver Results With Purpose</h3>
+      <p class="mt-4 text-gray-700 leading-7">Our mission is to help brands win by combining category expertise, collaborative partnerships, and relentless execution that drives sustainable, profitable growth.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="bg-gray-900 text-white" data-component-id="footer" data-cms-text="footer.results-sales-marketing-llc-copyright-2016-results-sales-marketing-llc-all-rights-reserved-1765-e-55th-st-suite-l3-chicago-il-60615-1-773-363-0999-privacy-policy-terms-of-use-site-map-designed-developed-by-evans-web-services">
+  
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" style="width: 100%;">
+    <div class="flex flex-col lg:flex-row-reverse justify-between items-center lg:items-start gap-8 md:space-y-8 lg:space-y-0">
+      
+      <div class="lg:w-1/2 space-y-6">
+        
+        <nav class="flex flex-wrap items-center justify-end gap-x-6 gap-y-2" aria-label="Footer Navigation">
+          <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Home</a>
+          <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">About Us</a>
+          <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Culture</a>
+          <a href="news.html" class="hidden text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">News</a>
+          <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Services</a>
+          <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Contact Us</a>
+        </nav>
+
+        <div class="flex flex-wrap items-center gap-4 justify-end">
+          <a href="http://www.resultssalesmarketing.com/privacy" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Privacy Policy
+          </a>
+          <span class="text-gray-500">•</span>
+          <a href="http://www.resultssalesmarketing.com/terms" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Terms of Use
+          </a>
+          <span class="text-gray-500">•</span>
+          <a href="http://www.resultssalesmarketing.com/sitemap" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Site Map
+          </a>
+        </div>
+        
+        
+        <div class="hidden border-t border-gray-700 pt-6">
+          <p class="text-gray-400 text-sm mb-2">Designed &amp; Developed By:</p>
+          <a href="http://www.evanswebservices.com/" target="_blank" class="inline-flex items-center space-x-2 group">
+            <span class="text-sky-300 group-hover:text-sky-200 transition-colors duration-200 font-medium">
+              Evans Web Services
+            </span>
+            <svg class="w-4 h-4 text-sky-400 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+      
+      <div class="lg:w-1/2 space-y-4">
+        <div class="space-y-2">
+          <p class="text-lg font-semibold text-white">Results Sales &amp; Marketing, LLC</p>
+          <p class="text-gray-300 text-sm" data-cms-text="p.copyright-2016-results-sales-marketing-llc-all-rights-reserved-">Copyright © 2026 Results Sales &amp; Marketing, LLC. All Rights Reserved.</p>
+        </div>
+        
+        <div class="space-y-2">
+          <div class="flex items-start space-x-2 text-red-500">
+            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" class="text-red-500"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span class="text-sm text-white">1765 E. 55th St., Suite L3 | Chicago, IL 60615</span>
+          </div>
+          
+          <div class="flex items-center space-x-2 text-gray-300">
+            <svg class="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            <span class="text-sm">+1 773.363.0999</span>
+          </div>
+        </div>
+      </div>
+      
+      
+      <div class="hidden lg:w-1/2 space-y-6">
+        
+        <nav class="flex flex-wrap items-center gap-x-6 gap-y-2" aria-label="Footer Navigation">
+          <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Home</a>
+          <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">About Us</a>
+          <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Culture</a>
+          <a href="news.html" class="hidden text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">News</a>
+          <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Services</a>
+          <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Contact Us</a>
+        </nav>
+
+        <div class="flex flex-wrap items-center gap-4">
+          <a href="http://www.resultssalesmarketing.com/privacy" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Privacy Policy
+          </a>
+          <span class="text-gray-500">•</span>
+          <a href="http://www.resultssalesmarketing.com/terms" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Terms of Use
+          </a>
+          <span class="text-gray-500">•</span>
+          <a href="http://www.resultssalesmarketing.com/sitemap" class="text-gray-300 hover:text-sky-300 transition-colors duration-200 text-sm font-medium">
+            Site Map
+          </a>
+        </div>
+        
+        
+        <div class="hidden border-t border-gray-700 pt-6">
+          <p class="text-gray-400 text-sm mb-2">Designed &amp; Developed By:</p>
+          <a href="http://www.evanswebservices.com/" target="_blank" class="inline-flex items-center space-x-2 group">
+            <span class="text-sky-300 group-hover:text-sky-200 transition-colors duration-200 font-medium">
+              Evans Web Services
+            </span>
+            <svg class="w-4 h-4 text-sky-400 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+</footer>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const currentFile = window.location.pathname.split("/").pop() || "index.html";
+    const comingSoonOverlay = document.getElementById("comingSoonOverlay");
+
+    const closeComingSoon = () => {
+        comingSoonOverlay?.classList.add("hidden");
+        comingSoonOverlay?.classList.remove("flex");
+    };
+
+    document.querySelectorAll("[data-nav-link]").forEach((link) => {
+        const href = link.getAttribute("href");
+        link.classList.remove("highlight-current");
+        link.style.color = "";
+        link.addEventListener("mouseenter", () => {
+            link.style.textDecoration = "underline";
+            link.style.textUnderlineOffset = "4px";
+            link.style.color = "#DC2626";
+        });
+
+        link.addEventListener("mouseleave", () => {
+            link.style.textDecoration = "none";
+            link.style.color = "";
+        });
+
+        if (!href) return;
+        const linkFile = href.split("/").pop();
+        if (linkFile === currentFile) {
+            link.style.color = "#DC2626";
+        }
+    });
+
+    comingSoonOverlay?.addEventListener("click", (event) => {
+        if (event.target === comingSoonOverlay) {
+            closeComingSoon();
+        }
+    });
+
+    comingSoonOverlay?.querySelectorAll(".coming-soon-close").forEach((button) => {
+        button.addEventListener("click", closeComingSoon);
+    });
+
+    const hamburger = document.getElementById('hamburger');
+    const closeMenu = document.getElementById('closeMenu');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const overlay = document.getElementById('overlay');
+    const openMenu = () => { mobileMenu.classList.add('open'); overlay.classList.remove('hidden'); };
+    const closeMobileMenu = () => { mobileMenu.classList.remove('open'); overlay.classList.add('hidden'); };
+    hamburger?.addEventListener('click', openMenu);
+    closeMenu?.addEventListener('click', closeMobileMenu);
+    overlay?.addEventListener('click', closeMobileMenu);
+
+    const pillars = [
+      {letter:'B', title:'Build With Integrity', description:'We lead with honesty, accountability, and consistency in every decision.'},
+      {letter:'U', title:'Unlock & Uncover', description:'We uncover opportunities others miss by asking better questions and using better data.'},
+      {letter:'I', title:'Invest Like Owners', description:'We treat client resources like our own and prioritize actions that create long-term value.'},
+      {letter:'L', title:'Lead With Insight', description:'We pair category expertise with market intelligence to guide smarter choices.'},
+      {letter:'D', title:'Deliver With Discipline', description:'We execute with operational excellence and dependable follow-through.'},
+      {letter:'R', title:'Retail With Rigor', description:'We show up strong at shelf level, in planning, and through every retail touchpoint.'},
+      {letter:'I', title:'Impact With Intention', description:'We focus on outcomes that matter and align every effort to strategic goals.'},
+      {letter:'G', title:'Grow Accountably', description:'We drive measurable growth with transparency, ownership, and clear metrics.'},
+      {letter:'H', title:'Honor Our Partners', description:'We build trust through collaboration, respect, and shared success.'},
+      {letter:'T', title:'Tenaciously Advocate', description:'We champion every brand we represent with persistence and purpose.'}
+    ];
+
+    const container = document.getElementById('pillarsContainer');
+    const titleEl = document.getElementById('pillarTitle');
+    const descEl = document.getElementById('pillarDescription');
+
+    pillars.forEach((pillar, idx) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `pillar-button flex flex-col items-center gap-3 p-2 ${idx === 0 ? 'active' : ''}`;
+      button.innerHTML = `
+        <div class="pillar-circle w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-red-600 text-red-600 bg-white flex items-center justify-center text-2xl md:text-3xl font-bold">${pillar.letter}</div>
+        <div class="text-xs md:text-sm font-semibold text-center text-black max-w-[120px]">${pillar.title}</div>
+      `;
+      button.addEventListener('click', () => {
+        document.querySelectorAll('.pillar-button').forEach(el => el.classList.remove('active'));
+        button.classList.add('active');
+        titleEl.textContent = pillar.title;
+        descEl.textContent = pillar.description;
+      });
+      container.appendChild(button);
+    });
+});
+</script>
+</body></html>
