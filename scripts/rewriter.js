@@ -291,7 +291,8 @@ function injectResponsiveBackgroundStyles($, currentFileRelativePath) {
       BG_DESKTOP_WIDTH
     );
 
-    const className = `wsrv-bg-${counter++}-${Math.random().toString(36).substr(2, 5)}`;
+    const className = "";
+    //`wsrv-bg-${counter++}`;
 
     const rewrittenInlineStyle = rewriteStyleUrls(current, currentFileRelativePath);
     $(el).attr("style", rewrittenInlineStyle);
