@@ -1343,6 +1343,17 @@ body.cms-editing #cms-toggle::after {
   display: flex;
 }
 
+.cms-video-options {
+  display: none;
+  gap: 8px;
+  margin-top: 10px;
+  flex-direction: column;
+}
+
+.cms-video-options.is-visible {
+  display: flex;
+}
+
 .cms-upload {
   display: flex;
   align-items: center;
@@ -1500,6 +1511,13 @@ body.cms-editing #cms-toggle::after {
   width: 14px;
   height: 14px;
   fill: currentColor;
+}
+
+.cms-image-preview__video {
+  width: 100%;
+  max-height: 220px;
+  border-radius: 14px;
+  background: #000;
 }
 
 .cms-image-preview.has-image .cms-image-preview__delete {
