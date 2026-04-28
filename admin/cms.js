@@ -239,6 +239,7 @@
             <label class="cms-radio"><input type="radio" name="cms-type" value="text" checked /> Text</label>
             <label class="cms-radio"><input type="radio" name="cms-type" value="image" /> Image</label>
             <label class="cms-radio"><input type="radio" name="cms-type" value="background" /> Background</label>
+            <label class="cms-radio"><input type="radio" name="cms-type" value="video" /> Video</label>
           </div>
         </div>
         <div class="cms-field cms-field--text">
@@ -246,7 +247,7 @@
           <textarea id="cms-value" placeholder="Type content here..."></textarea>
         </div>
         <div class="cms-field cms-field--image">
-          <label for="cms-image-url">Image URL</label>
+          <label for="cms-image-url" id="cms-media-label">Image URL</label>
           <div id="cms-image-preview" class="cms-image-preview cms-image-preview--interactive">
             <span class="cms-image-preview__empty">No image selected</span>
             <button type="button" class="cms-image-preview__delete" aria-label="Remove image" title="Remove image">
@@ -255,12 +256,34 @@
               </svg>
             </button>
           </div>
-          <p class="cms-image-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
+          <p class="cms-image-help" id="cms-media-help">Double-click the preview to upload or choose Gallery to reuse uploaded images.</p>
           <div class="cms-image-controls">
             <input id="cms-image-url" type="url" placeholder="https://example.com/image.png" />
             <button type="button" id="cms-open-gallery">Gallery</button>
           </div>
-          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*" />
+          <div class="cms-video-options" id="cms-video-options">
+            <label class="cms-toggle">
+              <span>Autoplay</span>
+              <input id="cms-video-autoplay" type="checkbox" />
+              <span class="cms-toggle__control" aria-hidden="true"></span>
+            </label>
+            <label class="cms-toggle">
+              <span>Loop</span>
+              <input id="cms-video-loop" type="checkbox" />
+              <span class="cms-toggle__control" aria-hidden="true"></span>
+            </label>
+            <label class="cms-toggle">
+              <span>Muted</span>
+              <input id="cms-video-muted" type="checkbox" />
+              <span class="cms-toggle__control" aria-hidden="true"></span>
+            </label>
+            <label class="cms-toggle">
+              <span>Show controls</span>
+              <input id="cms-video-controls" type="checkbox" checked />
+              <span class="cms-toggle__control" aria-hidden="true"></span>
+            </label>
+          </div>
+          <input id="cms-image-file" class="cms-image-file" type="file" accept="image/*,video/*" />
         </div>
         <div class="cms-quick-styles">
           <div class="cms-quick-styles__title">Quick Styles</div>
@@ -539,6 +562,13 @@
   const imageFileInput = sidebar.querySelector('#cms-image-file');
   const imagePreview = sidebar.querySelector('#cms-image-preview');
   const imagePreviewDelete = sidebar.querySelector('.cms-image-preview__delete');
+  const mediaLabel = sidebar.querySelector('#cms-media-label');
+  const mediaHelp = sidebar.querySelector('#cms-media-help');
+  const videoOptionsField = sidebar.querySelector('#cms-video-options');
+  const videoAutoplayInput = sidebar.querySelector('#cms-video-autoplay');
+  const videoLoopInput = sidebar.querySelector('#cms-video-loop');
+  const videoMutedInput = sidebar.querySelector('#cms-video-muted');
+  const videoControlsInput = sidebar.querySelector('#cms-video-controls');
   const saveButton = sidebar.querySelector('#cms-save');
   const cloneButton = sidebar.querySelector('#cms-clone');
   const toggleHiddenButton = sidebar.querySelector('#cms-toggle-hidden');
@@ -733,8 +763,8 @@
     linkInput.value = '';
     imageUrlInput.value = '';
     imageFileInput.value = '';
-    imagePreview.textContent = 'No image selected';
-    imagePreview.style.backgroundImage = 'none';
+    setVideoOptionsInputs();
+    updateImagePreview('', selectedType);
     deleteButton.disabled = true;
     textValueDirty = false;
     updateGridControls(null);
@@ -1336,7 +1366,12 @@
   }
 
   function isImageElement(element) {
-    return element && (element.tagName === 'IMG' || element.hasAttribute?.('data-cms-image'));
+    return element && (
+      element.tagName === 'IMG'
+      || element.tagName === 'VIDEO'
+      || element.hasAttribute?.('data-cms-image')
+      || element.hasAttribute?.('data-cms-video')
+    );
   }
 
   function supportsGridLayout(element) {
@@ -1595,7 +1630,7 @@
   }
 
   function remapCloneKeys(el) {
-    const nodes = [el, ...el.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg]')];
+    const nodes = [el, ...el.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg],[data-cms-video]')];
     nodes.forEach((node) => {
       if (node.hasAttribute('data-cms-text')) {
         const key = node.getAttribute('data-cms-text');
@@ -1608,6 +1643,10 @@
       if (node.hasAttribute('data-cms-bg')) {
         const key = node.getAttribute('data-cms-bg');
         if (key) node.setAttribute('data-cms-bg', ensureUniqueKey(key));
+      }
+      if (node.hasAttribute('data-cms-video')) {
+        const key = node.getAttribute('data-cms-video');
+        if (key) node.setAttribute('data-cms-video', ensureUniqueKey(key));
       }
       if (node.matches('[data-wireframe-section="true"]')) {
         node.dataset.sectionId = `section-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -1769,10 +1808,11 @@
   }
 
   function getExistingKeys() {
-    return Array.from(document.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg]'))
+    return Array.from(document.querySelectorAll('[data-cms-text],[data-cms-image],[data-cms-bg],[data-cms-video]'))
       .map((el) => {
         if (el.hasAttribute('data-cms-image')) return el.getAttribute('data-cms-image');
         if (el.hasAttribute('data-cms-bg')) return el.getAttribute('data-cms-bg');
+        if (el.hasAttribute('data-cms-video')) return el.getAttribute('data-cms-video');
         return el.getAttribute('data-cms-text');
       })
       .filter(Boolean);
@@ -1802,9 +1842,24 @@
     typeInputs.forEach((input) => {
       input.checked = input.value === type;
     });
-    sidebar.classList.toggle('cms-image-mode', type === 'image' || type === 'background');
+    const isMediaType = type === 'image' || type === 'background' || type === 'video';
+    sidebar.classList.toggle('cms-image-mode', isMediaType);
     flexField.style.display = type === 'text' ? 'none' : 'flex';
     fontSizeField.style.display = type === 'text' ? 'flex' : 'none';
+    if (mediaLabel) {
+      mediaLabel.textContent = type === 'video' ? 'Video URL' : 'Image URL';
+    }
+    if (mediaHelp) {
+      mediaHelp.textContent = type === 'video'
+        ? 'Double-click the preview to upload a video file. Use options for autoplay, loop, and controls.'
+        : 'Double-click the preview to upload or choose Gallery to reuse uploaded images.';
+    }
+    if (galleryOpenButton) {
+      galleryOpenButton.style.display = type === 'video' ? 'none' : 'inline-flex';
+    }
+    if (videoOptionsField) {
+      videoOptionsField.classList.toggle('is-visible', type === 'video');
+    }
     selectedType = type;
     if (!selectedElement) return;
     if (selectedType === 'text' && editMode) {
@@ -1821,6 +1876,9 @@
     if (el.hasAttribute('data-cms-bg')) {
       return 'background';
     }
+    if (el.tagName === 'VIDEO' || el.hasAttribute('data-cms-video') || el.querySelector?.('video')) {
+      return 'video';
+    }
     const bg = window.getComputedStyle(el).backgroundImage;
     if (bg && bg !== 'none') {
       return 'background';
@@ -1828,23 +1886,65 @@
     return 'text';
   }
 
-  function updateImagePreview(src) {
+  function getVideoOptionsFromInputs() {
+    return {
+      autoplay: Boolean(videoAutoplayInput?.checked),
+      loop: Boolean(videoLoopInput?.checked),
+      muted: Boolean(videoMutedInput?.checked),
+      controls: Boolean(videoControlsInput?.checked),
+    };
+  }
+
+  function setVideoOptionsInputs(options = {}) {
+    if (videoAutoplayInput) videoAutoplayInput.checked = Boolean(options.autoplay);
+    if (videoLoopInput) videoLoopInput.checked = Boolean(options.loop);
+    if (videoMutedInput) videoMutedInput.checked = Boolean(options.muted);
+    if (videoControlsInput) videoControlsInput.checked = options.controls !== false;
+  }
+
+  function updateImagePreview(src, type = selectedType) {
+    imagePreview.style.backgroundImage = 'none';
+    imagePreview.classList.remove('has-image');
+    const existingVideo = imagePreview.querySelector('video');
+    if (existingVideo) existingVideo.remove();
+    const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
     if (!src) {
-      const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
-      if (emptyLabel) emptyLabel.textContent = 'No image selected';
-      imagePreview.style.backgroundImage = 'none';
-      imagePreview.classList.remove('has-image');
+      if (emptyLabel) {
+        emptyLabel.textContent = type === 'video' ? 'No video selected' : 'No image selected';
+        emptyLabel.style.display = '';
+      }
       return;
     }
-    const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
-    if (emptyLabel) emptyLabel.textContent = '';
+    if (type === 'video') {
+      if (emptyLabel) emptyLabel.style.display = 'none';
+      const previewVideo = document.createElement('video');
+      previewVideo.className = 'cms-image-preview__video';
+      previewVideo.src = src;
+      const options = getVideoOptionsFromInputs();
+      previewVideo.autoplay = options.autoplay;
+      previewVideo.loop = options.loop;
+      previewVideo.muted = options.muted;
+      previewVideo.controls = options.controls;
+      previewVideo.playsInline = true;
+      imagePreview.appendChild(previewVideo);
+      imagePreview.classList.add('has-image');
+      return;
+    }
+    if (emptyLabel) {
+      emptyLabel.textContent = '';
+      emptyLabel.style.display = '';
+    }
     imagePreview.style.backgroundImage = `url('${src}')`;
     imagePreview.classList.add('has-image');
   }
 
   function applyImagePreviewToElement(src) {
-    if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
-    applyImageToElement(selectedElement, src, selectedType === 'background' ? 'background' : 'image');
+    if (!selectedElement || !(selectedType === 'image' || selectedType === 'background' || selectedType === 'video')) return;
+    applyImageToElement(
+      selectedElement,
+      src,
+      selectedType === 'background' ? 'background' : selectedType === 'video' ? 'video' : 'image'
+    );
   }
 
   function formatBackendValue(value) {
@@ -2011,10 +2111,14 @@
     keyField.value = path || '';
     valueInput.value = formatted;
     imageUrlInput.value = formatted;
-    updateImagePreview(formatted);
+    updateImagePreview(formatted, selectedType);
     if (selectedElement) {
-      if (selectedType === 'image' || selectedType === 'background') {
-        applyImageToElement(selectedElement, formatted, selectedType === 'background' ? 'background' : 'image');
+      if (selectedType === 'image' || selectedType === 'background' || selectedType === 'video') {
+        applyImageToElement(
+          selectedElement,
+          formatted,
+          selectedType === 'background' ? 'background' : selectedType === 'video' ? 'video' : 'image'
+        );
       } else {
         setPrimaryTextValue(selectedElement, formatted);
       }
@@ -2399,6 +2503,11 @@
 
   function getImageValue(el, key, type = 'image') {
     if (key && mergedContent[key]) return mergedContent[key];
+    if (type === 'video') {
+      if (el.tagName === 'VIDEO') return el.getAttribute('src') || '';
+      const nestedVideo = el.querySelector ? el.querySelector('video') : null;
+      return nestedVideo?.getAttribute('src') || '';
+    }
     if (type === 'image' && el.tagName === 'IMG') return el.getAttribute('src');
     const bg = window.getComputedStyle(el).backgroundImage;
     if (bg && bg !== 'none') {
@@ -2422,11 +2531,11 @@
     const urlValue = imageUrlInput.value.trim();
     if (file) {
       const data = await readFileAsDataUrl(file);
-      updateImagePreview(data);
+      updateImagePreview(data, selectedType);
       return { sourceType: 'upload', data, name: file.name };
     }
     if (urlValue) {
-      updateImagePreview(urlValue);
+      updateImagePreview(urlValue, selectedType);
       return { sourceType: 'url', url: urlValue };
     }
     return null;
@@ -2435,6 +2544,33 @@
   function applyImageToElement(el, src, mode = 'image') {
     if (mode === 'background') {
       el.style.backgroundImage = src ? `url('${src}')` : '';
+      return;
+    }
+    if (mode === 'video') {
+      const options = getVideoOptionsFromInputs();
+      let videoNode = el.tagName === 'VIDEO' ? el : el.querySelector?.('video');
+      if (!videoNode) {
+        videoNode = document.createElement('video');
+        if (el.tagName === 'VIDEO') {
+          el.replaceWith(videoNode);
+          selectedElement = videoNode;
+        } else {
+          el.innerHTML = '';
+          el.appendChild(videoNode);
+        }
+      }
+      videoNode.src = src || '';
+      videoNode.autoplay = options.autoplay;
+      videoNode.loop = options.loop;
+      videoNode.muted = options.muted;
+      videoNode.controls = options.controls;
+      videoNode.playsInline = true;
+      if (el.tagName !== 'VIDEO') {
+        el.dataset.cmsVideoAutoplay = String(options.autoplay);
+        el.dataset.cmsVideoLoop = String(options.loop);
+        el.dataset.cmsVideoMuted = String(options.muted);
+        el.dataset.cmsVideoControls = String(options.controls);
+      }
       return;
     }
     if (el.tagName === 'IMG') {
@@ -2496,7 +2632,8 @@
     const backendValue =
       el.getAttribute('data-server-text')
       || el.getAttribute('data-server-image')
-      || el.getAttribute('data-server-bg');
+      || el.getAttribute('data-server-bg')
+      || el.getAttribute('data-server-video');
     const backendContainer = getBackendSourceContainer(el);
     const backendSource = backendContainer?.getAttribute('data-json-source') || '';
     const shouldUseBackend = Boolean(backendValue) && Boolean(backendSource);
@@ -2528,9 +2665,11 @@
         ? 'data-cms-image'
         : selectedType === 'background'
           ? 'data-cms-bg'
+          : selectedType === 'video'
+            ? 'data-cms-video'
           : 'data-cms-text';
     const key = el.getAttribute(attributeName);
-    const value = selectedType === 'image' || selectedType === 'background'
+    const value = selectedType === 'image' || selectedType === 'background' || selectedType === 'video'
       ? getImageValue(el, key, selectedType)
       : getPrimaryTextValue(el).trim();
     linkInput.value = el.getAttribute('data-link') || '';
@@ -2542,10 +2681,19 @@
       componentSourceToggle.disabled = !componentId;
       lastComponentId = componentId;
     }
-    if (selectedType === 'image' || selectedType === 'background') {
+    if (selectedType === 'image' || selectedType === 'background' || selectedType === 'video') {
       const displayValue = mergedContent[key] ?? value;
       imageUrlInput.value = typeof displayValue === 'string' ? displayValue : '';
-      updateImagePreview(displayValue);
+      if (selectedType === 'video') {
+        const targetVideo = el.tagName === 'VIDEO' ? el : el.querySelector('video');
+        setVideoOptionsInputs({
+          autoplay: el.dataset.cmsVideoAutoplay === 'true' || targetVideo?.autoplay,
+          loop: el.dataset.cmsVideoLoop === 'true' || targetVideo?.loop,
+          muted: el.dataset.cmsVideoMuted === 'true' || targetVideo?.muted,
+          controls: el.dataset.cmsVideoControls ? el.dataset.cmsVideoControls === 'true' : targetVideo?.controls !== false,
+        });
+      }
+      updateImagePreview(displayValue, selectedType);
     } else {
       valueInput.value = mergedContent[key] ?? value;
       enableInlineEditing(el);
@@ -2589,7 +2737,7 @@
       editBtn.textContent = 'Edit';
       editBtn.addEventListener('click', () => {
         const el = document.querySelector(
-          `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"]`
+          `[data-cms-text="${CSS.escape(key)}"], [data-cms-image="${CSS.escape(key)}"], [data-cms-bg="${CSS.escape(key)}"], [data-cms-video="${CSS.escape(key)}"]`
         );
         if (el) selectElement(el);
       });
@@ -2627,7 +2775,7 @@
       valueInput.value = getPrimaryTextValue(selectedElement);
     }
     const key = keyField.value.trim();
-    let value = selectedType === 'image' || selectedType === 'background'
+    let value = selectedType === 'image' || selectedType === 'background' || selectedType === 'video'
       ? imageUrlInput.value.trim()
       : valueInput.value;
     const link = linkInput.value.trim();
@@ -2651,7 +2799,7 @@
       value = formatBackendValue(getValueByPath(backendServiceData, key));
       valueInput.value = value;
       imageUrlInput.value = value;
-      updateImagePreview(value);
+      updateImagePreview(value, selectedType);
       textValueDirty = true;
     }
 
@@ -2660,6 +2808,8 @@
         ? 'data-cms-image'
         : selectedType === 'background'
           ? 'data-cms-bg'
+          : selectedType === 'video'
+            ? 'data-cms-video'
           : 'data-cms-text';
     const currentKey = selectedElement.getAttribute(attributeName);
     const currentLink = selectedElement.getAttribute('data-link') || '';
@@ -2694,6 +2844,8 @@
         ? 'data-server-image'
         : selectedType === 'background'
           ? 'data-server-bg'
+          : selectedType === 'video'
+            ? 'data-server-video'
           : 'data-server-text';
     if (useBackend) {
       selectedElement.setAttribute(serverAttr, value || '');
@@ -2718,7 +2870,7 @@
     let bodyValue = value;
     let imagePayload = null;
 
-    if (selectedType === 'image' || selectedType === 'background') {
+    if (selectedType === 'image' || selectedType === 'background' || selectedType === 'video') {
       if (!useBackend) {
         try {
           imagePayload = await buildImagePayload();
@@ -2728,7 +2880,9 @@
           return;
         }
         if (!imagePayload && !value) {
-          messageEl.textContent = 'Provide an image URL or upload a file.';
+          messageEl.textContent = selectedType === 'video'
+            ? 'Provide a video URL or upload a video file.'
+            : 'Provide an image URL or upload a file.';
           messageEl.style.color = '#ef4444';
           return;
         }
@@ -2736,7 +2890,7 @@
       applyImageToElement(
         selectedElement,
         value || (imagePayload && imagePayload.data),
-        selectedType === 'background' ? 'background' : 'image'
+        selectedType === 'background' ? 'background' : selectedType === 'video' ? 'video' : 'image'
       );
     } else if (textValueDirty) {
       const nextValue = valueInput.value;
@@ -2802,6 +2956,8 @@
         ? 'data-cms-image'
         : selectedType === 'background'
           ? 'data-cms-bg'
+          : selectedType === 'video'
+            ? 'data-cms-video'
           : 'data-cms-text';
     const key = selectedElement.getAttribute(attributeName);
     const path = buildElementPath(selectedElement);
@@ -2894,7 +3050,7 @@
     const hasText = target.textContent && target.textContent.trim();
     const type = determineElementType(target);
     if (!hasText && type === 'text') {
-      messageEl.textContent = 'Select an element that contains text, an image, or a background.';
+      messageEl.textContent = 'Select an element that contains text, an image, a background, or a video.';
       messageEl.style.color = '#ef4444';
       //return;
     }
@@ -2954,6 +3110,13 @@
         applyImageToElement(el, mergedContent[key], 'background');
       }
     });
+
+    document.querySelectorAll('[data-cms-video]').forEach((el) => {
+      const key = el.getAttribute('data-cms-video');
+      if (key && mergedContent[key] !== undefined) {
+        applyImageToElement(el, mergedContent[key], 'video');
+      }
+    });
     refreshList();
   }
 
@@ -2967,6 +3130,8 @@
           el.setAttribute('data-cms-image', key);
         } else if (type === 'background') {
           el.setAttribute('data-cms-bg', key);
+        } else if (type === 'video') {
+          el.setAttribute('data-cms-video', key);
         } else {
           el.setAttribute('data-cms-text', key);
         }
@@ -3315,7 +3480,15 @@
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
   typeInputs.forEach((input) => {
-    input.addEventListener('change', (e) => setTypeSelection(e.target.value));
+    input.addEventListener('change', (e) => {
+      setTypeSelection(e.target.value);
+      imageFileInput.accept = e.target.value === 'video' ? 'video/*' : 'image/*';
+      if (e.target.value !== 'video') {
+        setVideoOptionsInputs();
+      }
+      const currentUrl = imageUrlInput.value.trim();
+      updateImagePreview(currentUrl, e.target.value);
+    });
   });
   fileSelect.addEventListener('change', () => {
     navigateToFile(fileSelect.value);
@@ -3360,17 +3533,17 @@
   imageFileInput.addEventListener('change', () => {
     if (imageFileInput.files[0]) {
       const fileUrl = URL.createObjectURL(imageFileInput.files[0]);
-      updateImagePreview(fileUrl);
+      updateImagePreview(fileUrl, selectedType);
       applyImagePreviewToElement(fileUrl);
     } else {
-      updateImagePreview('');
+      updateImagePreview('', selectedType);
     }
   });
   imageUrlInput.addEventListener('input', () => {
     if (backendToggle.checked) return;
     const nextUrl = imageUrlInput.value.trim();
     if (!nextUrl) return;
-    updateImagePreview(nextUrl);
+    updateImagePreview(nextUrl, selectedType);
     applyImagePreviewToElement(nextUrl);
   });
   imagePreview.addEventListener('dblclick', () => {
@@ -3378,15 +3551,30 @@
     imageFileInput.value = '';
     imageFileInput.click();
   });
+  [videoAutoplayInput, videoLoopInput, videoMutedInput, videoControlsInput].forEach((input) => {
+    if (!input) return;
+    input.addEventListener('change', () => {
+      if (selectedType !== 'video') return;
+      const currentUrl = imageUrlInput.value.trim();
+      updateImagePreview(currentUrl, 'video');
+      if (selectedElement) {
+        applyImageToElement(selectedElement, currentUrl, 'video');
+      }
+    });
+  });
   if (imagePreviewDelete) {
     imagePreviewDelete.addEventListener('click', (event) => {
       event.preventDefault();
       event.stopPropagation();
-      if (!selectedElement || !(selectedType === 'image' || selectedType === 'background')) return;
+      if (!selectedElement || !(selectedType === 'image' || selectedType === 'background' || selectedType === 'video')) return;
       imageUrlInput.value = '';
       imageFileInput.value = '';
-      updateImagePreview('');
-      applyImageToElement(selectedElement, '', selectedType === 'background' ? 'background' : 'image');
+      updateImagePreview('', selectedType);
+      applyImageToElement(
+        selectedElement,
+        '',
+        selectedType === 'background' ? 'background' : selectedType === 'video' ? 'video' : 'image'
+      );
       scheduleLayoutPersist();
     });
   }
