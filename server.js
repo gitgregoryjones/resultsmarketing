@@ -278,6 +278,30 @@ function replaceDataBackground(html, key, value) {
   });
 }
 
+function replaceDataVideo(html, key, value) {
+  try {
+    const root = parse(html);
+    const targets = root
+      .querySelectorAll('[data-cms-video]')
+      .filter((node) => node.getAttribute('data-cms-video') === key);
+    if (!targets.length) return html;
+    targets.forEach((target) => {
+      const tagName = (target.tagName || '').toLowerCase();
+      if (tagName === 'video') {
+        target.setAttribute('src', value);
+        return;
+      }
+      const nestedVideo = target.querySelector('video');
+      if (nestedVideo) {
+        nestedVideo.setAttribute('src', value);
+      }
+    });
+    return root.toString();
+  } catch (err) {
+    return html;
+  }
+}
+
 function prefixAssetPath(value, siteName) {
   if (!siteName || !value || typeof value !== 'string') return value;
   const trimmedSite = siteName.startsWith('/') ? siteName : `/${siteName}`;
@@ -315,20 +339,41 @@ function extensionForImageMime(mimeSubtype = '') {
   return '.png';
 }
 
-async function writeBase64ImageToDisk(dataUrl, baseName = 'embedded') {
+function extensionForVideoMime(mimeSubtype = '') {
+  const normalized = String(mimeSubtype || '').toLowerCase();
+  if (normalized === 'mp4') return '.mp4';
+  if (normalized === 'webm') return '.webm';
+  if (normalized === 'ogg' || normalized === 'ogv') return '.ogv';
+  if (normalized === 'quicktime') return '.mov';
+  if (normalized === 'x-matroska') return '.mkv';
+  return '.mp4';
+}
+
+async function writeBase64MediaToDisk(dataUrl, baseName = 'embedded') {
   if (typeof dataUrl !== 'string') return dataUrl;
   const trimmed = dataUrl.trim();
-  const match = trimmed.match(/^data:image\/([a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=\s]+)$/i);
+  const match = trimmed.match(
+    /^data:(image|video)\/([a-zA-Z0-9.+-]+)(?:;[^;,=]+(?:=[^;,]+)?)*;base64,([\s\S]+)$/i
+  );
   if (!match) return dataUrl;
 
   await fs.mkdir(IMAGES_DIR, { recursive: true });
-  const extension = extensionForImageMime(match[1]);
+  const mediaType = String(match[1] || '').toLowerCase();
+  const extension = mediaType === 'video'
+    ? extensionForVideoMime(match[2])
+    : extensionForImageMime(match[2]);
   const safeBase = String(baseName || 'embedded').replace(/[^a-z0-9_-]/gi, '_').toLowerCase();
   const filename = `${safeBase || 'embedded'}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${extension}`;
   const targetPath = path.join(IMAGES_DIR, filename);
-  const base64Payload = match[2].replace(/\s+/g, '');
+  const base64Payload = match[3].replace(/\s+/g, '');
   await fs.writeFile(targetPath, Buffer.from(base64Payload, 'base64'));
   return `/images/${filename}`;
+}
+
+async function writeBase64ImageToDisk(dataUrl, baseName = 'embedded') {
+  if (typeof dataUrl !== 'string') return dataUrl;
+  if (!dataUrl.trim().toLowerCase().startsWith('data:image/')) return dataUrl;
+  return writeBase64MediaToDisk(dataUrl, baseName);
 }
 
 async function localizeEmbeddedImagesInHtml(html, fileName = 'page') {
@@ -392,6 +437,16 @@ function extractContentFromHtml(html) {
     const style = el.getAttribute('style') || '';
     values[key] = extractBackgroundImage(style);
   });
+  root.querySelectorAll('[data-cms-video]').forEach((el) => {
+    const key = el.getAttribute('data-cms-video');
+    if (!key) return;
+    if ((el.tagName || '').toLowerCase() === 'video') {
+      values[key] = el.getAttribute('src') || '';
+      return;
+    }
+    const nestedVideo = el.querySelector('video');
+    values[key] = nestedVideo ? nestedVideo.getAttribute('src') || '' : '';
+  });
   const htmlEl = root.querySelector('html');
   const bodyEl = root.querySelector('body');
   const siteName =
@@ -434,10 +489,13 @@ function setCmsAttributes(element, { key, type, link }) {
   element.removeAttribute('data-cms-text');
   element.removeAttribute('data-cms-image');
   element.removeAttribute('data-cms-bg');
+  element.removeAttribute('data-cms-video');
   if (type === 'image') {
     element.setAttribute('data-cms-image', key);
   } else if (type === 'background') {
     element.setAttribute('data-cms-bg', key);
+  } else if (type === 'video') {
+    element.setAttribute('data-cms-video', key);
   } else {
     element.setAttribute('data-cms-text', key);
   }
@@ -468,7 +526,7 @@ function mergeContentIntoHtml(html, { key, type, value, elementPath, link, origi
       }
       if (!target && key) {
         target = root.querySelector(
-          `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"]`
+          `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"], [data-cms-video="${key}"]`
         );
       }
       if (target && key) {
@@ -485,6 +543,8 @@ function mergeContentIntoHtml(html, { key, type, value, elementPath, link, origi
       nextHtml = replaceDataImage(nextHtml, key, resolvedValue);
     } else if (type === 'background') {
       nextHtml = replaceDataBackground(nextHtml, key, resolvedValue);
+    } else if (type === 'video') {
+      nextHtml = replaceDataVideo(nextHtml, key, resolvedValue);
     } else {
       nextHtml = replaceDataText(nextHtml, key, resolvedValue);
     }
@@ -502,7 +562,7 @@ function removeElementFromHtml(html, { key, elementPath }) {
     }
     if (!target && key) {
       target = root.querySelector(
-        `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"]`
+        `[data-cms-text="${key}"], [data-cms-image="${key}"], [data-cms-bg="${key}"], [data-cms-video="${key}"]`
       );
     }
     if (target) {
@@ -702,7 +762,7 @@ async function publishSite() {
       html = await applyStylesToHtml(html);
       if (siteName) {
         const root = parse(html);
-        root.querySelectorAll('[data-cms-image], [data-cms-bg]').forEach((el) => {
+        root.querySelectorAll('[data-cms-image], [data-cms-bg], [data-cms-video]').forEach((el) => {
           const src = el.getAttribute('src') || '';
           if (!src) return;
           el.setAttribute('src', prefixAssetPath(src, siteName));
@@ -1456,7 +1516,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
           return;
         }
         let storedValue = value ?? '';
-        if (type === 'image' || type === 'background') {
+        if (type === 'image' || type === 'background' || type === 'video') {
           try {
             await fs.mkdir(IMAGES_DIR, { recursive: true });
           } catch (err) {
@@ -1473,7 +1533,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
             storedValue = `/images/${filename}`;
           }
 
-          storedValue = await writeBase64ImageToDisk(storedValue, targetFile.replace('.html', ''));
+          storedValue = await writeBase64MediaToDisk(storedValue, targetFile.replace('.html', ''));
 
           if (image && image.sourceType === 'url' && image.url) {
             storedValue = image.url;
@@ -1510,7 +1570,7 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
         if (key) {
           if (html) {
-            if ((type === 'image' || type === 'background') && storedValue !== value) {
+            if ((type === 'image' || type === 'background' || type === 'video') && storedValue !== value) {
               currentHtml = mergeContentIntoHtml(currentHtml, {
                 key,
                 type: type || 'text',
