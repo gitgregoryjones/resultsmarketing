@@ -1876,7 +1876,12 @@
     if (el.hasAttribute('data-cms-bg')) {
       return 'background';
     }
-    if (el.tagName === 'VIDEO' || el.hasAttribute('data-cms-video') || el.querySelector?.('video')) {
+    if (
+      el.tagName === 'VIDEO'
+      || el.tagName === 'IFRAME'
+      || el.hasAttribute('data-cms-video')
+      || el.querySelector?.('video, iframe')
+    ) {
       return 'video';
     }
     const bg = window.getComputedStyle(el).backgroundImage;
@@ -1902,11 +1907,70 @@
     if (videoControlsInput) videoControlsInput.checked = options.controls !== false;
   }
 
+  function extractYouTubeVideoId(value = '') {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    try {
+      const parsed = new URL(trimmed, window.location.origin);
+      const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+      const path = parsed.pathname || '';
+      const normalizedPath = path.replace(/\/+$/, '');
+      if (host === 'youtu.be') {
+        const id = normalizedPath.replace(/^\//, '').split('/')[0];
+        return /^[a-zA-Z0-9_-]{6,}$/.test(id) ? id : '';
+      }
+      if (host === 'youtube.com' || host === 'm.youtube.com' || host === 'music.youtube.com') {
+        if (normalizedPath === '/watch') {
+          const id = parsed.searchParams.get('v') || '';
+          return /^[a-zA-Z0-9_-]{6,}$/.test(id) ? id : '';
+        }
+        const segments = normalizedPath.split('/').filter(Boolean);
+        if (segments[0] === 'shorts' || segments[0] === 'embed' || segments[0] === 'live') {
+          const id = segments[1] || '';
+          return /^[a-zA-Z0-9_-]{6,}$/.test(id) ? id : '';
+        }
+      }
+    } catch (err) {
+      return '';
+    }
+    return '';
+  }
+
+  function toYouTubeEmbedUrl(value = '') {
+    const id = extractYouTubeVideoId(value);
+    return id ? `https://www.youtube.com/embed/${id}` : '';
+  }
+
+  function isYouTubeEmbedUrl(value = '') {
+    if (typeof value !== 'string') return false;
+    const trimmed = value.trim();
+    if (!trimmed) return false;
+    try {
+      const parsed = new URL(trimmed, window.location.origin);
+      const host = parsed.hostname.replace(/^www\./i, '').toLowerCase();
+      const path = (parsed.pathname || '').replace(/\/+$/, '');
+      if (host !== 'youtube.com' && host !== 'm.youtube.com' && host !== 'music.youtube.com') return false;
+      return /^\/embed\/[a-zA-Z0-9_-]{6,}$/.test(path);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function normalizeVideoUrl(value = '') {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    return toYouTubeEmbedUrl(trimmed) || trimmed;
+  }
+
   function updateImagePreview(src, type = selectedType) {
     imagePreview.style.backgroundImage = 'none';
     imagePreview.classList.remove('has-image');
     const existingVideo = imagePreview.querySelector('video');
     if (existingVideo) existingVideo.remove();
+    const existingFrame = imagePreview.querySelector('iframe');
+    if (existingFrame) existingFrame.remove();
     const emptyLabel = imagePreview.querySelector('.cms-image-preview__empty');
     if (!src) {
       if (emptyLabel) {
@@ -1916,17 +1980,28 @@
       return;
     }
     if (type === 'video') {
+      const normalizedVideoSrc = normalizeVideoUrl(src);
       if (emptyLabel) emptyLabel.style.display = 'none';
-      const previewVideo = document.createElement('video');
-      previewVideo.className = 'cms-image-preview__video';
-      previewVideo.src = src;
-      const options = getVideoOptionsFromInputs();
-      previewVideo.autoplay = options.autoplay;
-      previewVideo.loop = options.loop;
-      previewVideo.muted = options.muted;
-      previewVideo.controls = options.controls;
-      previewVideo.playsInline = true;
-      imagePreview.appendChild(previewVideo);
+      if (isYouTubeEmbedUrl(normalizedVideoSrc)) {
+        const previewFrame = document.createElement('iframe');
+        previewFrame.className = 'cms-image-preview__video cms-image-preview__iframe';
+        previewFrame.src = normalizedVideoSrc;
+        previewFrame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        previewFrame.setAttribute('allowfullscreen', '');
+        previewFrame.loading = 'lazy';
+        imagePreview.appendChild(previewFrame);
+      } else {
+        const previewVideo = document.createElement('video');
+        previewVideo.className = 'cms-image-preview__video';
+        previewVideo.src = normalizedVideoSrc;
+        const options = getVideoOptionsFromInputs();
+        previewVideo.autoplay = options.autoplay;
+        previewVideo.loop = options.loop;
+        previewVideo.muted = options.muted;
+        previewVideo.controls = options.controls;
+        previewVideo.playsInline = true;
+        imagePreview.appendChild(previewVideo);
+      }
       imagePreview.classList.add('has-image');
       return;
     }
@@ -2505,6 +2580,9 @@
     if (key && mergedContent[key]) return mergedContent[key];
     if (type === 'video') {
       if (el.tagName === 'VIDEO') return el.getAttribute('src') || '';
+      if (el.tagName === 'IFRAME') return el.getAttribute('src') || '';
+      const nestedFrame = el.querySelector ? el.querySelector('iframe') : null;
+      if (nestedFrame) return nestedFrame.getAttribute('src') || '';
       const nestedVideo = el.querySelector ? el.querySelector('video') : null;
       return nestedVideo?.getAttribute('src') || '';
     }
@@ -2528,13 +2606,17 @@
 
   async function buildImagePayload() {
     const file = imageFileInput.files[0];
-    const urlValue = imageUrlInput.value.trim();
+    const rawUrlValue = imageUrlInput.value.trim();
+    const urlValue = selectedType === 'video' ? normalizeVideoUrl(rawUrlValue) : rawUrlValue;
     if (file) {
       const data = await readFileAsDataUrl(file);
       updateImagePreview(data, selectedType);
       return { sourceType: 'upload', data, name: file.name };
     }
     if (urlValue) {
+      if (selectedType === 'video' && urlValue !== rawUrlValue) {
+        imageUrlInput.value = urlValue;
+      }
       updateImagePreview(urlValue, selectedType);
       return { sourceType: 'url', url: urlValue };
     }
@@ -2547,36 +2629,99 @@
       return;
     }
     if (mode === 'video') {
+      const normalizedSrc = normalizeVideoUrl(src || '');
+      const useIframe = isYouTubeEmbedUrl(normalizedSrc);
       const options = getVideoOptionsFromInputs();
       let hostElement = el;
-      let videoNode = el.tagName === 'VIDEO' ? el : el.querySelector?.('video');
-      if (!videoNode && el.tagName === 'IMG') {
+      const existingVideo = el.tagName === 'VIDEO' ? el : el.querySelector?.('video');
+      const existingIframe = el.tagName === 'IFRAME' ? el : el.querySelector?.('iframe');
+      if (useIframe && existingVideo) {
+        const replacementFrame = document.createElement('iframe');
+        Array.from(existingVideo.attributes || []).forEach((attribute) => {
+          if (attribute.name === 'src') return;
+          replacementFrame.setAttribute(attribute.name, attribute.value);
+        });
+        replacementFrame.classList.add('cms-video-embed');
+        existingVideo.replaceWith(replacementFrame);
+        if (selectedElement === existingVideo) {
+          selectedElement = replacementFrame;
+        }
+        hostElement = el.tagName === 'VIDEO' ? replacementFrame : el;
+      } else if (!useIframe && existingIframe) {
+        const replacementVideo = document.createElement('video');
+        Array.from(existingIframe.attributes || []).forEach((attribute) => {
+          if (attribute.name === 'src') return;
+          replacementVideo.setAttribute(attribute.name, attribute.value);
+        });
+        existingIframe.replaceWith(replacementVideo);
+        if (selectedElement === existingIframe) {
+          selectedElement = replacementVideo;
+        }
+        hostElement = el.tagName === 'IFRAME' ? replacementVideo : el;
+      }
+
+      if (useIframe) {
+        let frameNode = hostElement.tagName === 'IFRAME' ? hostElement : hostElement.querySelector?.('iframe');
+        if (!frameNode && hostElement.tagName === 'IMG') {
+          frameNode = document.createElement('iframe');
+          Array.from(hostElement.attributes || []).forEach((attribute) => {
+            const name = attribute.name;
+            if (name === 'src' || name === 'data-cms-image' || name === 'data-server-image') return;
+            frameNode.setAttribute(name, attribute.value);
+          });
+          frameNode.removeAttribute('data-cms-image');
+          frameNode.removeAttribute('data-server-image');
+          if (selectedElement === hostElement) selectedElement = frameNode;
+          hostElement.replaceWith(frameNode);
+          hostElement = frameNode;
+        }
+        if (!frameNode) {
+          frameNode = document.createElement('iframe');
+          hostElement.innerHTML = '';
+          hostElement.appendChild(frameNode);
+        }
+        frameNode.classList.add('cms-video-embed');
+        frameNode.src = normalizedSrc;
+        frameNode.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        frameNode.setAttribute('allowfullscreen', '');
+        frameNode.loading = 'lazy';
+        if (hostElement) {
+          hostElement.dataset.cmsVideoAutoplay = String(options.autoplay);
+          hostElement.dataset.cmsVideoLoop = String(options.loop);
+          hostElement.dataset.cmsVideoMuted = String(options.muted);
+          hostElement.dataset.cmsVideoControls = String(options.controls);
+        }
+        return;
+      }
+
+      let videoNode = hostElement.tagName === 'VIDEO' ? hostElement : hostElement.querySelector?.('video');
+      if (!videoNode && hostElement.tagName === 'IMG') {
         videoNode = document.createElement('video');
-        Array.from(el.attributes || []).forEach((attribute) => {
+        Array.from(hostElement.attributes || []).forEach((attribute) => {
           const name = attribute.name;
           if (name === 'src' || name === 'data-cms-image' || name === 'data-server-image') return;
           videoNode.setAttribute(name, attribute.value);
         });
         videoNode.removeAttribute('data-cms-image');
         videoNode.removeAttribute('data-server-image');
-        if (selectedElement === el) {
+        if (selectedElement === hostElement) {
           selectedElement = videoNode;
         }
-        el.replaceWith(videoNode);
+        hostElement.replaceWith(videoNode);
         hostElement = videoNode;
       }
       if (!videoNode) {
         videoNode = document.createElement('video');
-        if (el.tagName === 'VIDEO') {
-          el.replaceWith(videoNode);
+        if (hostElement.tagName === 'VIDEO') {
+          hostElement.replaceWith(videoNode);
           selectedElement = videoNode;
           hostElement = videoNode;
         } else {
-          el.innerHTML = '';
-          el.appendChild(videoNode);
+          hostElement.innerHTML = '';
+          hostElement.appendChild(videoNode);
         }
       }
-      videoNode.src = src || '';
+      videoNode.src = normalizedSrc;
       videoNode.autoplay = options.autoplay;
       videoNode.loop = options.loop;
       videoNode.muted = options.muted;
@@ -2707,7 +2852,7 @@
           autoplay: el.dataset.cmsVideoAutoplay === 'true' || targetVideo?.autoplay,
           loop: el.dataset.cmsVideoLoop === 'true' || targetVideo?.loop,
           muted: el.dataset.cmsVideoMuted === 'true' || targetVideo?.muted,
-          controls: el.dataset.cmsVideoControls ? el.dataset.cmsVideoControls === 'true' : targetVideo?.controls !== false,
+          controls: el.dataset.cmsVideoControls ? el.dataset.cmsVideoControls === 'true' : targetVideo ? targetVideo.controls !== false : true,
         });
       }
       updateImagePreview(displayValue, selectedType);
@@ -2795,6 +2940,10 @@
     let value = selectedType === 'image' || selectedType === 'background' || selectedType === 'video'
       ? imageUrlInput.value.trim()
       : valueInput.value;
+    if (selectedType === 'video' && value) {
+      value = normalizeVideoUrl(value);
+      imageUrlInput.value = value;
+    }
     const link = linkInput.value.trim();
     if (!key) {
       messageEl.textContent = 'Key is required.';
@@ -3558,7 +3707,11 @@
   });
   imageUrlInput.addEventListener('input', () => {
     if (backendToggle.checked) return;
-    const nextUrl = imageUrlInput.value.trim();
+    const rawNextUrl = imageUrlInput.value.trim();
+    const nextUrl = selectedType === 'video' ? normalizeVideoUrl(rawNextUrl) : rawNextUrl;
+    if (selectedType === 'video' && nextUrl && nextUrl !== rawNextUrl) {
+      imageUrlInput.value = nextUrl;
+    }
     if (!nextUrl) return;
     updateImagePreview(nextUrl, selectedType);
     applyImagePreviewToElement(nextUrl);

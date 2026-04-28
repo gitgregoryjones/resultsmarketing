@@ -291,6 +291,15 @@ function replaceDataVideo(html, key, value) {
         target.setAttribute('src', value);
         return;
       }
+      if (tagName === 'iframe') {
+        target.setAttribute('src', value);
+        return;
+      }
+      const nestedFrame = target.querySelector('iframe');
+      if (nestedFrame) {
+        nestedFrame.setAttribute('src', value);
+        return;
+      }
       const nestedVideo = target.querySelector('video');
       if (nestedVideo) {
         nestedVideo.setAttribute('src', value);
@@ -377,7 +386,7 @@ async function writeBase64ImageToDisk(dataUrl, baseName = 'embedded') {
 }
 
 async function localizeEmbeddedImagesInHtml(html, fileName = 'page') {
-  if (!html || !html.includes('data:image/')) return html;
+  if (!html || (!html.includes('data:image/') && !html.includes('data:video/'))) return html;
   const root = parse(html);
   const fileBase = path.basename(fileName, path.extname(fileName)) || 'page';
   let changed = false;
@@ -385,8 +394,8 @@ async function localizeEmbeddedImagesInHtml(html, fileName = 'page') {
   const allElements = root.querySelectorAll('*');
   for (const element of allElements) {
     const src = element.getAttribute('src');
-    if (typeof src === 'string' && src.trim().startsWith('data:image/')) {
-      const persistedSrc = await writeBase64ImageToDisk(src, fileBase);
+    if (typeof src === 'string' && /^data:(image|video)\//i.test(src.trim())) {
+      const persistedSrc = await writeBase64MediaToDisk(src, fileBase);
       if (persistedSrc !== src) {
         element.setAttribute('src', persistedSrc);
         changed = true;
@@ -394,11 +403,11 @@ async function localizeEmbeddedImagesInHtml(html, fileName = 'page') {
     }
 
     const style = element.getAttribute('style');
-    if (typeof style === 'string' && style.includes('data:image/')) {
-      const matches = [...style.matchAll(/url\((['"]?)(data:image\/[a-zA-Z0-9.+-]+;base64,[^\s'"\)]+)\1\)/gi)];
+    if (typeof style === 'string' && /data:(image|video)\//i.test(style)) {
+      const matches = [...style.matchAll(/url\((['"]?)(data:(?:image|video)\/[a-zA-Z0-9.+-]+(?:;[^;,=]+(?:=[^;,]+)?)*;base64,[\s\S]+?)\1\)/gi)];
       let nextStyle = style;
       for (const [, quote, dataUrl] of matches) {
-        const persistedSrc = await writeBase64ImageToDisk(dataUrl, fileBase);
+        const persistedSrc = await writeBase64MediaToDisk(dataUrl, fileBase);
         if (persistedSrc !== dataUrl) {
           const wrapped = `url(${quote || ''}${persistedSrc}${quote || ''})`;
           nextStyle = nextStyle.replace(`url(${quote || ''}${dataUrl}${quote || ''})`, wrapped);
@@ -442,6 +451,15 @@ function extractContentFromHtml(html) {
     if (!key) return;
     if ((el.tagName || '').toLowerCase() === 'video') {
       values[key] = el.getAttribute('src') || '';
+      return;
+    }
+    if ((el.tagName || '').toLowerCase() === 'iframe') {
+      values[key] = el.getAttribute('src') || '';
+      return;
+    }
+    const nestedFrame = el.querySelector('iframe');
+    if (nestedFrame) {
+      values[key] = nestedFrame.getAttribute('src') || '';
       return;
     }
     const nestedVideo = el.querySelector('video');
@@ -764,8 +782,21 @@ async function publishSite() {
         const root = parse(html);
         root.querySelectorAll('[data-cms-image], [data-cms-bg], [data-cms-video]').forEach((el) => {
           const src = el.getAttribute('src') || '';
-          if (!src) return;
-          el.setAttribute('src', prefixAssetPath(src, siteName));
+          if (src) {
+            el.setAttribute('src', prefixAssetPath(src, siteName));
+          }
+          if (el.hasAttribute('data-cms-video')) {
+            const nestedVideo = el.querySelector('video');
+            if (nestedVideo) {
+              const nestedSrc = nestedVideo.getAttribute('src') || '';
+              if (nestedSrc) nestedVideo.setAttribute('src', prefixAssetPath(nestedSrc, siteName));
+            }
+            const nestedFrame = el.querySelector('iframe');
+            if (nestedFrame) {
+              const nestedSrc = nestedFrame.getAttribute('src') || '';
+              if (nestedSrc) nestedFrame.setAttribute('src', prefixAssetPath(nestedSrc, siteName));
+            }
+          }
         });
         root.querySelectorAll('[data-cms-image], [data-cms-bg]').forEach((el) => {
           const style = el.getAttribute('style') || '';
