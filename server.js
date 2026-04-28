@@ -279,17 +279,27 @@ function replaceDataBackground(html, key, value) {
 }
 
 function replaceDataVideo(html, key, value) {
-  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const pattern = new RegExp(
-    `<video([^>]*?)\\sdata-cms-video=["']${escapedKey}["']([^>]*)>([\\s\\S]*?)<\\/video>`,
-    'gi'
-  );
-
-  return html.replace(pattern, (_match, before, after) => {
-    let cleanedBefore = before.replace(/\s?src=["'][^"']*["']/i, '');
-    let cleanedAfter = after.replace(/\s?src=["'][^"']*["']/i, '');
-    return `<video${cleanedBefore} data-cms-video="${key}" src="${escapeHtml(value)}"${cleanedAfter}></video>`;
-  });
+  try {
+    const root = parse(html);
+    const targets = root
+      .querySelectorAll('[data-cms-video]')
+      .filter((node) => node.getAttribute('data-cms-video') === key);
+    if (!targets.length) return html;
+    targets.forEach((target) => {
+      const tagName = (target.tagName || '').toLowerCase();
+      if (tagName === 'video') {
+        target.setAttribute('src', value);
+        return;
+      }
+      const nestedVideo = target.querySelector('video');
+      if (nestedVideo) {
+        nestedVideo.setAttribute('src', value);
+      }
+    });
+    return root.toString();
+  } catch (err) {
+    return html;
+  }
 }
 
 function prefixAssetPath(value, siteName) {
