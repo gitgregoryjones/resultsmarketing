@@ -2595,7 +2595,7 @@
       const youtubeEmbed = getYoutubeEmbedUrl(src);
       if (youtubeEmbed) {
         let iframeNode = el.tagName === 'IFRAME' ? el : el.querySelector?.('iframe');
-        if (!iframeNode && el.tagName === 'IMG') {
+        if (!iframeNode && (el.tagName === 'IMG' || el.tagName === 'VIDEO')) {
           iframeNode = document.createElement('iframe');
           Array.from(el.attributes || []).forEach((attribute) => {
             const name = attribute.name;
