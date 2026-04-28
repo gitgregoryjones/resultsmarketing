@@ -2548,12 +2548,29 @@
     }
     if (mode === 'video') {
       const options = getVideoOptionsFromInputs();
+      let hostElement = el;
       let videoNode = el.tagName === 'VIDEO' ? el : el.querySelector?.('video');
+      if (!videoNode && el.tagName === 'IMG') {
+        videoNode = document.createElement('video');
+        Array.from(el.attributes || []).forEach((attribute) => {
+          const name = attribute.name;
+          if (name === 'src' || name === 'data-cms-image' || name === 'data-server-image') return;
+          videoNode.setAttribute(name, attribute.value);
+        });
+        videoNode.removeAttribute('data-cms-image');
+        videoNode.removeAttribute('data-server-image');
+        if (selectedElement === el) {
+          selectedElement = videoNode;
+        }
+        el.replaceWith(videoNode);
+        hostElement = videoNode;
+      }
       if (!videoNode) {
         videoNode = document.createElement('video');
         if (el.tagName === 'VIDEO') {
           el.replaceWith(videoNode);
           selectedElement = videoNode;
+          hostElement = videoNode;
         } else {
           el.innerHTML = '';
           el.appendChild(videoNode);
@@ -2565,11 +2582,11 @@
       videoNode.muted = options.muted;
       videoNode.controls = options.controls;
       videoNode.playsInline = true;
-      if (el.tagName !== 'VIDEO') {
-        el.dataset.cmsVideoAutoplay = String(options.autoplay);
-        el.dataset.cmsVideoLoop = String(options.loop);
-        el.dataset.cmsVideoMuted = String(options.muted);
-        el.dataset.cmsVideoControls = String(options.controls);
+      if (hostElement) {
+        hostElement.dataset.cmsVideoAutoplay = String(options.autoplay);
+        hostElement.dataset.cmsVideoLoop = String(options.loop);
+        hostElement.dataset.cmsVideoMuted = String(options.muted);
+        hostElement.dataset.cmsVideoControls = String(options.controls);
       }
       return;
     }
