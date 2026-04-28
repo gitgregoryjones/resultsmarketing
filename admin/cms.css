@@ -1520,6 +1520,11 @@ body.cms-editing #cms-toggle::after {
   background: #000;
 }
 
+.cms-image-preview__iframe {
+  min-height: 180px;
+  border: 0;
+}
+
 .cms-image-preview.has-image .cms-image-preview__delete {
   display: inline-flex;
 }
