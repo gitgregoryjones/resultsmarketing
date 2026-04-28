@@ -352,7 +352,9 @@ function extensionForVideoMime(mimeSubtype = '') {
 async function writeBase64MediaToDisk(dataUrl, baseName = 'embedded') {
   if (typeof dataUrl !== 'string') return dataUrl;
   const trimmed = dataUrl.trim();
-  const match = trimmed.match(/^data:(image|video)\/([a-zA-Z0-9.+-]+);base64,([a-zA-Z0-9+/=\s]+)$/i);
+  const match = trimmed.match(
+    /^data:(image|video)\/([a-zA-Z0-9.+-]+)(?:;[^;,=]+(?:=[^;,]+)?)*;base64,([\s\S]+)$/i
+  );
   if (!match) return dataUrl;
 
   await fs.mkdir(IMAGES_DIR, { recursive: true });
