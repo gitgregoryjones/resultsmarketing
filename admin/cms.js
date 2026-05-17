@@ -457,9 +457,28 @@
           <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
         </div>
         <div id="cms-settings-message"></div>
+        <div class="cms-field cms-field--github">
+          <label>GitHub publish</label>
+          <div class="cms-site-input">
+            <input id="cms-github-owner" type="text" placeholder="owner" />
+            <input id="cms-github-repo" type="text" placeholder="repo" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <input id="cms-github-dev-branch" type="text" placeholder="development" />
+            <input id="cms-github-prod-branch" type="text" placeholder="gh-pages" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <input id="cms-github-token" type="password" placeholder="github token" />
+            <button type="button" id="cms-save-github">Connect</button>
+          </div>
+          <p class="cms-pill cms-pill--subtle">Configure repo + branches once, then publish directly to GitHub.</p>
+        </div>
         <div class="cms-publish">
           <button type="button" id="cms-publish">Publish static site</button>
           <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
+        </div>
+        <div class="cms-publish">
+          <button type="button" id="cms-publish-github">Publish to GitHub production branch</button>
         </div>
       </div>
     </div>
@@ -586,7 +605,14 @@
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
-  const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
+  const githubOwnerInput = sidebar.querySelector('#cms-github-owner');
+  const githubRepoInput = sidebar.querySelector('#cms-github-repo');
+  const githubDevBranchInput = sidebar.querySelector('#cms-github-dev-branch');
+  const githubProdBranchInput = sidebar.querySelector('#cms-github-prod-branch');
+  const githubTokenInput = sidebar.querySelector('#cms-github-token');
+  const githubSaveButton = sidebar.querySelector('#cms-save-github');
+  const githubPublishButton = sidebar.querySelector('#cms-publish-github');
+    const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
   const siteField = sidebar.querySelector('.cms-field--site');
   const listEl = sidebar.querySelector('#cms-list');
@@ -783,6 +809,78 @@
 
   function getComponentId(value) {
     return (value || '').trim();
+  }
+
+
+  async function loadGithubConfig() {
+    try {
+      const res = await fetch('/api/github/config');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data.configured) return;
+      githubOwnerInput.value = data.owner || '';
+      githubRepoInput.value = data.repo || '';
+      githubDevBranchInput.value = data.developmentBranch || 'development';
+      githubProdBranchInput.value = data.productionBranch || 'gh-pages';
+    } catch (err) {
+      console.warn('Unable to load github config', err);
+    }
+  }
+
+  async function saveGithubConfig() {
+    const owner = (githubOwnerInput.value || '').trim();
+    const repo = (githubRepoInput.value || '').trim();
+    const token = (githubTokenInput.value || '').trim();
+    const developmentBranch = (githubDevBranchInput.value || 'development').trim();
+    const productionBranch = (githubProdBranchInput.value || 'gh-pages').trim();
+    if (!owner || !repo || !token) {
+      settingsMessageEl.textContent = 'Owner, repo, and token are required to connect GitHub.';
+      settingsMessageEl.style.color = '#ef4444';
+      return;
+    }
+    githubSaveButton.disabled = true;
+    const originalLabel = githubSaveButton.textContent;
+    githubSaveButton.textContent = 'Connecting...';
+    try {
+      const res = await fetch('/api/github/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner, repo, token, developmentBranch, productionBranch }),
+      });
+      if (!res.ok) throw new Error('Unable to save github config');
+      settingsMessageEl.textContent = 'GitHub connected successfully.';
+      settingsMessageEl.style.color = '#16a34a';
+      githubTokenInput.value = '';
+    } catch (err) {
+      settingsMessageEl.textContent = 'Unable to connect GitHub.';
+      settingsMessageEl.style.color = '#ef4444';
+    } finally {
+      githubSaveButton.disabled = false;
+      githubSaveButton.textContent = originalLabel;
+    }
+  }
+
+  async function publishToGithub() {
+    const originalLabel = githubPublishButton.textContent;
+    githubPublishButton.disabled = true;
+    githubPublishButton.textContent = 'Publishing...';
+    settingsMessageEl.textContent = 'Publishing to GitHub production branch...';
+    settingsMessageEl.style.color = '#111827';
+    try {
+      const res = await fetch('/api/github/publish', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to publish to GitHub');
+      settingsMessageEl.textContent = data.message || `Published to ${data.branch || 'production branch'}.`;
+      settingsMessageEl.style.color = '#16a34a';
+      showToast(settingsMessageEl.textContent, 'success');
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to publish to GitHub.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast(settingsMessageEl.textContent, 'error');
+    } finally {
+      githubPublishButton.disabled = false;
+      githubPublishButton.textContent = originalLabel;
+    }
   }
 
   function clearComponentSelection() {
@@ -3645,6 +3743,8 @@
     setBackendKeyOptions([]);
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
+  githubSaveButton.addEventListener('click', saveGithubConfig);
+  githubPublishButton.addEventListener('click', publishToGithub);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => {
       setTypeSelection(e.target.value);
@@ -3780,6 +3880,7 @@
     updateServiceFormVisibility();
     applyHiddenStateToAllElements();
     hydrate();
+    loadGithubConfig();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
     }
