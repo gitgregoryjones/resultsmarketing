@@ -28,6 +28,9 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 - `POST /api/content?file=index.html` – Accepts `{ key, value, path, type, image, originalOuterHTML, updatedOuterHTML, file, siteName }` where `type` is `text`, `image`, or `background`; saves uploaded images to `/images`, merges text/image/background values immediately into the HTML file on disk (including any new CMS tag attributes), and persists a global `siteName` (lowercase, spaces removed) on every HTML file when sent.
 - `GET /api/files` – Lists available `.html` files in `/admin` for quick switching in the CMS sidebar.
 - `POST /api/publish` – Prepares every `.html` file from `/admin` by stripping `cms.js`/`cms.css`, copying needed local assets (e.g., `images`, `brands`, non-CMS assets from `/admin`), prefixing published image/background URLs with `/<siteName>` when set, and saving static HTML into the project root (plus `/siteName` asset folders) without deleting existing exports.
+- `GET /api/github/config` – Returns whether GitHub publishing is configured, plus repo/branch metadata (token is never returned).
+- `POST /api/github/config` – Saves `{ owner, repo, developmentBranch, productionBranch, token }` for automated publishing.
+- `POST /api/github/publish` – Runs the existing static publish, commits generated changes from the current development branch, and pushes them to the configured production branch.
 
 ## Notes
 - Content persists to disk in the HTML files themselves; no `localStorage` is used.
