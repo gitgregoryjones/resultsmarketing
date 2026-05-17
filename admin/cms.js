@@ -615,6 +615,9 @@
     const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
   const siteField = sidebar.querySelector('.cms-field--site');
+  const githubField = sidebar.querySelector('.cms-field--github');
+  const publishField = sidebar.querySelector('.cms-publish');
+  const githubPublishField = githubPublishButton?.closest('.cms-publish') || null;
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
@@ -641,6 +644,12 @@
   const settingsDialogOriginalParent = siteField?.parentElement || null;
   const settingsMessageParent = settingsMessageEl?.parentElement || null;
   const settingsNextSibling = siteField?.nextSibling || null;
+  const githubFieldOriginalParent = githubField?.parentElement || null;
+  const githubFieldNextSibling = githubField?.nextSibling || null;
+  const publishFieldOriginalParent = publishField?.parentElement || null;
+  const publishFieldNextSibling = publishField?.nextSibling || null;
+  const githubPublishFieldOriginalParent = githubPublishField?.parentElement || null;
+  const githubPublishFieldNextSibling = githubPublishField?.nextSibling || null;
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
@@ -994,6 +1003,9 @@
     if (!siteField || !settingsMessageEl) return;
     if (settingsDialog.classList.contains('is-visible')) return;
     settingsDialogBody.appendChild(siteField);
+    if (githubField) settingsDialogBody.appendChild(githubField);
+    if (publishField) settingsDialogBody.appendChild(publishField);
+    if (githubPublishField) settingsDialogBody.appendChild(githubPublishField);
     settingsDialogBody.appendChild(settingsMessageEl);
     settingsDialog.classList.add('is-visible');
   }
@@ -1002,6 +1014,15 @@
     if (!settingsDialog.classList.contains('is-visible')) return;
     if (settingsDialogOriginalParent && siteField) {
       settingsDialogOriginalParent.insertBefore(siteField, settingsNextSibling);
+    }
+    if (githubFieldOriginalParent && githubField) {
+      githubFieldOriginalParent.insertBefore(githubField, githubFieldNextSibling);
+    }
+    if (publishFieldOriginalParent && publishField) {
+      publishFieldOriginalParent.insertBefore(publishField, publishFieldNextSibling);
+    }
+    if (githubPublishFieldOriginalParent && githubPublishField) {
+      githubPublishFieldOriginalParent.insertBefore(githubPublishField, githubPublishFieldNextSibling);
     }
     if (settingsMessageParent && settingsMessageEl) {
       settingsMessageParent.appendChild(settingsMessageEl);
