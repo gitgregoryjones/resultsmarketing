@@ -80,10 +80,16 @@ async function readGithubAppState() {
     return {
       installed: Boolean(parsed.installed),
       installationId: String(parsed.installationId || '').trim(),
+      owner: String(parsed.owner || '').trim(),
+      repo: String(parsed.repo || '').trim(),
+      developmentBranch: String(parsed.developmentBranch || 'development').trim(),
+      productionBranch: String(parsed.productionBranch || 'gh-pages').trim(),
       updatedAt: parsed.updatedAt || null,
     };
   } catch (err) {
-    if (err && err.code === 'ENOENT') return { installed: false, installationId: '' };
+    if (err && err.code === 'ENOENT') {
+      return { installed: false, installationId: '', owner: '', repo: '', developmentBranch: 'development', productionBranch: 'gh-pages' };
+    }
     throw err;
   }
 }
@@ -93,35 +99,29 @@ async function writeGithubAppState(payload = {}) {
   const state = {
     installed: Boolean(payload.installed),
     installationId: String(payload.installationId || '').trim(),
+    owner: String(payload.owner || '').trim(),
+    repo: String(payload.repo || '').trim(),
+    developmentBranch: String(payload.developmentBranch || 'development').trim(),
+    productionBranch: String(payload.productionBranch || 'gh-pages').trim(),
     updatedAt: new Date().toISOString(),
   };
   await fs.writeFile(GITHUB_APP_STATE_FILE, JSON.stringify(state, null, 2));
   return state;
 }
 
-function getGithubAppRepoConfig() {
-  const owner = String(process.env.GITHUB_APP_REPO_OWNER || '').trim();
-  const repo = String(process.env.GITHUB_APP_REPO_NAME || '').trim();
-  const developmentBranch = String(process.env.GITHUB_APP_DEV_BRANCH || 'development').trim();
-  const productionBranch = String(process.env.GITHUB_APP_PROD_BRANCH || 'gh-pages').trim();
-  return { owner, repo, developmentBranch, productionBranch };
-}
-
 async function publishToGithubApp() {
   const state = await readGithubAppState();
   if (!state.installed) throw new Error('GitHub App is not connected yet');
-
-  const config = getGithubAppRepoConfig();
-  if (!config.owner || !config.repo) {
-    throw new Error('Server missing GITHUB_APP_REPO_OWNER or GITHUB_APP_REPO_NAME');
+  if (!state.owner || !state.repo) {
+    throw new Error('GitHub target not set. Save owner/repo in settings.');
   }
 
   const appToken = String(process.env.GITHUB_APP_INSTALLATION_TOKEN || '').trim();
   if (!appToken) throw new Error('Server missing GITHUB_APP_INSTALLATION_TOKEN');
 
   const currentBranch = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
-  if (currentBranch !== config.developmentBranch) {
-    throw new Error(`Publishing must be run from ${config.developmentBranch}. Current branch: ${currentBranch}`);
+  if (currentBranch !== state.developmentBranch) {
+    throw new Error(`Publishing must be run from ${state.developmentBranch}. Current branch: ${currentBranch}`);
   }
 
   const publishedFiles = await publishSite();
@@ -131,9 +131,9 @@ async function publishToGithubApp() {
   const commitMessage = `Publish static site (${new Date().toISOString()})`;
   await runGit(['add', '.']);
   await runGit(['commit', '-m', commitMessage]);
-  await runGit(['remote', 'set-url', 'origin', `https://x-access-token:${encodeURIComponent(appToken)}@github.com/${config.owner}/${config.repo}.git`]);
-  await runGit(['push', 'origin', `HEAD:${config.productionBranch}`]);
-  return { publishedFiles, committed: true, pushed: true, commitMessage, branch: config.productionBranch };
+  await runGit(['remote', 'set-url', 'origin', `https://x-access-token:${encodeURIComponent(appToken)}@github.com/${state.owner}/${state.repo}.git`]);
+  await runGit(['push', 'origin', `HEAD:${state.productionBranch}`]);
+  return { publishedFiles, committed: true, pushed: true, commitMessage, branch: state.productionBranch };
 }
 
 function stripOutlineClasses(element) {
@@ -1738,16 +1738,15 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/github/app/status' && req.method === 'GET') {
     try {
       const state = await readGithubAppState();
-      const cfg = getGithubAppRepoConfig();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(
         JSON.stringify({
           connected: state.installed,
           installationId: state.installationId || null,
-          owner: cfg.owner,
-          repo: cfg.repo,
-          developmentBranch: cfg.developmentBranch,
-          productionBranch: cfg.productionBranch,
+          owner: state.owner,
+          repo: state.repo,
+          developmentBranch: state.developmentBranch,
+          productionBranch: state.productionBranch,
         })
       );
     } catch (err) {
@@ -1765,6 +1764,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const payload = parseJsonBody(body);
         const state = await writeGithubAppState({
+          ...(await readGithubAppState()),
           installed: true,
           installationId: payload.installationId,
         });
@@ -1772,6 +1772,35 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ connected: state.installed, installationId: state.installationId || null }));
       } catch (err) {
         sendJsonError(res, 400, err.message || 'Unable to connect GitHub app');
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/github/app/config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      try {
+        const payload = parseJsonBody(body);
+        const previous = await readGithubAppState();
+        if (!payload.owner || !payload.repo) {
+          sendJsonError(res, 400, 'owner and repo are required');
+          return;
+        }
+        const state = await writeGithubAppState({
+          ...previous,
+          owner: payload.owner,
+          repo: payload.repo,
+          developmentBranch: payload.developmentBranch || previous.developmentBranch || 'development',
+          productionBranch: payload.productionBranch || previous.productionBranch || 'gh-pages',
+        });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ owner: state.owner, repo: state.repo, developmentBranch: state.developmentBranch, productionBranch: state.productionBranch }));
+      } catch (err) {
+        sendJsonError(res, 400, err.message || 'Unable to save GitHub app config');
       }
     });
     return;

@@ -31,6 +31,7 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 - `GET /api/github/app/status` – Returns GitHub App connection status and server-side repo/branch configuration.
 - `GET /api/github/app/start` – Returns the GitHub App installation URL to start authorization.
 - `POST /api/github/app/connect` – Marks a completed installation by saving `{ installationId }` in server state.
+- `POST /api/github/app/config` – Saves user-selected `{ owner, repo, developmentBranch, productionBranch }` for publishing target.
 - `POST /api/github/publish` – Runs the static publish, commits generated changes from the configured development branch, and pushes to the configured production branch using the GitHub App installation token.
 
 ## Notes

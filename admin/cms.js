@@ -460,6 +460,17 @@
         <div class="cms-field cms-field--github-app">
           <label>GitHub App</label>
           <div class="cms-site-input">
+            <input id="cms-github-owner" type="text" placeholder="owner or org" />
+            <input id="cms-github-repo" type="text" placeholder="repo name" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <input id="cms-github-dev-branch" type="text" placeholder="development branch" />
+            <input id="cms-github-prod-branch" type="text" placeholder="production branch" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <button type="button" id="cms-save-github-config">Save GitHub target</button>
+          </div>
+          <div class="cms-site-input">
             <button type="button" id="cms-connect-github-app">Connect GitHub App</button>
           </div>
           <p class="cms-pill cms-pill--subtle" id="cms-github-app-status">Not connected.</p>
@@ -596,6 +607,11 @@
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
+  const githubOwnerInput = sidebar.querySelector('#cms-github-owner');
+  const githubRepoInput = sidebar.querySelector('#cms-github-repo');
+  const githubDevBranchInput = sidebar.querySelector('#cms-github-dev-branch');
+  const githubProdBranchInput = sidebar.querySelector('#cms-github-prod-branch');
+  const githubConfigSaveButton = sidebar.querySelector('#cms-save-github-config');
   const githubConnectButton = sidebar.querySelector('#cms-connect-github-app');
   const githubAppStatusEl = sidebar.querySelector('#cms-github-app-status');
   const githubPublishButton = sidebar.querySelector('#cms-publish-github');
@@ -813,6 +829,10 @@
       const res = await fetch('/api/github/app/status');
       if (!res.ok) return;
       const data = await res.json();
+      githubOwnerInput.value = data.owner || '';
+      githubRepoInput.value = data.repo || '';
+      githubDevBranchInput.value = data.developmentBranch || 'development';
+      githubProdBranchInput.value = data.productionBranch || 'gh-pages';
       if (data.connected) {
         githubAppStatusEl.textContent = `Connected to ${data.owner}/${data.repo}. Publish ${data.developmentBranch} → ${data.productionBranch}.`;
         githubAppStatusEl.style.color = '#16a34a';
@@ -822,6 +842,33 @@
       }
     } catch (err) {
       console.warn('Unable to load GitHub App status', err);
+    }
+  }
+
+  async function saveGithubTargetConfig() {
+    const owner = (githubOwnerInput.value || '').trim();
+    const repo = (githubRepoInput.value || '').trim();
+    const developmentBranch = (githubDevBranchInput.value || 'development').trim();
+    const productionBranch = (githubProdBranchInput.value || 'gh-pages').trim();
+    if (!owner || !repo) {
+      settingsMessageEl.textContent = 'Owner/org and repo are required.';
+      settingsMessageEl.style.color = '#ef4444';
+      return;
+    }
+    try {
+      const res = await fetch('/api/github/app/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner, repo, developmentBranch, productionBranch }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to save GitHub target.');
+      settingsMessageEl.textContent = 'GitHub target saved.';
+      settingsMessageEl.style.color = '#16a34a';
+      await loadGithubAppStatus();
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to save GitHub target.';
+      settingsMessageEl.style.color = '#ef4444';
     }
   }
 
@@ -3734,6 +3781,7 @@ function clearComponentSelection() {
     setBackendKeyOptions([]);
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
+  githubConfigSaveButton.addEventListener('click', saveGithubTargetConfig);
   githubConnectButton.addEventListener('click', connectGithubApp);
   githubPublishButton.addEventListener('click', publishToGithub);
   typeInputs.forEach((input) => {
