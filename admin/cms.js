@@ -618,7 +618,7 @@
     const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
   const siteField = sidebar.querySelector('.cms-field--site');
-  const githubField = sidebar.querySelector('.cms-field--github');
+  const githubField = sidebar.querySelector('.cms-field--github-app');
   const publishField = sidebar.querySelector('.cms-publish');
   const githubPublishField = githubPublishButton?.closest('.cms-publish') || null;
   const listEl = sidebar.querySelector('#cms-list');
