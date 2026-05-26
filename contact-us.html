@@ -56,7 +56,7 @@
             </button>
 
             <div class="absolute left-1/2 -translate-x-1/2 w-[112px] h-[52px] flex items-center justify-center rounded md:static md:translate-x-0 md:w-[147px] md:h-[69px]">
-                <a href="index.html" style="color: inherit; text-decoration: none"><img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/resultsmarketing/images/resultslogo-1767007084921.png" data-link="index.html"></a>
+                <a href="index.html" style="color: inherit; text-decoration: none"><img alt="Results Marketing logo" class="max-h-full max-w-full object-contain" data-cms-image="brand.logo" src="/resultsmarketing/images/resultslogo-1767007084921.png" data-link="index.html" data-logo-unlock="news"></a>
             </div>
 
             
@@ -65,7 +65,7 @@
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.home" data-link="index.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Home</a>
                     <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">About Us</a>
                      <a href="culture.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.about-us" data-link="culture.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Our Culture</a>
-                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-nav-link data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">News</a>
+                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-news-link="true" data-nav-link data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">News</a>
                     <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.our-services" data-link="services.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.contact-us" data-link="contact-us.html" style="color: rgb(220, 38, 38); text-decoration: none">Contact Us</a>
                 </div>
@@ -90,15 +90,10 @@
             
             
             <div class="flex flex-col space-y-6">
-&lt;&lt;&lt;&lt;&lt;&lt;&lt; Updated upstream
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Home</a>
                 <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>About Us</a>
-=======
-                <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Home</a>
-                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>About Us</a>
-&gt;&gt;&gt;&gt;&gt;&gt;&gt; Stashed changes
                 <a href="culture.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Our Culture</a>
-                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">News</a>
+                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-news-link="true" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">News</a>
                 <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px; color: rgb(220, 38, 38);">Contact Us</a>
                 
@@ -131,6 +126,28 @@
             document.addEventListener("DOMContentLoaded", () => {
                 const currentFile = window.location.pathname.split("/").pop() || "index.html";
                 const comingSoonOverlay = document.getElementById("comingSoonOverlay");
+
+
+                const logoUnlockTarget = document.querySelector("[data-logo-unlock='news']");
+                const newsLinks = Array.from(document.querySelectorAll("[data-news-link='true']"));
+                let logoClickCount = 0;
+                const logoClicksRequired = 10;
+
+                const updateNewsVisibility = () => {
+                    const isUnlocked = logoClickCount >= logoClicksRequired;
+                    newsLinks.forEach((link) => {
+                        link.style.display = isUnlocked ? "" : "none";
+                    });
+                };
+
+                updateNewsVisibility();
+
+                logoUnlockTarget?.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    logoClickCount += 1;
+                    updateNewsVisibility();
+                });
 
                 const closeComingSoon = () => {
                     comingSoonOverlay?.classList.add("hidden");
@@ -274,7 +291,7 @@
                     </div>
 
                     
-                    <div class="space-y-8">
+                    <div class="space-y-8 lg:flex lg:flex-col">
                         
                         <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
                             <h3 class="text-2xl font-bold text-gray-800 mb-6">Contact Information</h3>
@@ -326,6 +343,30 @@
                         </div>
 
                         
+                        <div class="hidden lg:block overflow-hidden rounded-2xl shadow-lg bg-white">
+                            <div class="w-full aspect-[16/9] bg-center bg-cover" style="background-image: url('/images/index-1779811385651-hiehox.png');"></div>
+                        </div>
+
+                        <div class="hidden lg:block flex-1 rounded-2xl border border-gray-100 shadow-lg overflow-hidden bg-gradient-to-br from-white via-gray-50 to-red-50">
+                            <div class="h-full p-6 md:p-8 flex flex-col justify-between">
+                                <div class="space-y-4">
+                                    <p class="text-sm font-semibold uppercase tracking-[0.22em] text-red-500">Results Marketing</p>
+                                    <h4 class="text-2xl font-bold text-gray-800 leading-tight">Let’s build the next phase of your growth.</h4>
+                                    <p class="text-gray-600">From strategy to execution, our team partners with you to create measurable momentum.</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 pt-6">
+                                    <div class="rounded-xl bg-white border border-gray-100 px-4 py-3">
+                                        <p class="text-xs uppercase tracking-wide text-gray-500">Response Time</p>
+                                        <p class="text-lg font-bold text-gray-800">24 Hours</p>
+                                    </div>
+                                    <div class="rounded-xl bg-white border border-gray-100 px-4 py-3">
+                                        <p class="text-xs uppercase tracking-wide text-gray-500">Office Hours</p>
+                                        <p class="text-lg font-bold text-gray-800">Mon–Fri</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="hidden bg-white rounded-2xl shadow-lg overflow-hidden">
                             <div class="h-64 bg-gradient-to-br from-gray-100 to-gray-300 relative">
                                 <div class="absolute inset-0 flex items-center justify-center">
@@ -399,7 +440,7 @@
           <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Home</a>
           <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">About Us</a>
           <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Culture</a>
-          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">News</a>
+          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true">News</a>
           <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Services</a>
           <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Contact Us</a>
         </nav>
@@ -463,7 +504,7 @@
           <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Home</a>
           <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">About Us</a>
           <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Culture</a>
-          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">News</a>
+          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true">News</a>
           <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Our Services</a>
           <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium">Contact Us</a>
         </nav>
