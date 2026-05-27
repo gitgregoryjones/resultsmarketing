@@ -92,6 +92,81 @@ function sendJsonError(res, status, message) {
   res.end(JSON.stringify({ error: message }));
 }
 
+function parseHexColor(value = '') {
+  const hex = String(value || '').trim().replace(/^#/, '');
+  if (!/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(hex)) return null;
+  const normalized = hex.length === 3
+    ? hex.split('').map((char) => `${char}${char}`).join('')
+    : hex;
+  const int = Number.parseInt(normalized, 16);
+  return {
+    r: (int >> 16) & 255,
+    g: (int >> 8) & 255,
+    b: int & 255,
+  };
+}
+
+function clampColor(value) {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function buildThemeVarsFromAccent(accent = '') {
+  const rgb = parseHexColor(accent);
+  if (!rgb) {
+    return {
+      accent,
+      hover: accent,
+      soft: accent,
+      borderSoft: accent,
+    };
+  }
+  const hover = `rgb(${clampColor(rgb.r * 0.87)}, ${clampColor(rgb.g * 0.87)}, ${clampColor(rgb.b * 0.87)})`;
+  return {
+    accent: `#${accent.trim().replace(/^#/, '')}`,
+    hover,
+    soft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.1)`,
+    borderSoft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`,
+  };
+}
+
+
+function buildThemeCss(accent = '') {
+  const theme = buildThemeVarsFromAccent(accent || '#ef4444');
+  return `:root {
+  --theme-accent: ${theme.accent};
+  --theme-accent-hover: ${theme.hover};
+  --theme-accent-soft: ${theme.soft};
+  --theme-accent-border-soft: ${theme.borderSoft};
+}
+.text-red-500, .hover\\:text-red-500:hover { color: var(--theme-accent) !important; }
+.hover\\:text-red-600:hover { color: var(--theme-accent-hover) !important; }
+.bg-red-500, .bg-red-600, .bg-red-700, .sm\\:bg-red-500, .md\\:bg-red-500, .lg\\:bg-red-500, .sm\\:bg-red-600, .md\\:bg-red-600, .lg\\:bg-red-600, .sm\\:bg-red-700, .md\\:bg-red-700, .lg\\:bg-red-700 { background-color: var(--theme-accent) !important; }
+.hover\\:bg-red-600:hover { background-color: var(--theme-accent-hover) !important; }
+.bg-red-500\\/10 { background-color: var(--theme-accent-soft) !important; }
+.border-red-500, .border-red-700, .focus\\:border-red-500:focus { border-color: var(--theme-accent) !important; }
+.border-red-500\\/30 { border-color: var(--theme-accent-border-soft) !important; }
+`;
+}
+
+function ensureThemeCssLink(html = '') {
+  if (!html) return html;
+  let updated = html.replace(/<style\b[^>]*\bid\s*=\s*(["'])dynamic-theme-colors\1[^>]*>[\s\S]*?<\/style>/gi, '');
+  if (/id\s*=\s*(["'])dynamic-theme-colors\1/.test(updated) && /<link\b[^>]*href\s*=\s*(["'])theme\.css\1/i.test(updated)) {
+    return updated;
+  }
+  if (/<head[^>]*>/i.test(updated)) {
+    updated = updated.replace(/<\/head>/i, '  <link rel="stylesheet" href="theme.css" id="dynamic-theme-colors">\n</head>');
+  }
+  return updated;
+}
+function stripThemePickerArtifacts(html = '') {
+  if (!html) return html;
+  const withoutThemeScript = html.replace(/<script\b[^>]*\bid\s*=\s*(["'])dynamic-theme-picker-script\1[^>]*>[\s\S]*?<\/script>/gi, '');
+  const root = parse(withoutThemeScript);
+  root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
+  return root.toString();
+}
+
 function componentFileName(componentId = '') {
   const safeId = String(componentId || '')
     .trim()
@@ -766,6 +841,8 @@ async function publishSite(options = {}) {
   // Do not remove any existing published output; simply overwrite the files we
   // render so older exports remain available if needed.
   await ensureDir(PUBLISH_TARGET);
+  const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
+  await fs.writeFile(path.join(ADMIN_DIR, 'theme.css'), themeCss);
 
   const publishedFiles = [];
 
@@ -812,24 +889,10 @@ async function publishSite(options = {}) {
         });
         html = root.toString();
       }
-      if (publishThemeAccent) {
-        const root = parse(html);
-        const htmlEl = root.querySelector('html');
-        if (htmlEl) {
-          const existing = htmlEl.getAttribute('style') || '';
-          const cleaned = existing.replace(/--theme-accent\s*:\s*[^;]+;?/gi, '').trim();
-          const sep = cleaned && !cleaned.endsWith(';') ? '; ' : '';
-          htmlEl.setAttribute('style', `${cleaned}${sep}--theme-accent: ${publishThemeAccent}; --theme-accent-hover: ${publishThemeAccent};`);
-        }
-        html = root.toString();
-      }
+      html = stripThemePickerArtifacts(html);
+      html = ensureThemeCssLink(html);
       html = wrapDataLinks(html);
       html = stripHiddenCmsElements(html);
-      {
-        const root = parse(html);
-        root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
-        html = root.toString();
-      }
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);

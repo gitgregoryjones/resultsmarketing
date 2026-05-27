@@ -1021,7 +1021,13 @@
     messageEl.style.color = '#111827';
 
     try {
-      const themeAccent = localStorage.getItem('adminThemeAccent') || '';
+      const computedAccent = getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim();
+      const themeAccent = localStorage.getItem('adminThemeAccent') || computedAccent || '';
+      console.log('[THEME TRACE][publish click] file=index.html', {
+        localStorageAccent: localStorage.getItem('adminThemeAccent') || '',
+        computedAccent,
+        payloadThemeAccent: themeAccent,
+      });
       const res = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
