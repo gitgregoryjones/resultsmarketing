@@ -3180,7 +3180,13 @@
     let success = true;
 
     try {
-      const res = await fetch('/api/publish', { method: 'POST' });
+      const computedAccent = getComputedStyle(document.documentElement).getPropertyValue('--theme-accent').trim();
+      const themeAccent = localStorage.getItem('adminThemeAccent') || computedAccent || '';
+      const res = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ themeAccent }),
+      });
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
