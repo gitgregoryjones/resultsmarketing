@@ -856,7 +856,7 @@ async function publishSite(options = {}) {
   // render so older exports remain available if needed.
   await ensureDir(PUBLISH_TARGET);
   const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
-  await fs.writeFile(path.join(PUBLISH_TARGET, 'theme.css'), themeCss);
+  await fs.writeFile(path.join(ADMIN_DIR, 'theme.css'), themeCss);
 
   const publishedFiles = [];
 
