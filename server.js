@@ -143,7 +143,9 @@ function applyThemeVarsToRootCss(html = '', accent = '') {
 }
 
 function stripThemePickerArtifacts(html = '') {
-  const root = parse(html);
+  if (!html) return html;
+  const withoutThemeScript = html.replace(/<script\b[^>]*\bid\s*=\s*(["'])dynamic-theme-picker-script\1[^>]*>[\s\S]*?<\/script>/gi, '');
+  const root = parse(withoutThemeScript);
   root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
   return root.toString();
 }
