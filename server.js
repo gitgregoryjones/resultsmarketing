@@ -145,12 +145,6 @@ function applyThemeVarsToRootCss(html = '', accent = '') {
 function stripThemePickerArtifacts(html = '') {
   const root = parse(html);
   root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
-  root.querySelectorAll('script').forEach((scriptEl) => {
-    const content = scriptEl.innerHTML || '';
-    if (/adminThemeAccent|themeColorPickerPanel|localStorage\s*\./i.test(content)) {
-      scriptEl.remove();
-    }
-  });
   return root.toString();
 }
 
