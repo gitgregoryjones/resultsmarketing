@@ -1021,7 +1021,12 @@
     messageEl.style.color = '#111827';
 
     try {
-      const res = await fetch('/api/publish', { method: 'POST' });
+      const themeAccent = localStorage.getItem('adminThemeAccent') || '';
+      const res = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ themeAccent })
+      });
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;

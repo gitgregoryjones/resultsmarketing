@@ -749,7 +749,8 @@ async function copyAdminAssets() {
   }
 }
 
-async function publishSite() {
+async function publishSite(options = {}) {
+  const publishThemeAccent = typeof options.themeAccent === 'string' ? options.themeAccent.trim() : '';
   const files = await listHtmlFiles();
   let siteName = '';
   for (const file of [DEFAULT_FILE, ...files]) {
@@ -811,8 +812,24 @@ async function publishSite() {
         });
         html = root.toString();
       }
+      if (publishThemeAccent) {
+        const root = parse(html);
+        const htmlEl = root.querySelector('html');
+        if (htmlEl) {
+          const existing = htmlEl.getAttribute('style') || '';
+          const cleaned = existing.replace(/--theme-accent\s*:\s*[^;]+;?/gi, '').trim();
+          const sep = cleaned && !cleaned.endsWith(';') ? '; ' : '';
+          htmlEl.setAttribute('style', `${cleaned}${sep}--theme-accent: ${publishThemeAccent}; --theme-accent-hover: ${publishThemeAccent};`);
+        }
+        html = root.toString();
+      }
       html = wrapDataLinks(html);
       html = stripHiddenCmsElements(html);
+      {
+        const root = parse(html);
+        root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
+        html = root.toString();
+      }
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);
@@ -1655,15 +1672,27 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname === '/api/publish' && req.method === 'POST') {
-    try {
-      console.log(`Triggering site publish...`);
-      const published = await publishSite();
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ published }));
-    } catch (err) {
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Unable to publish site' }));
-    }
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      try {
+        console.log(`Triggering site publish...`);
+        let payload = {};
+        try {
+          payload = body ? JSON.parse(body) : {};
+        } catch (e) {
+          payload = {};
+        }
+        const published = await publishSite({ themeAccent: payload.themeAccent });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ published }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unable to publish site' }));
+      }
+    });
     return;
   }
 
