@@ -825,6 +825,11 @@ async function publishSite(options = {}) {
       }
       html = wrapDataLinks(html);
       html = stripHiddenCmsElements(html);
+      {
+        const root = parse(html);
+        root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
+        html = root.toString();
+      }
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);

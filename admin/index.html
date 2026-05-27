@@ -1308,7 +1308,7 @@
     if (document.getElementById('themeColorPickerPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'themeColorPickerPanel';
-    panel.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
+    panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
     panel.innerHTML = '<label for="themeColorPickerInput" style="font-size:12px;white-space:nowrap;">Theme color</label><input id="themeColorPickerInput" type="color" style="width:36px;height:28px;border:none;background:none;padding:0;cursor:pointer;"/><button id="themeColorReset" type="button" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;cursor:pointer;">Reset</button>';
     document.body.appendChild(panel);
     const input = panel.querySelector('#themeColorPickerInput');
