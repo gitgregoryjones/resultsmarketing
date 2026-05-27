@@ -142,6 +142,18 @@ function applyThemeVarsToRootCss(html = '', accent = '') {
   });
 }
 
+function stripThemePickerArtifacts(html = '') {
+  const root = parse(html);
+  root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
+  root.querySelectorAll('script').forEach((scriptEl) => {
+    const content = scriptEl.innerHTML || '';
+    if (/adminThemeAccent|themeColorPickerPanel|localStorage\s*\./i.test(content)) {
+      scriptEl.remove();
+    }
+  });
+  return root.toString();
+}
+
 function componentFileName(componentId = '') {
   const safeId = String(componentId || '')
     .trim()
@@ -862,6 +874,7 @@ async function publishSite(options = {}) {
         });
         html = root.toString();
       }
+      html = stripThemePickerArtifacts(html);
       if (publishThemeAccent) {
         html = applyThemeVarsToRootCss(html, publishThemeAccent);
         const theme = buildThemeVarsFromAccent(publishThemeAccent);
@@ -882,11 +895,6 @@ async function publishSite(options = {}) {
       }
       html = wrapDataLinks(html);
       html = stripHiddenCmsElements(html);
-      {
-        const root = parse(html);
-        root.querySelectorAll('#dynamic-theme-picker-script, #themeColorPickerPanel').forEach((el) => el.remove());
-        html = root.toString();
-      }
       html = stripCmsUi(html);
       html = stripCmsAssets(html);
       html = stripContentEditable(html);
