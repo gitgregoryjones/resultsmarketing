@@ -142,6 +142,36 @@ function applyThemeVarsToRootCss(html = '', accent = '') {
   });
 }
 
+
+function buildThemeCss(accent = '') {
+  const theme = buildThemeVarsFromAccent(accent || '#ef4444');
+  return `:root {
+  --theme-accent: ${theme.accent};
+  --theme-accent-hover: ${theme.hover};
+  --theme-accent-soft: ${theme.soft};
+  --theme-accent-border-soft: ${theme.borderSoft};
+}
+.text-red-500, .hover\:text-red-500:hover { color: var(--theme-accent) !important; }
+.hover\:text-red-600:hover { color: var(--theme-accent-hover) !important; }
+.bg-red-500, .bg-red-600, .bg-red-700, .sm\:bg-red-500, .md\:bg-red-500, .lg\:bg-red-500, .sm\:bg-red-600, .md\:bg-red-600, .lg\:bg-red-600, .sm\:bg-red-700, .md\:bg-red-700, .lg\:bg-red-700 { background-color: var(--theme-accent) !important; }
+.hover\:bg-red-600:hover { background-color: var(--theme-accent-hover) !important; }
+.bg-red-500\/10 { background-color: var(--theme-accent-soft) !important; }
+.border-red-500, .border-red-700, .focus\:border-red-500:focus { border-color: var(--theme-accent) !important; }
+.border-red-500\/30 { border-color: var(--theme-accent-border-soft) !important; }
+`;
+}
+
+function ensureThemeCssLink(html = '') {
+  if (!html) return html;
+  let updated = html.replace(/<style\b[^>]*\bid\s*=\s*(["'])dynamic-theme-colors\1[^>]*>[\s\S]*?<\/style>/gi, '');
+  if (/id\s*=\s*(["'])dynamic-theme-colors\1/.test(updated) && /<link\b[^>]*href\s*=\s*(["'])theme\.css\1/i.test(updated)) {
+    return updated;
+  }
+  if (/<head[^>]*>/i.test(updated)) {
+    updated = updated.replace(/<\/head>/i, '  <link rel="stylesheet" href="theme.css" id="dynamic-theme-colors">\n</head>');
+  }
+  return updated;
+}
 function stripThemePickerArtifacts(html = '') {
   if (!html) return html;
   const withoutThemeScript = html.replace(/<script\b[^>]*\bid\s*=\s*(["'])dynamic-theme-picker-script\1[^>]*>[\s\S]*?<\/script>/gi, '');
@@ -825,6 +855,8 @@ async function publishSite(options = {}) {
   // Do not remove any existing published output; simply overwrite the files we
   // render so older exports remain available if needed.
   await ensureDir(PUBLISH_TARGET);
+  const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
+  await fs.writeFile(path.join(PUBLISH_TARGET, 'theme.css'), themeCss);
 
   const publishedFiles = [];
 
@@ -877,6 +909,7 @@ async function publishSite(options = {}) {
         html = root.toString();
       }
       html = stripThemePickerArtifacts(html);
+      html = ensureThemeCssLink(html);
       if (publishThemeAccent) {
         html = applyThemeVarsToRootCss(html, publishThemeAccent);
         const theme = buildThemeVarsFromAccent(publishThemeAccent);
