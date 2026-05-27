@@ -4678,7 +4678,7 @@ tml&gt;
       if (!style) return;
       let updated = style;
       LEGACY_COLORS.forEach((legacy) => {
-        const re = new RegExp(legacy.replace(/[.*+?^${}()|[\]\]/g, '\\$&'), 'gi');
+        const re = new RegExp(legacy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
         updated = updated.replace(re, color);
       });
       if (updated !== style) el.setAttribute('style', updated);
