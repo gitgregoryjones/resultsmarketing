@@ -138,13 +138,13 @@ function buildThemeCss(accent = '') {
   --theme-accent-soft: ${theme.soft};
   --theme-accent-border-soft: ${theme.borderSoft};
 }
-.text-red-500, .hover\:text-red-500:hover { color: var(--theme-accent) !important; }
-.hover\:text-red-600:hover { color: var(--theme-accent-hover) !important; }
-.bg-red-500, .bg-red-600, .bg-red-700, .sm\:bg-red-500, .md\:bg-red-500, .lg\:bg-red-500, .sm\:bg-red-600, .md\:bg-red-600, .lg\:bg-red-600, .sm\:bg-red-700, .md\:bg-red-700, .lg\:bg-red-700 { background-color: var(--theme-accent) !important; }
-.hover\:bg-red-600:hover { background-color: var(--theme-accent-hover) !important; }
-.bg-red-500\/10 { background-color: var(--theme-accent-soft) !important; }
-.border-red-500, .border-red-700, .focus\:border-red-500:focus { border-color: var(--theme-accent) !important; }
-.border-red-500\/30 { border-color: var(--theme-accent-border-soft) !important; }
+.text-red-500, .hover\\:text-red-500:hover { color: var(--theme-accent) !important; }
+.hover\\:text-red-600:hover { color: var(--theme-accent-hover) !important; }
+.bg-red-500, .bg-red-600, .bg-red-700, .sm\\:bg-red-500, .md\\:bg-red-500, .lg\\:bg-red-500, .sm\\:bg-red-600, .md\\:bg-red-600, .lg\\:bg-red-600, .sm\\:bg-red-700, .md\\:bg-red-700, .lg\\:bg-red-700 { background-color: var(--theme-accent) !important; }
+.hover\\:bg-red-600:hover { background-color: var(--theme-accent-hover) !important; }
+.bg-red-500\\/10 { background-color: var(--theme-accent-soft) !important; }
+.border-red-500, .border-red-700, .focus\\:border-red-500:focus { border-color: var(--theme-accent) !important; }
+.border-red-500\\/30 { border-color: var(--theme-accent-border-soft) !important; }
 `;
 }
 
