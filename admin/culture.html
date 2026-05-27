@@ -480,7 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
 (function () {
   const STORAGE_KEY = 'adminThemeAccent';
   const DEFAULT_COLOR = '#ef4444';
-  const LEGACY_COLORS = ['#dc2626', '#e53e3e', '#f4483a', 'rgb(239, 68, 68)', 'rgb(220, 38, 38)', 'rgb(250, 44, 55)', 'rgb(250,44,55)', 'rgb(229, 62, 62)', 'rgb(229,62,62)'];
+  const LEGACY_COLORS = ['#dc2626', '#e53e3e', '#f4483a', 'rgb(239, 68, 68)', 'rgb(220, 38, 38)', 'rgb(250, 44, 55)', 'rgb(250,44,55)', 'rgb(229, 62, 62)', 'rgb(229,62,62)', '#19ae7c', 'rgb(25, 174, 124)', 'rgb(25,174,124)'];
 
   function clamp(v){ return Math.max(0, Math.min(255, Math.round(v))); }
   function hexToRgb(hex) {
@@ -509,6 +509,14 @@ document.addEventListener("DOMContentLoaded", () => {
         updated = updated.replace(re, color);
       });
       if (updated !== style) el.setAttribute('style', updated);
+    });
+
+    document.querySelectorAll('[fill]').forEach((el) => {
+      const fill = (el.getAttribute('fill') || '').trim().toLowerCase();
+      if (!fill || fill === 'none' || fill === 'currentcolor') return;
+      if (LEGACY_COLORS.some((legacy) => fill === legacy.toLowerCase())) {
+        el.setAttribute('fill', color);
+      }
     });
   }
 
