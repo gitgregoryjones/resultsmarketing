@@ -807,6 +807,7 @@ async function copyAdminAssets() {
 
 async function publishSite(options = {}) {
   const publishThemeAccent = typeof options.themeAccent === 'string' ? options.themeAccent.trim() : '';
+  console.log('[THEME TRACE][server publishSite start]', { publishThemeAccent });
   const files = await listHtmlFiles();
   let siteName = '';
   for (const file of [DEFAULT_FILE, ...files]) {
@@ -828,6 +829,11 @@ async function publishSite(options = {}) {
   for (const file of files) {
     try {
       let html = await fs.readFile(htmlPathFor(file), 'utf8');
+      const isIndexFile = file === 'index.html';
+      if (isIndexFile) {
+        const incomingRootMatch = html.match(/:root\s*\{[\s\S]*?\}/);
+        console.log('[THEME TRACE][index read admin html root block]', incomingRootMatch ? incomingRootMatch[0] : 'NO_ROOT_BLOCK_FOUND');
+      }
       const localizedHtml = await localizeEmbeddedImagesInHtml(html, file);
       if (localizedHtml !== html) {
         await fs.writeFile(htmlPathFor(file), localizedHtml);
@@ -872,6 +878,9 @@ async function publishSite(options = {}) {
       if (publishThemeAccent) {
         html = applyThemeVarsToRootCss(html, publishThemeAccent);
         const theme = buildThemeVarsFromAccent(publishThemeAccent);
+        if (isIndexFile) {
+          console.log('[THEME TRACE][index computed theme]', theme);
+        }
         const root = parse(html);
         const htmlEl = root.querySelector('html');
         if (htmlEl) {
@@ -887,6 +896,10 @@ async function publishSite(options = {}) {
         }
         html = root.toString();
       }
+      if (isIndexFile) {
+        const postThemeRootMatch = html.match(/:root\s*\{[\s\S]*?\}/);
+        console.log('[THEME TRACE][index post-theme root block]', postThemeRootMatch ? postThemeRootMatch[0] : 'NO_ROOT_BLOCK_FOUND');
+      }
       html = wrapDataLinks(html);
       html = stripHiddenCmsElements(html);
       html = stripCmsUi(html);
@@ -895,6 +908,11 @@ async function publishSite(options = {}) {
       html = stripDraggableAttributes(html);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
       await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
+      if (isIndexFile) {
+        const persistedHtml = await fs.readFile(path.join(PUBLISH_TARGET, file), 'utf8');
+        const persistedRootMatch = persistedHtml.match(/:root\s*\{[\s\S]*?\}/);
+        console.log('[THEME TRACE][index persisted root block]', persistedRootMatch ? persistedRootMatch[0] : 'NO_ROOT_BLOCK_FOUND');
+      }
       publishedFiles.push(file);
     } catch (err) {
       console.warn(`Unable to publish ${file}`, err);
