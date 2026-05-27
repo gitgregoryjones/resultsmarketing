@@ -152,6 +152,7 @@
 
                 const logoUnlockTarget = document.querySelector("[data-logo-unlock='news']");
                 const newsLinks = Array.from(document.querySelectorAll("[data-news-link='true']"));
+                const newsUnlockStorageKey = "newsLinkUnlocked";
                 let logoClickCount = 0;
                 const logoClicksRequired = 10;
 
@@ -162,12 +163,27 @@
                     });
                 };
 
+                try {
+                    if (window.localStorage.getItem(newsUnlockStorageKey) === "true") {
+                        logoClickCount = logoClicksRequired;
+                    }
+                } catch (error) {
+                    // localStorage may be unavailable in some browser privacy modes.
+                }
+
                 updateNewsVisibility();
 
                 logoUnlockTarget?.addEventListener("click", (event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     logoClickCount += 1;
+                    if (logoClickCount >= logoClicksRequired) {
+                        try {
+                            window.localStorage.setItem(newsUnlockStorageKey, "true");
+                        } catch (error) {
+                            // localStorage may be unavailable in some browser privacy modes.
+                        }
+                    }
                     updateNewsVisibility();
                 });
 
