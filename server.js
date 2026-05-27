@@ -92,6 +92,56 @@ function sendJsonError(res, status, message) {
   res.end(JSON.stringify({ error: message }));
 }
 
+function parseHexColor(value = '') {
+  const hex = String(value || '').trim().replace(/^#/, '');
+  if (!/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(hex)) return null;
+  const normalized = hex.length === 3
+    ? hex.split('').map((char) => `${char}${char}`).join('')
+    : hex;
+  const int = Number.parseInt(normalized, 16);
+  return {
+    r: (int >> 16) & 255,
+    g: (int >> 8) & 255,
+    b: int & 255,
+  };
+}
+
+function clampColor(value) {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function buildThemeVarsFromAccent(accent = '') {
+  const rgb = parseHexColor(accent);
+  if (!rgb) {
+    return {
+      accent,
+      hover: accent,
+      soft: accent,
+      borderSoft: accent,
+    };
+  }
+  const hover = `rgb(${clampColor(rgb.r * 0.87)}, ${clampColor(rgb.g * 0.87)}, ${clampColor(rgb.b * 0.87)})`;
+  return {
+    accent: `#${accent.trim().replace(/^#/, '')}`,
+    hover,
+    soft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.1)`,
+    borderSoft: `rgba(${rgb.r},${rgb.g},${rgb.b},0.3)`,
+  };
+}
+
+function applyThemeVarsToRootCss(html = '', accent = '') {
+  if (!accent) return html;
+  const theme = buildThemeVarsFromAccent(accent);
+  return html.replace(/:root\s*\{[\s\S]*?\}/g, (block) => {
+    if (!/--theme-accent\s*:/.test(block)) return block;
+    return block
+      .replace(/--theme-accent\s*:\s*[^;]+;/g, `--theme-accent: ${theme.accent};`)
+      .replace(/--theme-accent-hover\s*:\s*[^;]+;/g, `--theme-accent-hover: ${theme.hover};`)
+      .replace(/--theme-accent-soft\s*:\s*[^;]+;/g, `--theme-accent-soft: ${theme.soft};`)
+      .replace(/--theme-accent-border-soft\s*:\s*[^;]+;/g, `--theme-accent-border-soft: ${theme.borderSoft};`);
+  });
+}
+
 function componentFileName(componentId = '') {
   const safeId = String(componentId || '')
     .trim()
@@ -813,13 +863,20 @@ async function publishSite(options = {}) {
         html = root.toString();
       }
       if (publishThemeAccent) {
+        html = applyThemeVarsToRootCss(html, publishThemeAccent);
+        const theme = buildThemeVarsFromAccent(publishThemeAccent);
         const root = parse(html);
         const htmlEl = root.querySelector('html');
         if (htmlEl) {
           const existing = htmlEl.getAttribute('style') || '';
-          const cleaned = existing.replace(/--theme-accent\s*:\s*[^;]+;?/gi, '').trim();
+          const cleaned = existing
+            .replace(/--theme-accent\s*:\s*[^;]+;?/gi, '')
+            .replace(/--theme-accent-hover\s*:\s*[^;]+;?/gi, '')
+            .replace(/--theme-accent-soft\s*:\s*[^;]+;?/gi, '')
+            .replace(/--theme-accent-border-soft\s*:\s*[^;]+;?/gi, '')
+            .trim();
           const sep = cleaned && !cleaned.endsWith(';') ? '; ' : '';
-          htmlEl.setAttribute('style', `${cleaned}${sep}--theme-accent: ${publishThemeAccent}; --theme-accent-hover: ${publishThemeAccent};`);
+          htmlEl.setAttribute('style', `${cleaned}${sep}--theme-accent: ${theme.accent}; --theme-accent-hover: ${theme.hover}; --theme-accent-soft: ${theme.soft}; --theme-accent-border-soft: ${theme.borderSoft};`);
         }
         html = root.toString();
       }
