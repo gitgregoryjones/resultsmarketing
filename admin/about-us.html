@@ -258,11 +258,15 @@
                      <a href="culture.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="culture.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Culture</a>
                     <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-news-link="true" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">News</a>
                     <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Services</a>
-                    <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.contact-us" data-link="contact-us.html" style="color: rgb(220, 38, 38);" draggable="true">Contact Us</a>
+                    <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.contact-us" data-link="contact-us.html" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">Contact Us</a>
                 </div>
             </div>
-             <div class="w-[115px] h-[49px] hidden md:flex items-center justify-center rounded" style="background-size:cover;background-image:url('/images/powerbi2-1766477317452.png')" images="" powerbi2-1766477317452="" .png="" )="" http:="" www="" .resultssalesmarketing="" .com="" wp-content="" themes="" resultssalesmarketing="" logo="" data-cms-image="auto.div-2-2" draggable="true">
-                
+             <div class="w-[130px] h-[49px] hidden md:flex items-center justify-center gap-1 rounded bg-[#F2C811] text-black" role="img" aria-label="Power BI" draggable="true">
+                <svg class="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" aria-hidden="true" focusable="false" draggable="true">
+                    <path d="M4 5.75 11 3l7 2.75v12.5L11 21l-7-2.75V5.75Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" draggable="true"></path>
+                    <path d="M8 10.5v5.75M11 8.5v7.75M14 12.25v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" draggable="true"></path>
+                </svg>
+                <span class="text-sm text-center font-semibold leading-none" data-cms-text="nav.power-bi" draggable="true">Client Access</span>
             </div>
 
 
@@ -286,7 +290,7 @@
                 <a href="culture.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Our Culture</a>
                 <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-news-link="true" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">News</a>
                 <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Services</a>
-                <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px; color: rgb(220, 38, 38);" draggable="true">Contact Us</a>
+                <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">Contact Us</a>
                 
                 
                 
@@ -321,6 +325,7 @@
 
                 const logoUnlockTarget = document.querySelector("[data-logo-unlock='news']");
                 const newsLinks = Array.from(document.querySelectorAll("[data-news-link='true']"));
+                const newsUnlockStorageKey = "newsLinkUnlocked";
                 let logoClickCount = 0;
                 const logoClicksRequired = 10;
 
@@ -331,12 +336,27 @@
                     });
                 };
 
+                try {
+                    if (window.localStorage.getItem(newsUnlockStorageKey) === "true") {
+                        logoClickCount = logoClicksRequired;
+                    }
+                } catch (error) {
+                    // localStorage may be unavailable in some browser privacy modes.
+                }
+
                 updateNewsVisibility();
 
                 logoUnlockTarget?.addEventListener("click", (event) => {
                     event.preventDefault();
                     event.stopPropagation();
                     logoClickCount += 1;
+                    if (logoClickCount >= logoClicksRequired) {
+                        try {
+                            window.localStorage.setItem(newsUnlockStorageKey, "true");
+                        } catch (error) {
+                            // localStorage may be unavailable in some browser privacy modes.
+                        }
+                    }
                     updateNewsVisibility();
                 });
 
@@ -879,7 +899,7 @@ Strategic Solutions International" draggable="true">
           <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Home</a>
           <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">About Us</a>
           <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Our Culture</a>
-          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true" draggable="true">News</a>
+          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true" style="" draggable="true">News</a>
           <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Our Services</a>
           <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Contact Us</a>
         </nav>
@@ -943,7 +963,7 @@ Strategic Solutions International" draggable="true">
           <a href="index.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Home</a>
           <a href="about-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">About Us</a>
           <a href="culture.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Our Culture</a>
-          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true" draggable="true">News</a>
+          <a href="news.html" class=" text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" data-news-link="true" style="" draggable="true">News</a>
           <a href="services.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Our Services</a>
           <a href="contact-us.html" class="text-white hover:text-red-600 hover:underline hover:underline-offset-4 transition-colors duration-200 text-sm font-medium" draggable="true">Contact Us</a>
         </nav>
