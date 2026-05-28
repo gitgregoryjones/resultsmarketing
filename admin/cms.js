@@ -83,6 +83,120 @@
     { hex: '#ef4444', textClass: 'text-red-500', bgClass: 'bg-red-500' },
   ];
 
+  const THEME_PICKER_STORAGE_KEY = 'adminThemeAccent';
+  const THEME_PICKER_DEFAULT_COLOR = '#ef4444';
+  const THEME_PICKER_LEGACY_COLORS = [
+    '#dc2626',
+    '#e53e3e',
+    '#f4483a',
+    'rgb(239, 68, 68)',
+    'rgb(220, 38, 38)',
+    'rgb(250, 44, 55)',
+    'rgb(250,44,55)',
+    'rgb(229, 62, 62)',
+    'rgb(229,62,62)',
+    '#19ae7c',
+    'rgb(25, 174, 124)',
+    'rgb(25,174,124)',
+  ];
+
+  function clampThemeColorValue(value) {
+    return Math.max(0, Math.min(255, Math.round(value)));
+  }
+
+  function themeHexToRgb(hex) {
+    const clean = hex.replace('#', '');
+    const full = clean.length === 3 ? clean.split('').map((character) => character + character).join('') : clean;
+    const parsedColor = parseInt(full, 16);
+    return { r: (parsedColor >> 16) & 255, g: (parsedColor >> 8) & 255, b: parsedColor & 255 };
+  }
+
+  function themeRgbToString({ r, g, b }) {
+    return `rgb(${clampThemeColorValue(r)}, ${clampThemeColorValue(g)}, ${clampThemeColorValue(b)})`;
+  }
+
+  function shadeThemeColor(rgb, factor) {
+    return { r: rgb.r * factor, g: rgb.g * factor, b: rgb.b * factor };
+  }
+
+  function replaceLegacyThemeColor(value, color) {
+    return THEME_PICKER_LEGACY_COLORS.reduce((updatedValue, legacyColor) => {
+      const escapedLegacyColor = legacyColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return updatedValue.replace(new RegExp(escapedLegacyColor, 'gi'), color);
+    }, value);
+  }
+
+  function applyDynamicTheme(color) {
+    const rgb = themeHexToRgb(color);
+    const hover = shadeThemeColor(rgb, 0.85);
+    document.documentElement.style.setProperty('--theme-accent', color);
+    document.documentElement.style.setProperty('--theme-accent-hover', themeRgbToString(hover));
+    document.documentElement.style.setProperty('--theme-accent-soft', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`);
+    document.documentElement.style.setProperty('--theme-accent-border-soft', `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`);
+
+    document.querySelectorAll('[style]').forEach((element) => {
+      const style = element.getAttribute('style');
+      if (!style) return;
+      const updatedStyle = replaceLegacyThemeColor(style, color);
+      if (updatedStyle !== style) {
+        element.setAttribute('style', updatedStyle);
+      }
+    });
+
+    document.querySelectorAll('[fill]').forEach((element) => {
+      const fill = (element.getAttribute('fill') || '').trim().toLowerCase();
+      if (!fill || fill === 'none' || fill === 'currentcolor') return;
+      if (THEME_PICKER_LEGACY_COLORS.some((legacyColor) => fill === legacyColor.toLowerCase())) {
+        element.setAttribute('fill', color);
+      }
+    });
+  }
+
+  function mountDynamicThemePicker(initialColor) {
+    let panel = document.getElementById('themeColorPickerPanel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.id = 'themeColorPickerPanel';
+      panel.className = 'cms-ui';
+      panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
+      panel.innerHTML = '<label for="themeColorPickerInput" style="font-size:12px;white-space:nowrap;">Theme color</label><input id="themeColorPickerInput" type="color" style="width:36px;height:28px;border:none;background:none;padding:0;cursor:pointer;"/><button id="themeColorReset" type="button" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;cursor:pointer;">Reset</button>';
+      document.body.appendChild(panel);
+    } else {
+      panel.classList.add('cms-ui');
+    }
+
+    if (panel.dataset.themePickerMounted === 'true') return;
+
+    const input = panel.querySelector('#themeColorPickerInput');
+    const reset = panel.querySelector('#themeColorReset');
+    if (!input || !reset) return;
+
+    input.value = initialColor;
+    input.addEventListener('input', (event) => {
+      const nextColor = event.target.value;
+      localStorage.setItem(THEME_PICKER_STORAGE_KEY, nextColor);
+      applyDynamicTheme(nextColor);
+    });
+    reset.addEventListener('click', () => {
+      localStorage.removeItem(THEME_PICKER_STORAGE_KEY);
+      input.value = THEME_PICKER_DEFAULT_COLOR;
+      applyDynamicTheme(THEME_PICKER_DEFAULT_COLOR);
+    });
+    panel.dataset.themePickerMounted = 'true';
+  }
+
+  function initDynamicThemePicker() {
+    const savedColor = localStorage.getItem(THEME_PICKER_STORAGE_KEY) || THEME_PICKER_DEFAULT_COLOR;
+    applyDynamicTheme(savedColor);
+    mountDynamicThemePicker(savedColor);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDynamicThemePicker);
+  } else {
+    initDynamicThemePicker();
+  }
+
   const outline = document.createElement('div');
   outline.className = 'cms-outline cms-ui';
   document.body.appendChild(outline);
