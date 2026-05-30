@@ -86,7 +86,7 @@
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.home" data-link="index.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Home</a>
                     <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.about-us" data-link="about-us.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">About Us</a>
                      <a href="culture.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.about-us" data-link="culture.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Our Culture</a>
-                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-news-link="true" data-nav-link data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: #bd1f1a">News</a>
+                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-news-link="true" data-nav-link data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent)">News</a>
                     <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.our-services" data-link="services.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link data-cms-text="a.contact-us" data-link="contact-us.html" style="text-decoration: none; text-underline-offset: 4px; color: inherit">Contact Us</a>
                 </div>
@@ -118,7 +118,7 @@
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Home</a>
                 <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>About Us</a>
                 <a href="culture.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style>Our Culture</a>
-                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-news-link="true" data-nav-link style="text-decoration: none; text-underline-offset: 4px; color: #bd1f1a;">News</a>
+                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-news-link="true" data-nav-link style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);">News</a>
                 <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link style="text-decoration: none; text-underline-offset: 4px;">Contact Us</a>
                 
@@ -202,20 +202,26 @@
                 
                 document.querySelectorAll("[data-nav-link]").forEach((link) => {
                     const href = link.getAttribute("href");
+                    const activeColor = "var(--theme-accent)";
+                    const hoverColor = "var(--theme-accent-hover, var(--theme-accent))";
+                    const setLinkColor = () => {
+                        link.style.color = link.classList.contains("highlight-current") ? activeColor : "";
+                    };
+
                     link.classList.remove("highlight-current");
-                    link.style.color = "";
+                    setLinkColor();
                     link.addEventListener("mouseenter", () => {
-                        //add underline on hover with inline style and red underline offset
+                        //add underline on hover with inline style and theme-aware underline offset
                         link.style.textDecoration = "underline";
                         link.style.textUnderlineOffset = "4px"; 
-                        link.style.color = "#DC2626";
+                        link.style.color = hoverColor;
 
                     })
 
                     link.addEventListener("mouseleave", () => {
                         //remove underline on mouse leave
                         link.style.textDecoration = "none"; 
-                        link.style.color = "";
+                        setLinkColor();
                     })
                     
                     if (!href) {
@@ -223,9 +229,8 @@
                     }
                     const linkFile = href.split("/").pop();
                     if (linkFile === currentFile) {
-                        
-                        //link.classList.add("", "font-bold","highlight-current");
-                        link.style.color = "#DC2626";
+                        link.classList.add("font-bold", "highlight-current");
+                        setLinkColor();
                     }
                 });
 
@@ -634,7 +639,7 @@
             
             <div class="tab-content active bg-red-500 text-white rounded-tr-[20px] rounded-br-[20px] rounded-bl-[20px] p-8 lg:p-10 shadow-lg hidden" id="assessment-content">
                 <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl" data-cms-text="h3.clear-eyed-truth-market-reality-insights-that-protect-your-next-move-">From early assessment to sustained sell-through, we carry your goals as if they were our own and remain accountable every step of the way.</h3>
-                <a href="services.html" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.read-more-about-our-services" data-link="services.html" style="color: inherit; text-decoration: none">
+                <a href="services.html#results-services" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.read-more-about-our-services" data-link="services.html#results-services" style="color: inherit; text-decoration: none">
                     Read more about our services
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <g clip-path="url(#clip0_1_420)">
@@ -653,7 +658,7 @@
                 <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
                     Strategic roadmap for sustainable growth. We build actionable plans that drive results.
                 </h3>
-                <a href="services.html" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.learn-more-about-growth-planning" data-link="services.html" style="color: inherit; text-decoration: none">
+                <a href="services.html#results-services" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.learn-more-about-growth-planning" data-link="services.html#results-services" style="color: inherit; text-decoration: none">
                     Learn more about growth planning
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <g clip-path="url(#clip0_1_420)">
@@ -674,7 +679,7 @@
                 <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
                     Driving consumer demand and purchase. We create campaigns that convert interest into sales.
                 </h3>
-                <a href="services.html" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.explore-sell-through-strategies" data-link="services.html" style="color: inherit; text-decoration: none">
+                <a href="services.html#results-services" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.explore-sell-through-strategies" data-link="services.html#results-services" style="color: inherit; text-decoration: none">
                     Explore sell-through strategies
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <g clip-path="url(#clip0_1_420)">
@@ -693,7 +698,7 @@
                 <h3 class="text-2xl lg:text-3xl font-medium mb-6 leading-relaxed max-w-4xl">
                     Data-driven insights and performance tracking. We measure what matters to optimize your growth.
                 </h3>
-                <a href="services.html" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.see-our-analytics-capabilities" data-link="services.html" style="color: inherit; text-decoration: none">
+                <a href="services.html#results-services" class="inline-flex items-center gap-2 text-xl font-bold text-white hover:translate-x-1 transition-transform duration-200" data-cms-text="a.see-our-analytics-capabilities" data-link="services.html#results-services" style="color: inherit; text-decoration: none">
                     See our analytics capabilities
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <g clip-path="url(#clip0_1_420)">
@@ -722,7 +727,7 @@
                         <h4 class="text-xl font-medium mb-4 leading-relaxed">
                             Clear-eyed truth. Market reality. Insights that protect your next move.
                         </h4>
-                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                        <a href="services.html#results-services" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
                             Read more about our services
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_1_420)">
@@ -750,7 +755,7 @@
                         <h4 class="text-xl font-medium mb-4 leading-relaxed">
                             Strategic roadmap for sustainable growth. We build actionable plans that drive results.
                         </h4>
-                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                        <a href="services.html#results-services" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
                             Learn more about growth planning
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_1_420)">
@@ -778,7 +783,7 @@
                         <h4 class="text-xl font-medium mb-4 leading-relaxed">
                             Effective channel strategy and distribution. We ensure your products reach the right markets.
                         </h4>
-                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                        <a href="services.html#results-services" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
                             Discover our sell-in approach
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_1_420)">
@@ -806,7 +811,7 @@
                         <h4 class="text-xl font-medium mb-4 leading-relaxed">
                             Driving consumer demand and purchase. We create campaigns that convert interest into sales.
                         </h4>
-                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                        <a href="services.html#results-services" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
                             Explore sell-through strategies
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_1_420)">
@@ -834,7 +839,7 @@
                         <h4 class="text-xl font-medium mb-4 leading-relaxed">
                             Data-driven insights and performance tracking. We measure what matters to optimize your growth.
                         </h4>
-                        <a href="#" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
+                        <a href="services.html#results-services" class="inline-flex items-center gap-2 text-lg font-bold text-white mt-4">
                             See our analytics capabilities
                             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <g clip-path="url(#clip0_1_420)">
