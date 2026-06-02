@@ -173,8 +173,8 @@
                 } catch (error) {
                     // localStorage may be unavailable in some browser privacy modes.
                 }
-
-                updateNewsVisibility();
+                //Don't Hide News Link on Page Load, only hide it after first click if not unlocked, to avoid confusion for users who have already unlocked it or are in a privacy mode that prevents unlocking.
+                //updateNewsVisibility();
 
                 logoUnlockTarget?.addEventListener("click", (event) => {
                     event.preventDefault();
