@@ -1,8 +1,8 @@
 :root {
-  --theme-accent: #bd1f1a;
-  --theme-accent-hover: rgb(164, 27, 23);
-  --theme-accent-soft: rgba(189,31,26,0.1);
-  --theme-accent-border-soft: rgba(189,31,26,0.3);
+  --theme-accent: #ef4444;
+  --theme-accent-hover: rgb(208, 59, 59);
+  --theme-accent-soft: rgba(239,68,68,0.1);
+  --theme-accent-border-soft: rgba(239,68,68,0.3);
 }
 .text-red-500, .hover\:text-red-500:hover { color: var(--theme-accent) !important; }
 .hover\:text-red-600:hover { color: var(--theme-accent-hover) !important; }
