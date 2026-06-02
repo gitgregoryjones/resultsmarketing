@@ -571,9 +571,30 @@
           <p class="cms-pill cms-pill--subtle">Lowercase, no spaces. Required for prefixed image URLs.</p>
         </div>
         <div id="cms-settings-message"></div>
+        <div class="cms-field cms-field--github-app">
+          <label>GitHub App</label>
+          <div class="cms-site-input">
+            <input id="cms-github-owner" type="text" placeholder="owner or org" />
+            <input id="cms-github-repo" type="text" placeholder="repo name" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <input id="cms-github-dev-branch" type="text" placeholder="development branch" />
+            <input id="cms-github-prod-branch" type="text" placeholder="production branch" />
+          </div>
+          <div class="cms-site-input" style="margin-top:8px;">
+            <button type="button" id="cms-save-github-config">Save GitHub target</button>
+          </div>
+          <div class="cms-site-input">
+            <button type="button" id="cms-connect-github-app">Connect GitHub App</button>
+          </div>
+          <p class="cms-pill cms-pill--subtle" id="cms-github-app-status">Not connected.</p>
+        </div>
         <div class="cms-publish">
           <button type="button" id="cms-publish">Publish static site</button>
           <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
+        </div>
+        <div class="cms-publish">
+          <button type="button" id="cms-publish-github">Publish to GitHub production branch</button>
         </div>
       </div>
     </div>
@@ -700,9 +721,20 @@
   const publishButton = sidebar.querySelector('#cms-publish');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
-  const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
+  const githubOwnerInput = sidebar.querySelector('#cms-github-owner');
+  const githubRepoInput = sidebar.querySelector('#cms-github-repo');
+  const githubDevBranchInput = sidebar.querySelector('#cms-github-dev-branch');
+  const githubProdBranchInput = sidebar.querySelector('#cms-github-prod-branch');
+  const githubConfigSaveButton = sidebar.querySelector('#cms-save-github-config');
+  const githubConnectButton = sidebar.querySelector('#cms-connect-github-app');
+  const githubAppStatusEl = sidebar.querySelector('#cms-github-app-status');
+  const githubPublishButton = sidebar.querySelector('#cms-publish-github');
+    const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
   const messageEl = sidebar.querySelector('#cms-message');
   const siteField = sidebar.querySelector('.cms-field--site');
+  const githubField = sidebar.querySelector('.cms-field--github-app');
+  const publishField = sidebar.querySelector('.cms-publish');
+  const githubPublishField = githubPublishButton?.closest('.cms-publish') || null;
   const listEl = sidebar.querySelector('#cms-list');
   const emptyEl = sidebar.querySelector('#cms-empty');
   const fileSelect = sidebar.querySelector('#cms-file');
@@ -729,6 +761,12 @@
   const settingsDialogOriginalParent = siteField?.parentElement || null;
   const settingsMessageParent = settingsMessageEl?.parentElement || null;
   const settingsNextSibling = siteField?.nextSibling || null;
+  const githubFieldOriginalParent = githubField?.parentElement || null;
+  const githubFieldNextSibling = githubField?.nextSibling || null;
+  const publishFieldOriginalParent = publishField?.parentElement || null;
+  const publishFieldNextSibling = publishField?.nextSibling || null;
+  const githubPublishFieldOriginalParent = githubPublishField?.parentElement || null;
+  const githubPublishFieldNextSibling = githubPublishField?.nextSibling || null;
 
   let sidebarPosition = localStorage.getItem(POSITION_STORAGE_KEY) || 'right';
   let siteName = '';
@@ -899,7 +937,93 @@
     return (value || '').trim();
   }
 
-  function clearComponentSelection() {
+
+  async function loadGithubAppStatus() {
+    try {
+      const res = await fetch('/api/github/app/status');
+      if (!res.ok) return;
+      const data = await res.json();
+      githubOwnerInput.value = data.owner || '';
+      githubRepoInput.value = data.repo || '';
+      githubDevBranchInput.value = data.developmentBranch || 'development';
+      githubProdBranchInput.value = data.productionBranch || 'gh-pages';
+      if (data.connected) {
+        githubAppStatusEl.textContent = `Connected to ${data.owner}/${data.repo}. Publish ${data.developmentBranch} → ${data.productionBranch}.`;
+        githubAppStatusEl.style.color = '#16a34a';
+      } else {
+        githubAppStatusEl.textContent = 'Not connected. Click Connect GitHub App.';
+        githubAppStatusEl.style.color = '#6b7280';
+      }
+    } catch (err) {
+      console.warn('Unable to load GitHub App status', err);
+    }
+  }
+
+  async function saveGithubTargetConfig() {
+    const owner = (githubOwnerInput.value || '').trim();
+    const repo = (githubRepoInput.value || '').trim();
+    const developmentBranch = (githubDevBranchInput.value || 'development').trim();
+    const productionBranch = (githubProdBranchInput.value || 'gh-pages').trim();
+    if (!owner || !repo) {
+      settingsMessageEl.textContent = 'Owner/org and repo are required.';
+      settingsMessageEl.style.color = '#ef4444';
+      return;
+    }
+    try {
+      const res = await fetch('/api/github/app/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner, repo, developmentBranch, productionBranch }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to save GitHub target.');
+      settingsMessageEl.textContent = 'GitHub target saved.';
+      settingsMessageEl.style.color = '#16a34a';
+      await loadGithubAppStatus();
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to save GitHub target.';
+      settingsMessageEl.style.color = '#ef4444';
+    }
+  }
+
+  async function connectGithubApp() {
+    try {
+      const res = await fetch('/api/github/app/start');
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || 'Unable to start GitHub App install');
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+      settingsMessageEl.textContent = 'Complete installation in GitHub, then return and refresh.';
+      settingsMessageEl.style.color = '#111827';
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to start GitHub App install.';
+      settingsMessageEl.style.color = '#ef4444';
+    }
+  }
+
+  async function publishToGithub() {
+    const originalLabel = githubPublishButton.textContent;
+    githubPublishButton.disabled = true;
+    githubPublishButton.textContent = 'Publishing...';
+    settingsMessageEl.textContent = 'Publishing to GitHub production branch...';
+    settingsMessageEl.style.color = '#111827';
+    try {
+      const res = await fetch('/api/github/publish', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Unable to publish to GitHub');
+      settingsMessageEl.textContent = data.message || `Published to ${data.branch || 'production branch'}.`;
+      settingsMessageEl.style.color = '#16a34a';
+      showToast(settingsMessageEl.textContent, 'success');
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to publish to GitHub.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast(settingsMessageEl.textContent, 'error');
+    } finally {
+      githubPublishButton.disabled = false;
+      githubPublishButton.textContent = originalLabel;
+    }
+  }
+
+function clearComponentSelection() {
     if (!selectedElement) return;
     selectedElement.removeAttribute('data-component-id');
     selectedElement.removeAttribute('data-component-source');
@@ -1010,6 +1134,9 @@
     if (!siteField || !settingsMessageEl) return;
     if (settingsDialog.classList.contains('is-visible')) return;
     settingsDialogBody.appendChild(siteField);
+    if (githubField) settingsDialogBody.appendChild(githubField);
+    if (publishField) settingsDialogBody.appendChild(publishField);
+    if (githubPublishField) settingsDialogBody.appendChild(githubPublishField);
     settingsDialogBody.appendChild(settingsMessageEl);
     settingsDialog.classList.add('is-visible');
   }
@@ -1018,6 +1145,15 @@
     if (!settingsDialog.classList.contains('is-visible')) return;
     if (settingsDialogOriginalParent && siteField) {
       settingsDialogOriginalParent.insertBefore(siteField, settingsNextSibling);
+    }
+    if (githubFieldOriginalParent && githubField) {
+      githubFieldOriginalParent.insertBefore(githubField, githubFieldNextSibling);
+    }
+    if (publishFieldOriginalParent && publishField) {
+      publishFieldOriginalParent.insertBefore(publishField, publishFieldNextSibling);
+    }
+    if (githubPublishFieldOriginalParent && githubPublishField) {
+      githubPublishFieldOriginalParent.insertBefore(githubPublishField, githubPublishFieldNextSibling);
     }
     if (settingsMessageParent && settingsMessageEl) {
       settingsMessageParent.appendChild(settingsMessageEl);
@@ -3770,6 +3906,9 @@
     setBackendKeyOptions([]);
   });
   siteNameSaveButton.addEventListener('click', persistSiteName);
+  githubConfigSaveButton.addEventListener('click', saveGithubTargetConfig);
+  githubConnectButton.addEventListener('click', connectGithubApp);
+  githubPublishButton.addEventListener('click', publishToGithub);
   typeInputs.forEach((input) => {
     input.addEventListener('change', (e) => {
       setTypeSelection(e.target.value);
@@ -3905,6 +4044,7 @@
     updateServiceFormVisibility();
     applyHiddenStateToAllElements();
     hydrate();
+    loadGithubAppStatus();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);
     }
