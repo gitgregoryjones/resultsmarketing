@@ -85,9 +85,9 @@
             <div class="hidden md:flex flex-1 justify-center items-center" draggable="true">
                 <div class="flex justify-start items-center gap-6 lg:gap-8" draggable="true">
                     <a href="index.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.home" data-link="index.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Home</a>
-                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="about-us.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">About Us</a>
+                    <a href="about-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold highlight-current" data-nav-link="" data-cms-text="a.about-us" data-link="about-us.html" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">About Us</a>
                      <a href="culture.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.about-us" data-link="culture.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Culture</a>
-                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4" data-news-link="true" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">News</a>
+                    <a href="news.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold highlight-current" data-news-link="true" data-nav-link="" data-cms-text="a.news" data-link="news.html" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">News</a>
                     <a href="services.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.our-services" data-link="services.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Services</a>
                     <a href="contact-us.html" class="nav-link text-black text-base font-normal transition-colors hover:text-red-600 hover:underline hover:underline-offset-4 font-bold" data-nav-link="" data-cms-text="a.contact-us" data-link="contact-us.html" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Contact Us</a>
                 </div>
@@ -117,9 +117,9 @@
             
             <div class="flex flex-col space-y-6" draggable="true">
                 <a href="index.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Home</a>
-                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">About Us</a>
+                <a href="about-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold highlight-current" data-nav-link="" style="color: var(--theme-accent);" draggable="true">About Us</a>
                 <a href="culture.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="" draggable="true">Our Culture</a>
-                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100" data-news-link="true" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">News</a>
+                <a href="news.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold highlight-current" data-news-link="true" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px; color: var(--theme-accent);" draggable="true">News</a>
                 <a href="services.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Our Services</a>
                 <a href="contact-us.html" class="nav-link text-black text-lg font-normal transition-colors hover:text-red-600 hover:bg-gray-50 py-2 px-2 -mx-2 rounded border-b border-gray-100 font-bold" data-nav-link="" style="text-decoration: none; text-underline-offset: 4px;" draggable="true">Contact Us</a>
                 
@@ -174,8 +174,8 @@
                 } catch (error) {
                     // localStorage may be unavailable in some browser privacy modes.
                 }
-
-                updateNewsVisibility();
+                //Don't Hide News Link on Page Load, only hide it after first click if not unlocked, to avoid confusion for users who have already unlocked it or are in a privacy mode that prevents unlocking.
+                //updateNewsVisibility();
 
                 logoUnlockTarget?.addEventListener("click", (event) => {
                     event.preventDefault();
@@ -400,8 +400,8 @@
                             <p class="mt-1 text-base font-normal text-gray-800 font-oswaldraggable="true">Average Growth</p>
                         </div>
                         <div class="rounded-xl bg-white p-4 shadow-md" draggable="true">
-                            <div class="text-red-500 text-5xl font-medium leading-tight" draggable="true">+14%</div>
-                            <p class="mt-1 text-base font-normal text-gray-800 font-oswald draggable="true">Average Growth</p>
+                            <div class="text-red-500 text-5xl font-medium leading-tight" draggable="true">73</div>
+                            <p class="mt-1 text-base font-normal text-gray-800 font-oswald draggable="true"> Countries<br draggable="true"><span class="" draggable="true">Global Coverage</span><br draggable="true"></p>
                         </div>
                     </div>
                 </div>
