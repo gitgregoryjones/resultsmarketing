@@ -2045,11 +2045,13 @@ function contentTypeFor(filePath) {
 async function serveStatic(res, filePath) {
   let safePath = path.normalize(filePath).replace(/^\/+/, '');
 
-  if (safePath.startsWith('admin/')) {
-    safePath = safePath.replace(/^admin\//, '');
-  }
+  const searchBases = [];
 
-  const searchBases = [ADMIN_DIR, ROOT];
+  if (safePath.startsWith('admin/')) {
+    searchBases.push(ROOT);
+  } else {
+    searchBases.push(ADMIN_DIR, ROOT);
+  }
 
   for (const base of searchBases) {
     try {
@@ -2059,14 +2061,13 @@ async function serveStatic(res, filePath) {
       res.end(data);
       return;
     } catch (err) {
-      // continue
+      // continue to next base
     }
   }
 
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('Not found');
 }
-
 async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
   if (req.method === 'GET') {
     const { values, tags, siteName } = await readContent(fileName);
