@@ -130,7 +130,7 @@
       <form class="cms-auth__card" id="cms-auth-form">
         <p class="cms-auth__eyebrow">Admin access</p>
         <h1 id="cms-auth-title">Sign in to Results Marketing CMS</h1>
-        <p class="cms-auth__copy" id="cms-auth-copy">Use your Supabase user account to edit this project.</p>
+        <p class="cms-auth__copy" id="cms-auth-copy">Use your account to edit this project.</p>
         <label class="cms-auth__field" data-auth-field="email">Email<input id="cms-auth-email" type="email" autocomplete="email"></label>
         <label class="cms-auth__field" data-auth-field="password">Password<input id="cms-auth-password" type="password" autocomplete="current-password"></label>
         <label class="cms-auth__field" data-auth-field="confirm">Confirm password<input id="cms-auth-confirm" type="password" autocomplete="new-password"></label>
@@ -170,12 +170,12 @@
     }
     if (copy) {
       copy.textContent = activeMode === 'register'
-        ? 'Register with your email and password. If email confirmation is enabled, Supabase will send a confirmation link.'
+        ? 'Register with your email and password. If email confirmation is enabled, you will receive a confirmation link.'
         : activeMode === 'forgot'
-          ? 'Enter your email and Supabase will send a password reset link.'
+          ? 'Enter your email and we will send a password reset link.'
           : activeMode === 'reset'
-            ? 'Enter a new password for your Supabase account.'
-            : 'Use your Supabase user account to edit this project.';
+            ? 'Enter a new password for your account.'
+            : 'Use your account to edit this project.';
     }
     if (submit) {
       submit.textContent = activeMode === 'register'
@@ -319,7 +319,7 @@
             validateNewPassword(passwordInput.value, confirmInput.value);
             const result = await registerWithSupabase(emailInput.value.trim(), passwordInput.value);
             if (!result.signedIn) {
-              messageEl.textContent = 'Account created. Check your email for a Supabase confirmation link, then sign in.';
+              messageEl.textContent = 'Account created. Check your email for a confirmation link, then sign in.';
               setAuthPanelMode(panel, 'signin');
               passwordInput.value = '';
               confirmInput.value = '';
@@ -328,7 +328,7 @@
             }
           } else if (mode === 'forgot') {
             await sendPasswordReset(emailInput.value.trim());
-            messageEl.textContent = 'Check your email for a Supabase password reset link.';
+            messageEl.textContent = 'Check your email for a password reset link.';
             setAuthPanelMode(panel, 'signin');
             submit.disabled = false;
             return;
@@ -383,7 +383,7 @@
     }
     const recoverySession = getRecoverySessionFromUrl();
     if (recoverySession) {
-      return showAuthPanel('Enter a new password to finish resetting your Supabase account.', 'reset', recoverySession);
+      return showAuthPanel('Enter a new password to finish resetting your account.', 'reset', recoverySession);
     }
     if (await verifyStoredSession()) return true;
     return showAuthPanel('');
