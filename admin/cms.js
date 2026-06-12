@@ -3436,20 +3436,24 @@
         computedAccent,
         payloadThemeAccent: themeAccent,
       });
+      const publishDebug = localStorage.getItem('publishDebug') === 'true' || localStorage.getItem('cmsPublishDebug') === 'true';
       const res = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ themeAccent }),
+        body: JSON.stringify({ themeAccent, debug: publishDebug }),
       });
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
+      console.log('[PUBLISH TRACE][admin response]', data);
       const count = Array.isArray(data.published) ? data.published.length : 0;
       const githubTarget = data.github && data.github.enabled ? ` and uploaded to ${data.github.repo}/${data.github.branch}` : '';
-      const successMessage = `Published ${count} page${count === 1 ? '' : 's'}${githubTarget}.`;
+      const traceSuffix = data.traceId ? ` Trace: ${data.traceId}` : '';
+      const successMessage = `Published ${count} page${count === 1 ? '' : 's'}${githubTarget}.${traceSuffix}`;
       settingsMessageEl.textContent = successMessage;
       settingsMessageEl.style.color = '#16a34a';
       showToast(successMessage, 'success');
     } catch (err) {
+      console.error('[PUBLISH TRACE][admin error]', err);
       success = false;
       settingsMessageEl.textContent = 'Unable to publish static pages to GitHub Pages.';
       settingsMessageEl.style.color = '#ef4444';

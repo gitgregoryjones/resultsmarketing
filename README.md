@@ -37,10 +37,21 @@ Set these environment variables in Netlify:
 | `GITHUB_COMMITTER_NAME` | Optional commit author name for publish commits. |
 | `GITHUB_COMMITTER_EMAIL` | Optional commit author email for publish commits. |
 | `PUBLISH_LOCAL_DIR` | Optional local/serverless render directory before upload. Defaults to `published`. |
+| `PUBLISH_DEBUG` | Optional `true`/`false` flag. When true, publish responses include a step-by-step trace in addition to server logs. |
 
 Create/invite users in Supabase Auth to manage who can sign in. Once `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set, `/api/*` routes require a Supabase bearer token, and the CMS displays a Supabase email/password login before loading admin data.
 
 > Note: Netlify Functions have ephemeral writable storage. The publish flow still renders to a local directory first, but long-term published output is the configured GitHub Pages repo. Keep source HTML edits in your repo workflow if you need them persisted across Netlify function cold starts/redeploys.
+
+
+### Publish debugging
+Every publish request now gets a trace id like `pub-lxyz123-abc456`. The server logs each local render step, each GitHub API request, each uploaded file, and the GitHub commit SHA/URL returned by the Contents API. Set `PUBLISH_DEBUG=true` in `.env` (or in Netlify) to include the full trace in the `/api/publish` JSON response. For one-off browser debugging without changing `.env`, run this in the browser console before clicking Publish:
+
+```js
+localStorage.setItem('publishDebug', 'true')
+```
+
+The admin publish response is also logged to the browser console as `[PUBLISH TRACE][admin response]`, including `traceId`, uploaded file paths, and GitHub commit metadata.
 
 ## Files
 - `/admin/index.html` – Demo page using tagged text, image, and background-image elements.

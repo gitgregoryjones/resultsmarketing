@@ -80,6 +80,7 @@ const GITHUB_PAGES_PATH = (process.env.GITHUB_PAGES_PATH || '').replace(/^\/+|\/
 const GITHUB_PAGES_TOKEN = process.env.GITHUB_PAGES_TOKEN || process.env.GITHUB_TOKEN || '';
 const GITHUB_COMMITTER_NAME = process.env.GITHUB_COMMITTER_NAME || 'Results Marketing CMS';
 const GITHUB_COMMITTER_EMAIL = process.env.GITHUB_COMMITTER_EMAIL || 'cms@example.com';
+const PUBLISH_DEBUG = /^(1|true|yes|on)$/i.test(process.env.PUBLISH_DEBUG || '');
 const DATA_ROOT = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const COMPONENTS_DIR = path.join(DATA_ROOT, 'components');
 const STYLES_DIR = path.join(DATA_ROOT, 'styles');
@@ -228,6 +229,50 @@ async function requireAuthenticatedRequest(req, res, pathname) {
   return false;
 }
 
+
+function redactPublishDetails(value) {
+  if (Array.isArray(value)) return value.map(redactPublishDetails);
+  if (!value || typeof value !== 'object') return value;
+  return Object.entries(value).reduce((acc, [key, item]) => {
+    if (/token|authorization|apikey|password|secret/i.test(key) && typeof item === 'string') {
+      acc[key] = '[redacted]';
+    } else {
+      acc[key] = redactPublishDetails(item);
+    }
+    return acc;
+  }, {});
+}
+
+function createPublishTrace(enabled = PUBLISH_DEBUG) {
+  const id = `pub-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const startedAt = new Date();
+  const entries = [];
+  const record = (step, details = {}, level = 'info') => {
+    const safeDetails = redactPublishDetails(details);
+    const entry = {
+      id,
+      step,
+      level,
+      at: new Date().toISOString(),
+      ms: Date.now() - startedAt.getTime(),
+      details: safeDetails,
+    };
+    entries.push(entry);
+    const logger = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log;
+    logger(`[publish:${id}] ${step}`, safeDetails);
+    return entry;
+  };
+  return {
+    id,
+    enabled,
+    entries,
+    info: (step, details) => record(step, details, 'info'),
+    warn: (step, details) => record(step, details, 'warn'),
+    error: (step, details) => record(step, details, 'error'),
+    toJSON: () => ({ id, startedAt: startedAt.toISOString(), entries }),
+  };
+}
+
 function githubApiHeaders() {
   return {
     Accept: 'application/vnd.github+json',
@@ -261,47 +306,109 @@ async function walkFiles(dir, base = dir) {
   return files;
 }
 
-async function githubRequest(apiPath, options = {}) {
+async function githubRequest(apiPath, options = {}, trace) {
+  const { expectedStatuses = [], ...fetchOptions } = options;
+  const method = fetchOptions.method || 'GET';
+  const started = Date.now();
+  trace?.info('github.request.start', { method, apiPath });
   const response = await fetch(`https://api.github.com${apiPath}`, {
-    ...options,
+    ...fetchOptions,
     headers: {
       ...githubApiHeaders(),
-      ...(options.headers || {}),
+      ...(fetchOptions.headers || {}),
     },
   });
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (err) {
+    trace?.error('github.request.invalid_json', {
+      method,
+      apiPath,
+      status: response.status,
+      elapsedMs: Date.now() - started,
+      bodyPreview: text.slice(0, 300),
+    });
+    throw err;
+  }
+  const details = {
+    method,
+    apiPath,
+    status: response.status,
+    elapsedMs: Date.now() - started,
+    rateLimitRemaining: response.headers.get('x-ratelimit-remaining'),
+    requestId: response.headers.get('x-github-request-id'),
+  };
   if (!response.ok) {
     const message = data && data.message ? data.message : response.statusText;
+    if (expectedStatuses.includes(response.status)) {
+      trace?.info('github.request.expected_status', { ...details, message });
+      return { ...(data || {}), __status: response.status };
+    }
+    trace?.error('github.request.failed', { ...details, message });
     throw new Error(`GitHub API ${response.status}: ${message}`);
   }
+  trace?.info('github.request.done', details);
   return data;
 }
 
-async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = []) {
+async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = [], trace) {
   const repo = normalizeGitHubRepo(GITHUB_PAGES_REPO);
-  if (!repo && !GITHUB_PAGES_TOKEN) return { enabled: false };
+  if (!repo && !GITHUB_PAGES_TOKEN) {
+    trace?.warn('github.publish.skipped', {
+      reason: 'GITHUB_PAGES_REPO and GITHUB_PAGES_TOKEN are not configured',
+    });
+    return { enabled: false, uploaded: [], commits: [] };
+  }
   if (!repo) throw new Error('GITHUB_PAGES_REPO must be set to owner/repo');
   if (!GITHUB_PAGES_TOKEN) throw new Error('GITHUB_PAGES_TOKEN or GITHUB_TOKEN must be set');
 
+  trace?.info('github.publish.start', {
+    repo,
+    branch: GITHUB_PAGES_BRANCH,
+    path: GITHUB_PAGES_PATH || '/',
+    sourceDir,
+    pages: publishedFiles.length,
+  });
+
   const sourceFiles = await walkFiles(sourceDir);
+  trace?.info('github.publish.files_discovered', {
+    count: sourceFiles.length,
+    files: sourceFiles,
+  });
+
   const uploaded = [];
+  const commits = [];
   for (const relativeFile of sourceFiles) {
     const sourcePath = path.join(sourceDir, relativeFile);
     const targetPath = [GITHUB_PAGES_PATH, relativeFile].filter(Boolean).join('/');
     const encodedPath = targetPath.split('/').map(encodeURIComponent).join('/');
+    const stat = await fs.stat(sourcePath);
     let sha;
+    let action = 'create';
+    trace?.info('github.file.prepare', { relativeFile, targetPath, bytes: stat.size });
     try {
       const existing = await githubRequest(`/repos/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(GITHUB_PAGES_BRANCH)}`, {
         method: 'GET',
-      });
-      sha = existing && existing.sha;
+        expectedStatuses: [404],
+      }, trace);
+      if (existing && existing.__status === 404) {
+        trace?.info('github.file.no_existing_file', { targetPath });
+      } else {
+        sha = existing && existing.sha;
+        action = 'update';
+        trace?.info('github.file.existing_found', {
+          targetPath,
+          sha: sha ? sha.slice(0, 12) : '',
+        });
+      }
     } catch (err) {
-      if (!/GitHub API 404/.test(err.message || '')) throw err;
+      throw err;
     }
 
     const content = toBase64(await fs.readFile(sourcePath));
-    await githubRequest(`/repos/${repo}/contents/${encodedPath}`, {
+    const result = await githubRequest(`/repos/${repo}/contents/${encodedPath}`, {
       method: 'PUT',
       body: JSON.stringify({
         message: `Publish CMS site: ${relativeFile}`,
@@ -313,9 +420,30 @@ async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = []) {
           email: GITHUB_COMMITTER_EMAIL,
         },
       }),
-    });
-    uploaded.push(targetPath);
+    }, trace);
+
+    const commit = result && result.commit ? result.commit : {};
+    const upload = {
+      path: targetPath,
+      action,
+      bytes: stat.size,
+      commitSha: commit.sha || '',
+      commitUrl: commit.html_url || '',
+      contentSha: result && result.content ? result.content.sha : '',
+    };
+    uploaded.push(upload);
+    if (commit.sha) {
+      commits.push({ sha: commit.sha, url: commit.html_url || '', path: targetPath });
+    }
+    trace?.info('github.file.committed', upload);
   }
+
+  trace?.info('github.publish.done', {
+    repo,
+    branch: GITHUB_PAGES_BRANCH,
+    uploaded: uploaded.length,
+    commits: commits.length,
+  });
 
   return {
     enabled: true,
@@ -323,6 +451,7 @@ async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = []) {
     branch: GITHUB_PAGES_BRANCH,
     path: GITHUB_PAGES_PATH,
     uploaded,
+    commits,
     pages: publishedFiles,
   };
 }
@@ -1028,21 +1157,24 @@ function wrapDataLinks(html) {
   }
 }
 
-async function copyDirIfExists(sourceDir, targetDir) {
+async function copyDirIfExists(sourceDir, targetDir, trace) {
   try {
     await fs.access(sourceDir);
     await ensureDir(path.dirname(targetDir));
     await fs.cp(sourceDir, targetDir, { recursive: true });
+    trace?.info('local.assets.copy_dir.done', { sourceDir, targetDir });
     console.log(`Copied Dir worked ${sourceDir} to ${targetDir}`);
   } catch (err) {
     if (err && err.code !== 'ENOENT') {
+      trace?.warn('local.assets.copy_dir.failed', { sourceDir, targetDir, message: err.message });
       console.warn(`Unable to copy ${sourceDir} to ${targetDir}`, err);
     }
   }
 }
 
-async function copyAdminAssets() {
+async function copyAdminAssets(trace) {
   try {
+    trace?.info('local.assets.copy_admin.start', { sourceDir: ADMIN_DIR, targetDir: PUBLISH_TARGET });
     await fs.cp(ADMIN_DIR, PUBLISH_TARGET, {
       recursive: true,
       filter: (src) => {
@@ -1054,14 +1186,19 @@ async function copyAdminAssets() {
         return true;
       },
     });
+    trace?.info('local.assets.copy_admin.done', { sourceDir: ADMIN_DIR, targetDir: PUBLISH_TARGET });
   } catch (err) {
+    trace?.warn('local.assets.copy_admin.failed', { sourceDir: ADMIN_DIR, targetDir: PUBLISH_TARGET, message: err.message });
     console.warn('Unable to copy admin assets to root', err);
   }
 }
 
 async function publishSite(options = {}) {
+  const trace = options.trace;
+  trace?.info('local.publish.start', { targetDir: PUBLISH_TARGET, adminDir: ADMIN_DIR, themeAccent: options.themeAccent || '' });
   const publishThemeAccent = typeof options.themeAccent === 'string' ? options.themeAccent.trim() : '';
   const files = await listHtmlFiles();
+  trace?.info('local.publish.files_listed', { count: files.length, files });
   let siteName = '';
   for (const file of [DEFAULT_FILE, ...files]) {
     try {
@@ -1073,8 +1210,10 @@ async function publishSite(options = {}) {
     }
   }
 
+  trace?.info('local.publish.clean_target.start', { targetDir: PUBLISH_TARGET });
   await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
   await ensureDir(PUBLISH_TARGET);
+  trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
   const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
 
   const publishedFiles = [];
@@ -1130,18 +1269,25 @@ async function publishSite(options = {}) {
       html = stripCmsAssets(html);
       html = stripContentEditable(html);
       html = stripDraggableAttributes(html);
+      const outputPath = path.join(PUBLISH_TARGET, file);
       console.log(`Publishing ${file}... to ${PUBLISH_TARGET}`);
-      await fs.writeFile(path.join(PUBLISH_TARGET, file), html);
+      await fs.writeFile(outputPath, html);
+      const stat = await fs.stat(outputPath);
+      trace?.info('local.publish.page_written', { file, outputPath, bytes: stat.size });
       publishedFiles.push(file);
     } catch (err) {
+      trace?.warn('local.publish.page_failed', { file, message: err.message });
       console.warn(`Unable to publish ${file}`, err);
     }
   }
 
-  await copyAdminAssets();
-  await fs.writeFile(path.join(PUBLISH_TARGET, 'theme.css'), themeCss);
+  await copyAdminAssets(trace);
+  const themePath = path.join(PUBLISH_TARGET, 'theme.css');
+  await fs.writeFile(themePath, themeCss);
+  trace?.info('local.publish.theme_written', { outputPath: themePath, bytes: Buffer.byteLength(themeCss) });
   //await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
   //await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
+  trace?.info('local.publish.assets_start', { siteName: siteName || '' });
   console.log(`Publishing site assets for site name: ${siteName || '(none)'}`);
   if (siteName) {
     const siteRoot = path.join(PUBLISH_TARGET, siteName);
@@ -1149,14 +1295,15 @@ async function publishSite(options = {}) {
     await ensureDir(siteRoot);
     console.log(`siteRoot ensured: ${siteRoot}`);
     console.log(`Copying image to: ${path.join(siteRoot, 'images')}`);
-    await copyDirIfExists(IMAGES_DIR, path.join(siteRoot, 'images'));
+    await copyDirIfExists(IMAGES_DIR, path.join(siteRoot, 'images'), trace);
     console.log(`Images copied to: ${path.join(siteRoot, 'images')}`);
-    await copyDirIfExists(BRANDS_DIR, path.join(siteRoot, 'brands'));
+    await copyDirIfExists(BRANDS_DIR, path.join(siteRoot, 'brands'), trace);
     console.log(`Brands copied to: ${path.join(siteRoot, 'brands')}`);
     
   } 
 
 
+  trace?.info('local.publish.done', { targetDir: PUBLISH_TARGET, pages: publishedFiles.length, files: publishedFiles });
   return publishedFiles;
 }
 
@@ -1989,6 +2136,7 @@ async function handleRequest(req, res) {
       body += chunk;
     });
     req.on('end', async () => {
+      let trace;
       try {
         console.log(`Triggering site publish...`);
         let payload = {};
@@ -1997,13 +2145,29 @@ async function handleRequest(req, res) {
         } catch (e) {
           payload = {};
         }
-        const published = await publishSite({ themeAccent: payload.themeAccent });
-        const github = await publishDirectoryToGitHubPages(PUBLISH_TARGET, published);
+        trace = createPublishTrace(PUBLISH_DEBUG || Boolean(payload.debug));
+        trace.info('request.publish.received', {
+          authenticatedUser: req.cmsUser && (req.cmsUser.email || req.cmsUser.id) ? (req.cmsUser.email || req.cmsUser.id) : '',
+          debugResponse: trace.enabled,
+          hasGithubRepo: Boolean(GITHUB_PAGES_REPO),
+          hasGithubToken: Boolean(GITHUB_PAGES_TOKEN),
+        });
+        const published = await publishSite({ themeAccent: payload.themeAccent, trace });
+        const github = await publishDirectoryToGitHubPages(PUBLISH_TARGET, published, trace);
+        trace.info('request.publish.done', {
+          pages: published.length,
+          githubEnabled: Boolean(github.enabled),
+          githubUploads: Array.isArray(github.uploaded) ? github.uploaded.length : 0,
+        });
+        const responsePayload = { published, github, target: PUBLISH_TARGET, traceId: trace.id };
+        if (trace.enabled) responsePayload.trace = trace.toJSON();
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ published, github, target: PUBLISH_TARGET }));
+        res.end(JSON.stringify(responsePayload));
       } catch (err) {
+        trace = trace || createPublishTrace(true);
+        trace.error('request.publish.failed', { message: err.message, stack: err.stack });
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Unable to publish site' }));
+        res.end(JSON.stringify({ error: 'Unable to publish site', detail: err.message, traceId: trace.id, trace: trace.toJSON() }));
       }
     });
     return;
