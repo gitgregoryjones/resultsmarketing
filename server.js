@@ -6,15 +6,57 @@ const { parse } = require('node-html-parser');
 const { fetchServiceJson } = require('./services');
 
 const PORT = process.env.PORT || 3000;
-const ROOT = __dirname;
+const SOURCE_ROOT = __dirname;
+const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+const ROOT = process.env.RUNTIME_DATA_DIR
+  ? path.resolve(process.env.RUNTIME_DATA_DIR)
+  : IS_NETLIFY_FUNCTION
+    ? path.join('/tmp', 'resultsmarketing-cms')
+    : SOURCE_ROOT;
 const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
-const DATA_ROOT = process.env.DATA_DIR || 'data';
+
+const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+const AUTH_REQUIRED = SUPABASE_URL && SUPABASE_ANON_KEY;
+const GITHUB_PAGES_REPO = process.env.GITHUB_PAGES_REPO || '';
+const GITHUB_PAGES_BRANCH = process.env.GITHUB_PAGES_BRANCH || 'gh-pages';
+const GITHUB_PAGES_PATH = (process.env.GITHUB_PAGES_PATH || '').replace(/^\/+|\/+$/g, '');
+const GITHUB_PAGES_TOKEN = process.env.GITHUB_PAGES_TOKEN || process.env.GITHUB_TOKEN || '';
+const GITHUB_COMMITTER_NAME = process.env.GITHUB_COMMITTER_NAME || 'Results Marketing CMS';
+const GITHUB_COMMITTER_EMAIL = process.env.GITHUB_COMMITTER_EMAIL || 'cms@example.com';
+const DATA_ROOT = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const COMPONENTS_DIR = path.join(DATA_ROOT, 'components');
 const STYLES_DIR = path.join(DATA_ROOT, 'styles');
-const PUBLISH_TARGET = ROOT;
+const PUBLISH_TARGET = process.env.PUBLISH_LOCAL_DIR
+  ? path.resolve(process.env.PUBLISH_LOCAL_DIR)
+  : path.join(ROOT, 'published');
+
+
+let runtimeReadyPromise;
+
+async function copyRuntimeDir(name) {
+  const source = path.join(SOURCE_ROOT, name);
+  const target = path.join(ROOT, name);
+  try {
+    await fs.cp(source, target, { recursive: true });
+  } catch (err) {
+    if (err && err.code !== 'ENOENT') throw err;
+  }
+}
+
+async function ensureRuntimeFiles() {
+  if (ROOT === SOURCE_ROOT) return;
+  if (!runtimeReadyPromise) {
+    runtimeReadyPromise = (async () => {
+      await ensureDir(ROOT);
+      await Promise.all(['admin', 'data', 'images', 'brands'].map(copyRuntimeDir));
+    })();
+  }
+  return runtimeReadyPromise;
+}
 
 function sanitizeSiteName(name = '') {
   return String(name || '')
@@ -90,6 +132,146 @@ function parseJsonBody(body = '') {
 function sendJsonError(res, status, message) {
   res.writeHead(status, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify({ error: message }));
+}
+
+
+function getBearerToken(req) {
+  const authHeader = req.headers && (req.headers.authorization || req.headers.Authorization);
+  if (!authHeader || typeof authHeader !== 'string') return '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : '';
+}
+
+function isPublicApiRoute(pathname) {
+  return pathname === '/api/auth/config';
+}
+
+async function validateSupabaseToken(token) {
+  if (!AUTH_REQUIRED) return null;
+  if (!token) return null;
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+async function requireAuthenticatedRequest(req, res, pathname) {
+  if (!AUTH_REQUIRED || isPublicApiRoute(pathname)) return true;
+  try {
+    const user = await validateSupabaseToken(getBearerToken(req));
+    if (user && user.id) {
+      req.cmsUser = user;
+      return true;
+    }
+  } catch (err) {
+    console.warn('Unable to validate Supabase token', err);
+  }
+  res.writeHead(401, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: 'Authentication required' }));
+  return false;
+}
+
+function githubApiHeaders() {
+  return {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${GITHUB_PAGES_TOKEN}`,
+    'Content-Type': 'application/json',
+    'User-Agent': 'resultsmarketing-cms',
+    'X-GitHub-Api-Version': '2022-11-28',
+  };
+}
+
+function normalizeGitHubRepo(repo = '') {
+  const normalized = String(repo || '').trim().replace(/^https:\/\/github\.com\//i, '').replace(/\.git$/i, '');
+  return normalized.includes('/') ? normalized : '';
+}
+
+function toBase64(buffer) {
+  return Buffer.from(buffer).toString('base64');
+}
+
+async function walkFiles(dir, base = dir) {
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await walkFiles(fullPath, base));
+    } else if (entry.isFile()) {
+      files.push(path.relative(base, fullPath).replace(/\\/g, '/'));
+    }
+  }
+  return files;
+}
+
+async function githubRequest(apiPath, options = {}) {
+  const response = await fetch(`https://api.github.com${apiPath}`, {
+    ...options,
+    headers: {
+      ...githubApiHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    const message = data && data.message ? data.message : response.statusText;
+    throw new Error(`GitHub API ${response.status}: ${message}`);
+  }
+  return data;
+}
+
+async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = []) {
+  const repo = normalizeGitHubRepo(GITHUB_PAGES_REPO);
+  if (!repo && !GITHUB_PAGES_TOKEN) return { enabled: false };
+  if (!repo) throw new Error('GITHUB_PAGES_REPO must be set to owner/repo');
+  if (!GITHUB_PAGES_TOKEN) throw new Error('GITHUB_PAGES_TOKEN or GITHUB_TOKEN must be set');
+
+  const sourceFiles = await walkFiles(sourceDir);
+  const uploaded = [];
+  for (const relativeFile of sourceFiles) {
+    const sourcePath = path.join(sourceDir, relativeFile);
+    const targetPath = [GITHUB_PAGES_PATH, relativeFile].filter(Boolean).join('/');
+    const encodedPath = targetPath.split('/').map(encodeURIComponent).join('/');
+    let sha;
+    try {
+      const existing = await githubRequest(`/repos/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(GITHUB_PAGES_BRANCH)}`, {
+        method: 'GET',
+      });
+      sha = existing && existing.sha;
+    } catch (err) {
+      if (!/GitHub API 404/.test(err.message || '')) throw err;
+    }
+
+    const content = toBase64(await fs.readFile(sourcePath));
+    await githubRequest(`/repos/${repo}/contents/${encodedPath}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        message: `Publish CMS site: ${relativeFile}`,
+        content,
+        branch: GITHUB_PAGES_BRANCH,
+        sha,
+        committer: {
+          name: GITHUB_COMMITTER_NAME,
+          email: GITHUB_COMMITTER_EMAIL,
+        },
+      }),
+    });
+    uploaded.push(targetPath);
+  }
+
+  return {
+    enabled: true,
+    repo,
+    branch: GITHUB_PAGES_BRANCH,
+    path: GITHUB_PAGES_PATH,
+    uploaded,
+    pages: publishedFiles,
+  };
 }
 
 function parseHexColor(value = '') {
@@ -838,11 +1020,9 @@ async function publishSite(options = {}) {
     }
   }
 
-  // Do not remove any existing published output; simply overwrite the files we
-  // render so older exports remain available if needed.
+  await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
   await ensureDir(PUBLISH_TARGET);
   const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
-  await fs.writeFile(path.join(ADMIN_DIR, 'theme.css'), themeCss);
 
   const publishedFiles = [];
 
@@ -906,9 +1086,10 @@ async function publishSite(options = {}) {
   }
 
   await copyAdminAssets();
+  await fs.writeFile(path.join(PUBLISH_TARGET, 'theme.css'), themeCss);
   //await copyDirIfExists(IMAGES_DIR, path.join(PUBLISH_TARGET, 'images'));
   //await copyDirIfExists(BRANDS_DIR, path.join(PUBLISH_TARGET, 'brands'));
- console.log(`Loo at Without ADMIN name root Publishing site assets to site name folder... ${siteName}`);
+  console.log(`Publishing site assets for site name: ${siteName || '(none)'}`);
   if (siteName) {
     const siteRoot = path.join(PUBLISH_TARGET, siteName);
     console.log(`Publishing site assets to site name folder... ${siteRoot}`);
@@ -1726,9 +1907,24 @@ async function handleApiContent(req, res, fileName = DEFAULT_FILE) {
 
 
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
+  await ensureRuntimeFiles();
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname || '/';
+
+  if (pathname === '/api/auth/config' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      enabled: Boolean(AUTH_REQUIRED),
+      supabaseUrl: AUTH_REQUIRED ? SUPABASE_URL : '',
+      supabaseAnonKey: AUTH_REQUIRED ? SUPABASE_ANON_KEY : '',
+    }));
+    return;
+  }
+
+  if (pathname.startsWith('/api/') && !(await requireAuthenticatedRequest(req, res, pathname))) {
+    return;
+  }
 
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
@@ -1749,8 +1945,9 @@ const server = http.createServer(async (req, res) => {
           payload = {};
         }
         const published = await publishSite({ themeAccent: payload.themeAccent });
+        const github = await publishDirectoryToGitHubPages(PUBLISH_TARGET, published);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ published }));
+        res.end(JSON.stringify({ published, github, target: PUBLISH_TARGET }));
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Unable to publish site' }));
@@ -1933,8 +2130,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   return serveStatic(res, pathname === '/' ? DEFAULT_FILE : pathname.slice(1));
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  const server = http.createServer(handleRequest);
+  server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = { handleRequest, publishSite };

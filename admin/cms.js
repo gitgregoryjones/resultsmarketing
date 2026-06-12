@@ -1,6 +1,141 @@
 (function () {
   const API_ENDPOINT = '/api/content';
   const FILES_ENDPOINT = '/api/files';
+  const AUTH_TOKEN_KEY = 'resultsmarketing.supabase.accessToken';
+  const AUTH_REFRESH_KEY = 'resultsmarketing.supabase.refreshToken';
+  const AUTH_USER_KEY = 'resultsmarketing.supabase.userEmail';
+  const nativeFetch = window.fetch.bind(window);
+  let authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
+  let authReady = Promise.resolve(true);
+
+  function getStoredAccessToken() {
+    try {
+      return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    } catch (err) {
+      return '';
+    }
+  }
+
+  function setStoredSession(session) {
+    try {
+      if (session && session.access_token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, session.access_token);
+        if (session.refresh_token) localStorage.setItem(AUTH_REFRESH_KEY, session.refresh_token);
+        if (session.user && session.user.email) localStorage.setItem(AUTH_USER_KEY, session.user.email);
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        localStorage.removeItem(AUTH_REFRESH_KEY);
+        localStorage.removeItem(AUTH_USER_KEY);
+      }
+    } catch (err) {
+      // localStorage can be unavailable in locked-down browser contexts.
+    }
+  }
+
+  window.fetch = async (resource, options = {}) => {
+    const requestUrl = typeof resource === 'string' ? resource : resource && resource.url;
+    const shouldAttachToken = authConfig.enabled && requestUrl && !requestUrl.includes('/api/auth/config');
+    if (!shouldAttachToken) return nativeFetch(resource, options);
+
+    const headers = new Headers(options.headers || (resource && resource.headers) || {});
+    const token = getStoredAccessToken();
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+    return nativeFetch(resource, { ...options, headers });
+  };
+
+  function buildAuthPanel(message = '') {
+    const panel = document.createElement('div');
+    panel.className = 'cms-auth';
+    panel.innerHTML = `
+      <form class="cms-auth__card" id="cms-auth-form">
+        <p class="cms-auth__eyebrow">Admin access</p>
+        <h1>Sign in to Results Marketing CMS</h1>
+        <p class="cms-auth__copy">Use a Supabase user account that has access to this project.</p>
+        <label>Email<input id="cms-auth-email" type="email" autocomplete="email" required></label>
+        <label>Password<input id="cms-auth-password" type="password" autocomplete="current-password" required></label>
+        <button type="submit" id="cms-auth-submit">Sign in</button>
+        <p class="cms-auth__message" id="cms-auth-message">${message}</p>
+      </form>`;
+    return panel;
+  }
+
+  async function signInWithSupabase(email, password) {
+    const response = await nativeFetch(`${authConfig.supabaseUrl}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.access_token) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to sign in');
+    }
+    setStoredSession(data);
+    return data;
+  }
+
+  async function showAuthPanel(message = '') {
+    return new Promise((resolve) => {
+      document.body.classList.add('cms-auth-locked');
+      const existing = document.querySelector('.cms-auth');
+      if (existing) existing.remove();
+      const panel = buildAuthPanel(message);
+      document.body.appendChild(panel);
+      const form = panel.querySelector('#cms-auth-form');
+      const submit = panel.querySelector('#cms-auth-submit');
+      const messageEl = panel.querySelector('#cms-auth-message');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        submit.disabled = true;
+        messageEl.textContent = 'Signing in...';
+        try {
+          await signInWithSupabase(
+            panel.querySelector('#cms-auth-email').value.trim(),
+            panel.querySelector('#cms-auth-password').value
+          );
+          panel.remove();
+          document.body.classList.remove('cms-auth-locked');
+          resolve(true);
+        } catch (err) {
+          messageEl.textContent = err.message || 'Unable to sign in';
+          submit.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function verifyStoredSession() {
+    const token = getStoredAccessToken();
+    if (!token) return false;
+    const response = await nativeFetch(`${authConfig.supabaseUrl}/auth/v1/user`, {
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (response.ok) return true;
+    setStoredSession(null);
+    return false;
+  }
+
+  async function initializeAuth() {
+    try {
+      const response = await nativeFetch('/api/auth/config');
+      authConfig = await response.json();
+    } catch (err) {
+      authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
+    }
+    if (!authConfig.enabled) return true;
+    if (await verifyStoredSession()) return true;
+    return showAuthPanel('');
+  }
+
+  authReady = initializeAuth();
+
   const params = new URLSearchParams(window.location.search);
   const pathFile = (() => {
     const pathName = window.location.pathname || '/';
@@ -3289,7 +3424,7 @@
     const originalLabel = publishButton.textContent;
     publishButton.disabled = true;
     publishButton.textContent = 'Publishing...';
-    settingsMessageEl.textContent = 'Publishing merged HTML to the site root...';
+    settingsMessageEl.textContent = 'Publishing merged HTML to GitHub Pages...';
     settingsMessageEl.style.color = '#111827';
     let success = true;
 
@@ -3309,15 +3444,16 @@
       if (!res.ok) throw new Error('Publish failed');
       const data = await res.json();
       const count = Array.isArray(data.published) ? data.published.length : 0;
-      const successMessage = `Published ${count} page${count === 1 ? '' : 's'} to the site root.`;
+      const githubTarget = data.github && data.github.enabled ? ` and uploaded to ${data.github.repo}/${data.github.branch}` : '';
+      const successMessage = `Published ${count} page${count === 1 ? '' : 's'}${githubTarget}.`;
       settingsMessageEl.textContent = successMessage;
       settingsMessageEl.style.color = '#16a34a';
       showToast(successMessage, 'success');
     } catch (err) {
       success = false;
-      settingsMessageEl.textContent = 'Unable to publish static pages.';
+      settingsMessageEl.textContent = 'Unable to publish static pages to GitHub Pages.';
       settingsMessageEl.style.color = '#ef4444';
-      showToast('Unable to publish static pages.', 'error');
+      showToast('Unable to publish static pages to GitHub Pages.', 'error');
     } finally {
       publishButton.disabled = false;
       publishButton.textContent = originalLabel;
@@ -3891,7 +4027,8 @@
     });
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    await authReady;
     bindAdminCtaRedirects();
     loadFiles();
     loadComponentOptions();
