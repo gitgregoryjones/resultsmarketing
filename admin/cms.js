@@ -8,7 +8,7 @@
   let authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
   let authReady = Promise.resolve(true);
   let currentAuthUser = null;
-  let currentUserRole = 'admin';
+  let currentUserCanAdmin = true;
 
   function getStoredAccessToken() {
     try {
@@ -34,33 +34,31 @@
     }
   }
 
-  function normalizeRoleName(role = '') {
-    return String(role || '').trim().toLowerCase();
-  }
-
-  function getSupabaseUserRoles(user = {}) {
-    const appMetadata = user.app_metadata || {};
-    const userMetadata = user.user_metadata || {};
-    const candidates = [
-      user.role,
-      appMetadata.role,
-      userMetadata.role,
-      ...(Array.isArray(appMetadata.roles) ? appMetadata.roles : []),
-      ...(Array.isArray(userMetadata.roles) ? userMetadata.roles : []),
-    ];
-    return candidates.map(normalizeRoleName).filter(Boolean);
-  }
-
-  function setCurrentAuthUser(user) {
+  function setCurrentAuthUser(user, permissions = {}) {
     currentAuthUser = user || null;
-    const roles = getSupabaseUserRoles(currentAuthUser || {});
-    currentUserRole = authConfig.enabled ? (roles.includes('admin') ? 'admin' : roles[0] || '') : 'admin';
+    currentUserCanAdmin = authConfig.enabled ? Boolean(permissions.isAdmin) : true;
     applyRolePermissions();
+  }
+
+  async function refreshCurrentUserPermissions(user = currentAuthUser) {
+    if (!authConfig.enabled) {
+      setCurrentAuthUser(user, { isAdmin: true });
+      return true;
+    }
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json().catch(() => ({}));
+      setCurrentAuthUser(user || (data.email ? { email: data.email } : null), { isAdmin: data.isAdmin });
+      return Boolean(data.isAdmin);
+    } catch (err) {
+      setCurrentAuthUser(user, { isAdmin: false });
+      return false;
+    }
   }
 
   function currentUserIsAdmin() {
     if (!authConfig.enabled) return true;
-    return getSupabaseUserRoles(currentAuthUser || {}).includes('admin');
+    return currentUserCanAdmin;
   }
 
   window.fetch = async (resource, options = {}) => {
@@ -106,7 +104,7 @@
       throw new Error(data.error_description || data.msg || data.error || 'Unable to sign in');
     }
     setStoredSession(data);
-    setCurrentAuthUser(data.user || null);
+    await refreshCurrentUserPermissions(data.user || null);
     return data;
   }
 
@@ -150,11 +148,12 @@
       },
     });
     if (response.ok) {
-      setCurrentAuthUser(await response.json().catch(() => null));
+      const user = await response.json().catch(() => null);
+      await refreshCurrentUserPermissions(user);
       return true;
     }
     setStoredSession(null);
-    setCurrentAuthUser(null);
+    setCurrentAuthUser(null, { isAdmin: false });
     return false;
   }
 
@@ -166,7 +165,7 @@
       authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
     }
     if (!authConfig.enabled) {
-      setCurrentAuthUser(null);
+      setCurrentAuthUser(null, { isAdmin: true });
       return true;
     }
     if (await verifyStoredSession()) return true;
@@ -333,6 +332,8 @@
       panel.id = 'themeColorPickerPanel';
       panel.className = 'cms-ui';
       panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
+      panel.hidden = true;
+      panel.setAttribute('aria-hidden', 'true');
       panel.innerHTML = '<label for="themeColorPickerInput" style="font-size:12px;white-space:nowrap;">Theme color</label><input id="themeColorPickerInput" type="color" style="width:36px;height:28px;border:none;background:none;padding:0;cursor:pointer;"/><button id="themeColorReset" type="button" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;cursor:pointer;">Reset</button>';
       document.body.appendChild(panel);
     } else {
@@ -897,9 +898,9 @@
 
   function applyRolePermissions() {
     const isAdmin = currentUserIsAdmin();
-    document.documentElement.classList.toggle('cms-role-admin', isAdmin);
-    document.documentElement.classList.toggle('cms-role-restricted', !isAdmin);
-    document.documentElement.dataset.cmsRole = currentUserRole || (isAdmin ? 'admin' : 'restricted');
+    document.documentElement.classList.toggle('cms-admin-user', isAdmin);
+    document.documentElement.classList.toggle('cms-restricted-user', !isAdmin);
+    document.documentElement.dataset.cmsAdmin = String(isAdmin);
 
     if (floatingMenu) {
       floatingMenu.hidden = !isAdmin;
@@ -928,6 +929,11 @@
     }
     if (publishMenuButton) {
       publishMenuButton.disabled = !isAdmin;
+    }
+    const themePickerPanel = document.getElementById('themeColorPickerPanel');
+    if (themePickerPanel) {
+      themePickerPanel.hidden = !isAdmin;
+      themePickerPanel.setAttribute('aria-hidden', String(!isAdmin));
     }
   }
 
@@ -1295,7 +1301,7 @@
 
   async function triggerPublishWithFeedback(button) {
     if (!currentUserIsAdmin()) {
-      showToast('Admin role required to publish.', 'error');
+      showToast('Admin email required to publish.', 'error');
       return false;
     }
     if (!button || button.disabled) return false;
@@ -3501,9 +3507,9 @@
 
   async function publishStaticSite() {
     if (!currentUserIsAdmin()) {
-      settingsMessageEl.textContent = 'Admin role required to publish.';
+      settingsMessageEl.textContent = 'Admin email required to publish.';
       settingsMessageEl.style.color = '#ef4444';
-      showToast('Admin role required to publish.', 'error');
+      showToast('Admin email required to publish.', 'error');
       return false;
     }
     if (!siteName) {

@@ -100,6 +100,7 @@ const BRANDS_DIR = path.join(ROOT, 'brands');
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const AUTH_REQUIRED = SUPABASE_URL && SUPABASE_ANON_KEY;
+const ADMIN_EMAILS = process.env.CMS_ADMIN_EMAILS || process.env.ADMIN_EMAILS || process.env.SUPABASE_ADMIN_EMAILS || '';
 const GITHUB_PAGES_REPO = process.env.GITHUB_PAGES_REPO || '';
 const GITHUB_PAGES_BRANCH = process.env.GITHUB_PAGES_BRANCH || 'gh-pages';
 const GITHUB_PAGES_PATH = (process.env.GITHUB_PAGES_PATH || '').replace(/^\/+|\/+$/g, '');
@@ -240,25 +241,23 @@ async function validateSupabaseToken(token) {
   return response.json();
 }
 
-function normalizeRoleName(role = '') {
-  return String(role || '').trim().toLowerCase();
+function normalizeEmail(email = '') {
+  return String(email || '').trim().toLowerCase();
 }
 
-function getSupabaseUserRoles(user = {}) {
-  const appMetadata = user.app_metadata || {};
-  const userMetadata = user.user_metadata || {};
-  const candidates = [
-    user.role,
-    appMetadata.role,
-    userMetadata.role,
-    ...(Array.isArray(appMetadata.roles) ? appMetadata.roles : []),
-    ...(Array.isArray(userMetadata.roles) ? userMetadata.roles : []),
-  ];
-  return candidates.map(normalizeRoleName).filter(Boolean);
+function parseAdminEmails(value = ADMIN_EMAILS) {
+  return new Set(
+    String(value || '')
+      .split(/[\s,;]+/)
+      .map(normalizeEmail)
+      .filter(Boolean)
+  );
 }
 
 function isAdminSupabaseUser(user = {}) {
-  return getSupabaseUserRoles(user).includes('admin');
+  const email = normalizeEmail(user.email);
+  if (!email) return false;
+  return parseAdminEmails().has(email);
 }
 
 async function requireAuthenticatedRequest(req, res, pathname) {
@@ -267,7 +266,6 @@ async function requireAuthenticatedRequest(req, res, pathname) {
     const user = await validateSupabaseToken(getBearerToken(req));
     if (user && user.id) {
       req.cmsUser = user;
-      req.cmsUserRoles = getSupabaseUserRoles(user);
       req.cmsIsAdmin = isAdminSupabaseUser(user);
       return true;
     }
@@ -2299,13 +2297,22 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      email: req.cmsUser && req.cmsUser.email ? req.cmsUser.email : '',
+      isAdmin: Boolean(req.cmsIsAdmin),
+    }));
+    return;
+  }
+
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
   }
 
   if (pathname === '/api/publish' && req.method === 'POST') {
     if (AUTH_REQUIRED && !req.cmsIsAdmin) {
-      sendJsonError(res, 403, 'Admin role required to publish');
+      sendJsonError(res, 403, 'Admin email required to publish');
       return;
     }
     let body = '';
