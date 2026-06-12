@@ -1,12 +1,65 @@
 const http = require('node:http');
+const fsSync = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const url = require('node:url');
 const { parse } = require('node-html-parser');
 const { fetchServiceJson } = require('./services');
 
-const PORT = process.env.PORT || 3000;
 const SOURCE_ROOT = __dirname;
+
+function stripInlineEnvComment(value = '') {
+  let quote = '';
+  for (let index = 0; index < value.length; index += 1) {
+    const char = value[index];
+    const previous = value[index - 1];
+    if ((char === '"' || char === "'") && previous !== '\\') {
+      quote = quote === char ? '' : quote || char;
+    }
+    if (char === '#' && !quote && /\s/.test(previous || '')) {
+      return value.slice(0, index).trimEnd();
+    }
+  }
+  return value.trimEnd();
+}
+
+function parseEnvValue(rawValue = '') {
+  const trimmed = stripInlineEnvComment(String(rawValue).trim());
+  if (!trimmed) return '';
+  const quote = trimmed[0];
+  if ((quote === '"' || quote === "'") && trimmed.endsWith(quote)) {
+    const unquoted = trimmed.slice(1, -1);
+    if (quote === '"') {
+      return unquoted
+        .replace(/\\n/g, '\n')
+        .replace(/\\r/g, '\r')
+        .replace(/\\t/g, '\t')
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, '\\');
+    }
+    return unquoted.replace(/\\'/g, "'");
+  }
+  return trimmed;
+}
+
+function loadDotEnvFile(envPath = path.join(SOURCE_ROOT, '.env')) {
+  if (!fsSync.existsSync(envPath)) return;
+  const contents = fsSync.readFileSync(envPath, 'utf8');
+  contents.split(/\r?\n/).forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const declaration = trimmed.startsWith('export ') ? trimmed.slice(7).trimStart() : trimmed;
+    const equalsIndex = declaration.indexOf('=');
+    if (equalsIndex <= 0) return;
+    const key = declaration.slice(0, equalsIndex).trim();
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key) || process.env[key] !== undefined) return;
+    process.env[key] = parseEnvValue(declaration.slice(equalsIndex + 1));
+  });
+}
+
+loadDotEnvFile(process.env.DOTENV_CONFIG_PATH ? path.resolve(process.env.DOTENV_CONFIG_PATH) : undefined);
+
+const PORT = process.env.PORT || 3000;
 const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
 const ROOT = process.env.RUNTIME_DATA_DIR
   ? path.resolve(process.env.RUNTIME_DATA_DIR)

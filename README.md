@@ -22,6 +22,8 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser to view
 ## Netlify deployment
 This repo includes `netlify.toml` and `netlify/functions/server.js`, which route Netlify traffic through the existing Node request handler.
 
+For local development, copy `.env.example` to `.env` and fill in the values you want to use. `node server.js` automatically loads `.env` from the repo root before reading Supabase, GitHub Pages, port, and publish settings. If you need a different env file, set `DOTENV_CONFIG_PATH=/path/to/file.env` before starting the server.
+
 Set these environment variables in Netlify:
 
 | Variable | Purpose |
