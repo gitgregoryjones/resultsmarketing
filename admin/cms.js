@@ -613,6 +613,7 @@
         </svg>
         <span>Publish</span>
       </button>
+      <button type="button" class="cms-floating-menu__button" id="cms-download-button">Download</button>
     </div>
   `;
   document.body.appendChild(floatingMenu);
@@ -958,6 +959,7 @@
         <div id="cms-settings-message"></div>
         <div class="cms-publish">
           <button type="button" id="cms-publish">Publish static site</button>
+          <button type="button" id="cms-download-published">Download published ZIP</button>
           <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
         </div>
       </div>
@@ -1030,6 +1032,7 @@
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
+  const downloadMenuButton = floatingMenu.querySelector('#cms-download-button');
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
   const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
   const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
@@ -1083,6 +1086,7 @@
   const quickBgSwatches = sidebar.querySelector('[data-quick-styles="background"]');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
+  const downloadButton = sidebar.querySelector('#cms-download-published');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
@@ -1134,6 +1138,12 @@
     }
     if (publishMenuButton) {
       publishMenuButton.disabled = !isAdmin;
+    }
+    if (downloadButton) {
+      downloadButton.disabled = !isAdmin;
+    }
+    if (downloadMenuButton) {
+      downloadMenuButton.disabled = !isAdmin;
     }
     const themePickerPanel = document.getElementById('themeColorPickerPanel');
     if (themePickerPanel) {
@@ -3756,6 +3766,63 @@
     }
   }
 
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function fileNameFromDisposition(disposition = '') {
+    const match = String(disposition || '').match(/filename=\"?([^\";]+)\"?/i);
+    return match ? match[1] : 'published-site.zip';
+  }
+
+  async function downloadPublishedSite(button = downloadButton) {
+    if (!currentUserIsAdmin()) {
+      settingsMessageEl.textContent = 'Admin email required to download published files.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast('Admin email required to download published files.', 'error');
+      return false;
+    }
+
+    const originalLabel = button ? button.textContent : '';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Downloading...';
+    }
+    settingsMessageEl.textContent = 'Preparing published ZIP download...';
+    settingsMessageEl.style.color = '#111827';
+
+    try {
+      const res = await fetch('/api/download-published');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Download failed');
+      }
+      const blob = await res.blob();
+      downloadBlob(blob, fileNameFromDisposition(res.headers.get('content-disposition')));
+      settingsMessageEl.textContent = 'Published ZIP download started.';
+      settingsMessageEl.style.color = '#16a34a';
+      showToast('Published ZIP download started.', 'success');
+      return true;
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to download published ZIP.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast(settingsMessageEl.textContent, 'error');
+      return false;
+    } finally {
+      if (button) {
+        button.disabled = !currentUserIsAdmin();
+        button.textContent = originalLabel;
+      }
+    }
+  }
+
   async function publishStaticSite() {
     if (!currentUserIsAdmin()) {
       settingsMessageEl.textContent = 'Admin email required to publish.';
@@ -3972,6 +4039,9 @@
     toggleHiddenSelection();
   });
   publishButton.addEventListener('click', publishStaticSite);
+  if (downloadButton) {
+    downloadButton.addEventListener('click', () => downloadPublishedSite(downloadButton));
+  }
   publishShortcutButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishShortcutButton);
   });
@@ -4308,6 +4378,9 @@
   publishMenuButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishMenuButton);
   });
+  if (downloadMenuButton) {
+    downloadMenuButton.addEventListener('click', () => downloadPublishedSite(downloadMenuButton));
+  }
   floatingMinimizeButton.addEventListener('click', () => {
     floatingMenu.classList.toggle('is-minimized');
   });

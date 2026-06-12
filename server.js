@@ -377,6 +377,115 @@ async function walkFiles(dir, base = dir) {
   return files;
 }
 
+const CRC32_TABLE = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+  }
+  return value >>> 0;
+});
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function dosDateTime(date = new Date()) {
+  const year = Math.max(1980, date.getFullYear());
+  return {
+    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+  };
+}
+
+function zipHeader(signature, size) {
+  const buffer = Buffer.alloc(size);
+  buffer.writeUInt32LE(signature, 0);
+  return buffer;
+}
+
+async function createZipFromDirectory(sourceDir) {
+  let files;
+  try {
+    files = await walkFiles(sourceDir);
+  } catch (err) {
+    if (err && err.code === 'ENOENT') {
+      const error = new Error('Published directory does not exist. Publish the site before downloading.');
+      error.code = 'PUBLISHED_DIR_MISSING';
+      throw error;
+    }
+    throw err;
+  }
+
+  if (!files.length) {
+    const error = new Error('Published directory is empty. Publish the site before downloading.');
+    error.code = 'PUBLISHED_DIR_EMPTY';
+    throw error;
+  }
+
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  for (const file of files.sort()) {
+    const absolute = path.join(sourceDir, file);
+    const data = await fs.readFile(absolute);
+    const name = Buffer.from(file, 'utf8');
+    const stat = await fs.stat(absolute);
+    const stamp = dosDateTime(stat.mtime);
+    const checksum = crc32(data);
+
+    const local = zipHeader(0x04034b50, 30);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(0, 8);
+    local.writeUInt16LE(stamp.time, 10);
+    local.writeUInt16LE(stamp.date, 12);
+    local.writeUInt32LE(checksum, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    local.writeUInt16LE(0, 28);
+    localParts.push(local, name, data);
+
+    const central = zipHeader(0x02014b50, 46);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(0, 8);
+    central.writeUInt16LE(0, 10);
+    central.writeUInt16LE(stamp.time, 12);
+    central.writeUInt16LE(stamp.date, 14);
+    central.writeUInt32LE(checksum, 16);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(data.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    central.writeUInt16LE(0, 30);
+    central.writeUInt16LE(0, 32);
+    central.writeUInt16LE(0, 34);
+    central.writeUInt16LE(0, 36);
+    central.writeUInt32LE(0, 38);
+    central.writeUInt32LE(offset, 42);
+    centralParts.push(central, name);
+
+    offset += local.length + name.length + data.length;
+  }
+
+  const centralDirectory = Buffer.concat(centralParts);
+  const end = zipHeader(0x06054b50, 22);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(files.length, 8);
+  end.writeUInt16LE(files.length, 10);
+  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+
+  return Buffer.concat([...localParts, centralDirectory, end]);
+}
+
 async function githubRequest(apiPath, options = {}, trace) {
   const { expectedStatuses = [], ...fetchOptions } = options;
   const method = fetchOptions.method || 'GET';
@@ -2308,6 +2417,28 @@ async function handleRequest(req, res) {
 
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
+  }
+
+  if (pathname === '/api/download-published' && req.method === 'GET') {
+    if (AUTH_REQUIRED && !req.cmsIsAdmin) {
+      sendJsonError(res, 403, 'Admin email required to download published files');
+      return;
+    }
+    try {
+      const zip = await createZipFromDirectory(PUBLISH_TARGET);
+      const fileName = `published-site-${new Date().toISOString().slice(0, 10)}.zip`;
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': zip.length,
+        'Cache-Control': 'no-store',
+      });
+      res.end(zip);
+    } catch (err) {
+      const status = err && (err.code === 'PUBLISHED_DIR_MISSING' || err.code === 'PUBLISHED_DIR_EMPTY') ? 404 : 500;
+      sendJsonError(res, status, err.message || 'Unable to download published files');
+    }
+    return;
   }
 
   if (pathname === '/api/publish' && req.method === 'POST') {

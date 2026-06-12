@@ -1217,7 +1217,8 @@ body.cms-editing #cms-toggle::after {
   margin: 6px 0 10px;
 }
 
-#cms-publish {
+#cms-publish,
+#cms-download-published {
   width: 100%;
   padding: 10px 12px;
   border-radius: 16px;
@@ -1228,13 +1229,15 @@ body.cms-editing #cms-toggle::after {
   transition: all 120ms ease;
 }
 
-#cms-publish:hover {
+#cms-publish:hover,
+#cms-download-published:hover {
   border-color: var(--cms-purple);
   color: var(--cms-purple);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
-#cms-publish:disabled {
+#cms-publish:disabled,
+#cms-download-published:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   box-shadow: none;
