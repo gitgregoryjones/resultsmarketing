@@ -6,9 +6,12 @@
   const AUTH_USER_KEY = 'resultsmarketing.supabase.userEmail';
   const nativeFetch = window.fetch.bind(window);
   let authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
+  let authConfigLoaded = false;
   let authReady = Promise.resolve(true);
   let currentAuthUser = null;
-  let currentUserCanAdmin = true;
+  let currentUserCanAdmin = false;
+  let cmsUiReady = false;
+  let pendingRolePermissionApply = false;
 
   function getStoredAccessToken() {
     try {
@@ -36,7 +39,7 @@
 
   function setCurrentAuthUser(user, permissions = {}) {
     currentAuthUser = user || null;
-    currentUserCanAdmin = authConfig.enabled ? Boolean(permissions.isAdmin) : true;
+    currentUserCanAdmin = authConfig.enabled ? Boolean(permissions.isAdmin) : authConfigLoaded;
     applyRolePermissions();
   }
 
@@ -57,6 +60,7 @@
   }
 
   function currentUserIsAdmin() {
+    if (!authConfigLoaded) return false;
     if (!authConfig.enabled) return true;
     return currentUserCanAdmin;
   }
@@ -365,6 +369,7 @@
     } catch (err) {
       authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
     }
+    authConfigLoaded = true;
     if (!authConfig.enabled) {
       setCurrentAuthUser(null, { isAdmin: true });
       return true;
@@ -543,6 +548,8 @@
       document.body.appendChild(panel);
     } else {
       panel.classList.add('cms-ui');
+      panel.hidden = !currentUserIsAdmin();
+      panel.setAttribute('aria-hidden', String(!currentUserIsAdmin()));
     }
 
     if (panel.dataset.themePickerMounted === 'true') return;
@@ -1106,10 +1113,34 @@
   if (publishSection) publishSection.hidden = true;
 
   function applyRolePermissions() {
+    if (!cmsUiReady) {
+      pendingRolePermissionApply = true;
+      return;
+    }
+    pendingRolePermissionApply = false;
     const isAdmin = currentUserIsAdmin();
     document.documentElement.classList.toggle('cms-admin-user', isAdmin);
     document.documentElement.classList.toggle('cms-restricted-user', !isAdmin);
     document.documentElement.dataset.cmsAdmin = String(isAdmin);
+
+    const setAdminOnlyControl = (control) => {
+      if (!control) return;
+      control.hidden = !isAdmin;
+      control.disabled = !isAdmin;
+      control.setAttribute('aria-hidden', String(!isAdmin));
+    };
+
+    const pagesMenuItem = pagesToggleButton ? pagesToggleButton.closest('.cms-floating-menu__item') : null;
+    if (pagesMenuItem) {
+      pagesMenuItem.hidden = !isAdmin;
+      pagesMenuItem.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (!isAdmin && pagesDropdown) {
+      pagesDropdown.classList.remove('is-open');
+    }
+    setAdminOnlyControl(effectsButton);
+    setAdminOnlyControl(settingsMenuButton);
+    setAdminOnlyControl(xrayButton);
 
     if (floatingMenu) {
       floatingMenu.hidden = !isAdmin;
@@ -1136,15 +1167,11 @@
     if (publishButton) {
       publishButton.disabled = !isAdmin;
     }
-    if (publishMenuButton) {
-      publishMenuButton.disabled = !isAdmin;
-    }
+    setAdminOnlyControl(publishMenuButton);
     if (downloadButton) {
       downloadButton.disabled = !isAdmin;
     }
-    if (downloadMenuButton) {
-      downloadMenuButton.disabled = !isAdmin;
-    }
+    setAdminOnlyControl(downloadMenuButton);
     const themePickerPanel = document.getElementById('themeColorPickerPanel');
     if (themePickerPanel) {
       themePickerPanel.hidden = !isAdmin;
@@ -1169,6 +1196,11 @@
       activateTab('content');
     }
     setLayoutDragState(isLayoutModeEnabled());
+  }
+
+  cmsUiReady = true;
+  if (pendingRolePermissionApply) {
+    applyRolePermissions();
   }
 
   const textColorInput = sidebar.querySelector('#cms-text-color');
@@ -2073,6 +2105,9 @@
   function handleDragStart(event) {
     if (!canUseDragDropBuilder()) {
       event.preventDefault();
+      activeWireframeTool = null;
+      clearDropTarget();
+      clearReorderIndicator();
       return;
     }
     if (!isLayoutModeEnabled()) return;
@@ -2090,6 +2125,8 @@
 
   function handleDragOver(event) {
     if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
       clearDropTarget();
       clearReorderIndicator();
       return;
@@ -2163,6 +2200,7 @@
 
   function handleDrop(event) {
     if (!canUseDragDropBuilder()) {
+      event.preventDefault();
       activeWireframeTool = null;
       clearDropTarget();
       clearReorderIndicator();
