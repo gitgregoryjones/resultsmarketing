@@ -129,7 +129,6 @@
         <button type="submit" id="cms-auth-submit">Sign in</button>
         <div class="cms-auth__links">
           <button type="button" class="cms-auth__link" data-auth-mode="signin">Sign in</button>
-          <button type="button" class="cms-auth__link" data-auth-mode="register">Create account</button>
           <button type="button" class="cms-auth__link" data-auth-mode="forgot">Forgot password?</button>
         </div>
         <p class="cms-auth__message" id="cms-auth-message"></p>
