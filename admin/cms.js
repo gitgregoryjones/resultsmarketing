@@ -474,8 +474,12 @@
   ];
 
   const THEME_PICKER_STORAGE_KEY = 'adminThemeAccent';
-  const THEME_PICKER_DEFAULT_COLOR = '#ef4444';
+  const THEME_PICKER_DEFAULT_COLOR = '#bd1f1a';
+  const PREVIOUS_THEME_DEFAULT_COLORS = ['#ae041e'];
   const THEME_PICKER_LEGACY_COLORS = [
+    '#ae041e',
+    'rgb(174, 4, 30)',
+    'rgb(174,4,30)',
     '#dc2626',
     '#e53e3e',
     '#f4483a',
@@ -578,8 +582,17 @@
     panel.dataset.themePickerMounted = 'true';
   }
 
+  function themePickerInitialColor() {
+    const savedColor = localStorage.getItem(THEME_PICKER_STORAGE_KEY) || '';
+    if (PREVIOUS_THEME_DEFAULT_COLORS.includes(savedColor.trim().toLowerCase())) {
+      localStorage.removeItem(THEME_PICKER_STORAGE_KEY);
+      return THEME_PICKER_DEFAULT_COLOR;
+    }
+    return savedColor || THEME_PICKER_DEFAULT_COLOR;
+  }
+
   function initDynamicThemePicker() {
-    const savedColor = localStorage.getItem(THEME_PICKER_STORAGE_KEY) || THEME_PICKER_DEFAULT_COLOR;
+    const savedColor = themePickerInitialColor();
     applyDynamicTheme(savedColor);
     mountDynamicThemePicker(savedColor);
   }

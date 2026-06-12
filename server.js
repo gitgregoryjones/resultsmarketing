@@ -769,7 +769,7 @@ function buildThemeVarsFromAccent(accent = '') {
 
 
 function buildThemeCss(accent = '') {
-  const theme = buildThemeVarsFromAccent(accent || '#ef4444');
+  const theme = buildThemeVarsFromAccent(accent || '#bd1f1a');
   return `:root {
   --theme-accent: ${theme.accent};
   --theme-accent-hover: ${theme.hover};
@@ -1488,7 +1488,7 @@ async function publishSite(options = {}) {
   await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
   await ensureDir(PUBLISH_TARGET);
   trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
-  const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
+  const themeCss = buildThemeCss(publishThemeAccent || '#bd1f1a');
 
   const publishedFiles = [];
 
