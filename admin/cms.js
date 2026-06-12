@@ -69,6 +69,14 @@
     return currentUserIsAdmin();
   }
 
+  function setThemePickerVisibility(panel = document.getElementById('themeColorPickerPanel')) {
+    if (!panel) return;
+    const isAdmin = currentUserIsAdmin();
+    panel.hidden = !isAdmin;
+    panel.setAttribute('aria-hidden', String(!isAdmin));
+    panel.style.display = isAdmin ? 'flex' : 'none';
+  }
+
   window.fetch = async (resource, options = {}) => {
     const requestUrl = typeof resource === 'string' ? resource : resource && resource.url;
     const shouldAttachToken = authConfig.enabled && requestUrl && !requestUrl.includes('/api/auth/config');
@@ -540,16 +548,15 @@
       panel = document.createElement('div');
       panel.id = 'themeColorPickerPanel';
       panel.className = 'cms-ui';
-      panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
+      panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:none;align-items:center;gap:8px;';
       panel.hidden = true;
       panel.setAttribute('aria-hidden', 'true');
       panel.innerHTML = '<label for="themeColorPickerInput" style="font-size:12px;white-space:nowrap;">Theme color</label><input id="themeColorPickerInput" type="color" style="width:36px;height:28px;border:none;background:none;padding:0;cursor:pointer;"/><button id="themeColorReset" type="button" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;cursor:pointer;">Reset</button>';
       document.body.appendChild(panel);
     } else {
       panel.classList.add('cms-ui');
-      panel.hidden = !currentUserIsAdmin();
-      panel.setAttribute('aria-hidden', String(!currentUserIsAdmin()));
     }
+    setThemePickerVisibility(panel);
 
     if (panel.dataset.themePickerMounted === 'true') return;
 
@@ -1171,11 +1178,7 @@
       downloadButton.disabled = !isAdmin;
     }
     setAdminOnlyControl(downloadMenuButton);
-    const themePickerPanel = document.getElementById('themeColorPickerPanel');
-    if (themePickerPanel) {
-      themePickerPanel.hidden = !isAdmin;
-      themePickerPanel.setAttribute('aria-hidden', String(!isAdmin));
-    }
+    setThemePickerVisibility();
     sidebar.querySelectorAll('[data-tab="wireframe"], [data-panel="wireframe"]').forEach((el) => {
       el.hidden = !isAdmin;
       el.setAttribute('aria-hidden', String(!isAdmin));
