@@ -74,24 +74,129 @@
     return nativeFetch(resource, { ...options, headers });
   };
 
-  function buildAuthPanel(message = '') {
+  function authRedirectUrl() {
+    const redirect = new URL(window.location.href);
+    redirect.hash = '';
+    return redirect.toString();
+  }
+
+  function supabaseAuthUrl(pathname) {
+    return `${authConfig.supabaseUrl}/auth/v1/${pathname}`;
+  }
+
+  function supabaseRedirectUrl(pathname) {
+    return `${supabaseAuthUrl(pathname)}?redirect_to=${encodeURIComponent(authRedirectUrl())}`;
+  }
+
+  function getRecoverySessionFromUrl() {
+    const hash = window.location.hash ? window.location.hash.slice(1) : '';
+    if (!hash) return null;
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token') || '';
+    if (!accessToken || params.get('type') !== 'recovery') return null;
+    return {
+      access_token: accessToken,
+      refresh_token: params.get('refresh_token') || '',
+      token_type: params.get('token_type') || 'bearer',
+    };
+  }
+
+  function cleanAuthHash() {
+    if (!window.location.hash) return;
+    const cleanUrl = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState(null, document.title, cleanUrl);
+  }
+
+  function buildAuthPanel(message = '', mode = 'signin') {
     const panel = document.createElement('div');
     panel.className = 'cms-auth';
     panel.innerHTML = `
       <form class="cms-auth__card" id="cms-auth-form">
         <p class="cms-auth__eyebrow">Admin access</p>
-        <h1>Sign in to Results Marketing CMS</h1>
-        <p class="cms-auth__copy">Use a Supabase user account that has access to this project.</p>
-        <label>Email<input id="cms-auth-email" type="email" autocomplete="email" required></label>
-        <label>Password<input id="cms-auth-password" type="password" autocomplete="current-password" required></label>
+        <h1 id="cms-auth-title">Sign in to Results Marketing CMS</h1>
+        <p class="cms-auth__copy" id="cms-auth-copy">Use your Supabase user account to edit this project.</p>
+        <label class="cms-auth__field" data-auth-field="email">Email<input id="cms-auth-email" type="email" autocomplete="email"></label>
+        <label class="cms-auth__field" data-auth-field="password">Password<input id="cms-auth-password" type="password" autocomplete="current-password"></label>
+        <label class="cms-auth__field" data-auth-field="confirm">Confirm password<input id="cms-auth-confirm" type="password" autocomplete="new-password"></label>
         <button type="submit" id="cms-auth-submit">Sign in</button>
-        <p class="cms-auth__message" id="cms-auth-message">${message}</p>
+        <div class="cms-auth__links">
+          <button type="button" class="cms-auth__link" data-auth-mode="signin">Sign in</button>
+          <button type="button" class="cms-auth__link" data-auth-mode="register">Create account</button>
+          <button type="button" class="cms-auth__link" data-auth-mode="forgot">Forgot password?</button>
+        </div>
+        <p class="cms-auth__message" id="cms-auth-message"></p>
       </form>`;
+    const messageEl = panel.querySelector('#cms-auth-message');
+    if (messageEl) messageEl.textContent = message;
+    setAuthPanelMode(panel, mode);
     return panel;
   }
 
+  function setAuthPanelMode(panel, mode) {
+    const activeMode = mode === 'register' || mode === 'forgot' || mode === 'reset' ? mode : 'signin';
+    const title = panel.querySelector('#cms-auth-title');
+    const copy = panel.querySelector('#cms-auth-copy');
+    const submit = panel.querySelector('#cms-auth-submit');
+    const emailField = panel.querySelector('[data-auth-field="email"]');
+    const passwordField = panel.querySelector('[data-auth-field="password"]');
+    const confirmField = panel.querySelector('[data-auth-field="confirm"]');
+    const emailInput = panel.querySelector('#cms-auth-email');
+    const passwordInput = panel.querySelector('#cms-auth-password');
+    const confirmInput = panel.querySelector('#cms-auth-confirm');
+    panel.dataset.authMode = activeMode;
+    if (title) {
+      title.textContent = activeMode === 'register'
+        ? 'Create your Results Marketing CMS account'
+        : activeMode === 'forgot'
+          ? 'Reset your password'
+          : activeMode === 'reset'
+            ? 'Choose a new password'
+            : 'Sign in to Results Marketing CMS';
+    }
+    if (copy) {
+      copy.textContent = activeMode === 'register'
+        ? 'Register with your email and password. If email confirmation is enabled, Supabase will send a confirmation link.'
+        : activeMode === 'forgot'
+          ? 'Enter your email and Supabase will send a password reset link.'
+          : activeMode === 'reset'
+            ? 'Enter a new password for your Supabase account.'
+            : 'Use your Supabase user account to edit this project.';
+    }
+    if (submit) {
+      submit.textContent = activeMode === 'register'
+        ? 'Create account'
+        : activeMode === 'forgot'
+          ? 'Send reset link'
+          : activeMode === 'reset'
+            ? 'Update password'
+            : 'Sign in';
+    }
+    if (emailField) emailField.hidden = activeMode === 'reset';
+    if (passwordField) passwordField.hidden = activeMode === 'forgot';
+    if (confirmField) confirmField.hidden = activeMode !== 'register' && activeMode !== 'reset';
+    if (emailInput) emailInput.required = activeMode !== 'reset';
+    if (passwordInput) {
+      passwordInput.required = activeMode !== 'forgot';
+      passwordInput.autocomplete = activeMode === 'signin' ? 'current-password' : 'new-password';
+      passwordInput.placeholder = activeMode === 'signin' ? '' : 'At least 6 characters';
+    }
+    if (confirmInput) confirmInput.required = activeMode === 'register' || activeMode === 'reset';
+    panel.querySelectorAll('[data-auth-mode]').forEach((button) => {
+      button.hidden = button.dataset.authMode === activeMode || activeMode === 'reset';
+    });
+  }
+
+  function validateNewPassword(password, confirm) {
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters.');
+    }
+    if (password !== confirm) {
+      throw new Error('Passwords do not match.');
+    }
+  }
+
   async function signInWithSupabase(email, password) {
-    const response = await nativeFetch(`${authConfig.supabaseUrl}/auth/v1/token?grant_type=password`, {
+    const response = await nativeFetch(supabaseAuthUrl('token?grant_type=password'), {
       method: 'POST',
       headers: {
         apikey: authConfig.supabaseAnonKey,
@@ -108,30 +213,122 @@
     return data;
   }
 
-  async function showAuthPanel(message = '') {
+  async function registerWithSupabase(email, password) {
+    const response = await nativeFetch(supabaseRedirectUrl('signup'), {
+      method: 'POST',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to create account');
+    }
+    if (data.access_token) {
+      setStoredSession(data);
+      await refreshCurrentUserPermissions(data.user || null);
+      return { signedIn: true };
+    }
+    return { signedIn: false };
+  }
+
+  async function sendPasswordReset(email) {
+    const response = await nativeFetch(supabaseRedirectUrl('recover'), {
+      method: 'POST',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to send reset link');
+    }
+  }
+
+  async function updateSupabasePassword(session, password) {
+    const response = await nativeFetch(supabaseAuthUrl('user'), {
+      method: 'PUT',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to update password');
+    }
+    setStoredSession({ ...session, user: data });
+    await refreshCurrentUserPermissions(data || null);
+  }
+
+  async function showAuthPanel(message = '', initialMode = 'signin', recoverySession = null) {
     return new Promise((resolve) => {
       document.body.classList.add('cms-auth-locked');
       const existing = document.querySelector('.cms-auth');
       if (existing) existing.remove();
-      const panel = buildAuthPanel(message);
+      const panel = buildAuthPanel(message, initialMode);
       document.body.appendChild(panel);
       const form = panel.querySelector('#cms-auth-form');
       const submit = panel.querySelector('#cms-auth-submit');
       const messageEl = panel.querySelector('#cms-auth-message');
+      const emailInput = panel.querySelector('#cms-auth-email');
+      const passwordInput = panel.querySelector('#cms-auth-password');
+      const confirmInput = panel.querySelector('#cms-auth-confirm');
+
+      panel.querySelectorAll('[data-auth-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          setAuthPanelMode(panel, button.dataset.authMode);
+          if (messageEl) messageEl.textContent = '';
+        });
+      });
+
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         submit.disabled = true;
-        messageEl.textContent = 'Signing in...';
+        const mode = panel.dataset.authMode || 'signin';
+        messageEl.textContent = mode === 'register'
+          ? 'Creating account...'
+          : mode === 'forgot'
+            ? 'Sending reset link...'
+            : mode === 'reset'
+              ? 'Updating password...'
+              : 'Signing in...';
         try {
-          await signInWithSupabase(
-            panel.querySelector('#cms-auth-email').value.trim(),
-            panel.querySelector('#cms-auth-password').value
-          );
+          if (mode === 'register') {
+            validateNewPassword(passwordInput.value, confirmInput.value);
+            const result = await registerWithSupabase(emailInput.value.trim(), passwordInput.value);
+            if (!result.signedIn) {
+              messageEl.textContent = 'Account created. Check your email for a Supabase confirmation link, then sign in.';
+              setAuthPanelMode(panel, 'signin');
+              passwordInput.value = '';
+              confirmInput.value = '';
+              submit.disabled = false;
+              return;
+            }
+          } else if (mode === 'forgot') {
+            await sendPasswordReset(emailInput.value.trim());
+            messageEl.textContent = 'Check your email for a Supabase password reset link.';
+            setAuthPanelMode(panel, 'signin');
+            submit.disabled = false;
+            return;
+          } else if (mode === 'reset') {
+            validateNewPassword(passwordInput.value, confirmInput.value);
+            await updateSupabasePassword(recoverySession, passwordInput.value);
+            cleanAuthHash();
+          } else {
+            await signInWithSupabase(emailInput.value.trim(), passwordInput.value);
+          }
           panel.remove();
           document.body.classList.remove('cms-auth-locked');
           resolve(true);
         } catch (err) {
-          messageEl.textContent = err.message || 'Unable to sign in';
+          messageEl.textContent = err.message || 'Unable to continue';
           submit.disabled = false;
         }
       });
@@ -167,6 +364,10 @@
     if (!authConfig.enabled) {
       setCurrentAuthUser(null, { isAdmin: true });
       return true;
+    }
+    const recoverySession = getRecoverySessionFromUrl();
+    if (recoverySession) {
+      return showAuthPanel('Enter a new password to finish resetting your Supabase account.', 'reset', recoverySession);
     }
     if (await verifyStoredSession()) return true;
     return showAuthPanel('');

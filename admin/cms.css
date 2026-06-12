@@ -1902,6 +1902,34 @@ html.compact-admin-hero .hero-compact-summary__supporting {
   opacity: 0.7;
 }
 
+.cms-auth__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: 14px;
+}
+
+.cms-auth__card .cms-auth__link {
+  width: auto;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--cms-red, #dc2626);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.cms-auth__card .cms-auth__link:hover {
+  color: #991b1b;
+}
+
+.cms-auth__field[hidden],
+.cms-auth__link[hidden] {
+  display: none !important;
+}
+
 .cms-auth__message {
   min-height: 18px;
   margin: 12px 0 0;
