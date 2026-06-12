@@ -7,6 +7,8 @@
   const nativeFetch = window.fetch.bind(window);
   let authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
   let authReady = Promise.resolve(true);
+  let currentAuthUser = null;
+  let currentUserRole = 'admin';
 
   function getStoredAccessToken() {
     try {
@@ -30,6 +32,35 @@
     } catch (err) {
       // localStorage can be unavailable in locked-down browser contexts.
     }
+  }
+
+  function normalizeRoleName(role = '') {
+    return String(role || '').trim().toLowerCase();
+  }
+
+  function getSupabaseUserRoles(user = {}) {
+    const appMetadata = user.app_metadata || {};
+    const userMetadata = user.user_metadata || {};
+    const candidates = [
+      user.role,
+      appMetadata.role,
+      userMetadata.role,
+      ...(Array.isArray(appMetadata.roles) ? appMetadata.roles : []),
+      ...(Array.isArray(userMetadata.roles) ? userMetadata.roles : []),
+    ];
+    return candidates.map(normalizeRoleName).filter(Boolean);
+  }
+
+  function setCurrentAuthUser(user) {
+    currentAuthUser = user || null;
+    const roles = getSupabaseUserRoles(currentAuthUser || {});
+    currentUserRole = authConfig.enabled ? (roles.includes('admin') ? 'admin' : roles[0] || '') : 'admin';
+    applyRolePermissions();
+  }
+
+  function currentUserIsAdmin() {
+    if (!authConfig.enabled) return true;
+    return getSupabaseUserRoles(currentAuthUser || {}).includes('admin');
   }
 
   window.fetch = async (resource, options = {}) => {
@@ -75,6 +106,7 @@
       throw new Error(data.error_description || data.msg || data.error || 'Unable to sign in');
     }
     setStoredSession(data);
+    setCurrentAuthUser(data.user || null);
     return data;
   }
 
@@ -117,8 +149,12 @@
         Authorization: `Bearer ${token}`,
       },
     });
-    if (response.ok) return true;
+    if (response.ok) {
+      setCurrentAuthUser(await response.json().catch(() => null));
+      return true;
+    }
     setStoredSession(null);
+    setCurrentAuthUser(null);
     return false;
   }
 
@@ -129,7 +165,10 @@
     } catch (err) {
       authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
     }
-    if (!authConfig.enabled) return true;
+    if (!authConfig.enabled) {
+      setCurrentAuthUser(null);
+      return true;
+    }
     if (await verifyStoredSession()) return true;
     return showAuthPanel('');
   }
@@ -343,6 +382,8 @@
   const floatingMenu = document.createElement('div');
   floatingMenu.id = 'cms-floating-menu';
   floatingMenu.className = 'cms-floating-menu cms-ui';
+  floatingMenu.hidden = true;
+  floatingMenu.setAttribute('aria-hidden', 'true');
   floatingMenu.innerHTML = `
     <button type="button" class="cms-floating-menu__minimize" aria-label="Minimize menu">–</button>
     <div class="cms-floating-menu__items">
@@ -395,6 +436,9 @@
   publishShortcutButton.id = 'cms-publish-shortcut';
   publishShortcutButton.classList.add('cms-ui');
   publishShortcutButton.type = 'button';
+  publishShortcutButton.hidden = true;
+  publishShortcutButton.disabled = true;
+  publishShortcutButton.setAttribute('aria-hidden', 'true');
   publishShortcutButton.setAttribute('aria-label', 'Publish site');
   publishShortcutButton.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -846,6 +890,47 @@
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
   const quickPickerButtons = sidebar.querySelectorAll('[data-quick-picker]');
+  const advancedSection = sidebar.querySelector('.cms-advanced');
+  const publishSection = sidebar.querySelector('.cms-publish');
+  if (advancedSection) advancedSection.hidden = true;
+  if (publishSection) publishSection.hidden = true;
+
+  function applyRolePermissions() {
+    const isAdmin = currentUserIsAdmin();
+    document.documentElement.classList.toggle('cms-role-admin', isAdmin);
+    document.documentElement.classList.toggle('cms-role-restricted', !isAdmin);
+    document.documentElement.dataset.cmsRole = currentUserRole || (isAdmin ? 'admin' : 'restricted');
+
+    if (floatingMenu) {
+      floatingMenu.hidden = !isAdmin;
+      floatingMenu.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (publishShortcutButton) {
+      publishShortcutButton.hidden = !isAdmin;
+      publishShortcutButton.disabled = !isAdmin || editMode;
+      publishShortcutButton.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (advancedSection) {
+      advancedSection.hidden = !isAdmin;
+    }
+    if (advancedContent && !isAdmin) {
+      advancedContent.classList.remove('is-open');
+    }
+    if (advancedToggle && !isAdmin) {
+      advancedToggle.classList.remove('is-open');
+      advancedToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (publishSection) {
+      publishSection.hidden = !isAdmin;
+    }
+    if (publishButton) {
+      publishButton.disabled = !isAdmin;
+    }
+    if (publishMenuButton) {
+      publishMenuButton.disabled = !isAdmin;
+    }
+  }
+
   const textColorInput = sidebar.querySelector('#cms-text-color');
   const quickTextColorInput = sidebar.querySelector('#cms-quick-text-color');
   const quickBgColorInput = sidebar.querySelector('#cms-quick-bg-color');
@@ -1209,7 +1294,11 @@
   }
 
   async function triggerPublishWithFeedback(button) {
-    if (!button || button.disabled) return;
+    if (!currentUserIsAdmin()) {
+      showToast('Admin role required to publish.', 'error');
+      return false;
+    }
+    if (!button || button.disabled) return false;
     button.classList.remove('is-error');
     button.classList.add('is-publishing');
     button.disabled = true;
@@ -1221,7 +1310,7 @@
         button.classList.remove('is-error');
       }, 3000);
     }
-    button.disabled = editMode && button === publishShortcutButton;
+    button.disabled = !currentUserIsAdmin() || (editMode && button === publishShortcutButton);
   }
 
   function removeOutlines() {
@@ -2043,7 +2132,7 @@
       hideQuickColorMenu();
       document.body.classList.remove('cms-layout-mode');
     }
-    publishShortcutButton.disabled = editMode;
+    publishShortcutButton.disabled = editMode || !currentUserIsAdmin();
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
     updateHiddenToggleState();
@@ -3411,6 +3500,12 @@
   }
 
   async function publishStaticSite() {
+    if (!currentUserIsAdmin()) {
+      settingsMessageEl.textContent = 'Admin role required to publish.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast('Admin role required to publish.', 'error');
+      return false;
+    }
     if (!siteName) {
       settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
       settingsMessageEl.style.color = '#ef4444';
@@ -4045,6 +4140,7 @@
     setBackendMode(false);
     updateServiceFormVisibility();
     applyHiddenStateToAllElements();
+    applyRolePermissions();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);

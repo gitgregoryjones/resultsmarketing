@@ -240,12 +240,35 @@ async function validateSupabaseToken(token) {
   return response.json();
 }
 
+function normalizeRoleName(role = '') {
+  return String(role || '').trim().toLowerCase();
+}
+
+function getSupabaseUserRoles(user = {}) {
+  const appMetadata = user.app_metadata || {};
+  const userMetadata = user.user_metadata || {};
+  const candidates = [
+    user.role,
+    appMetadata.role,
+    userMetadata.role,
+    ...(Array.isArray(appMetadata.roles) ? appMetadata.roles : []),
+    ...(Array.isArray(userMetadata.roles) ? userMetadata.roles : []),
+  ];
+  return candidates.map(normalizeRoleName).filter(Boolean);
+}
+
+function isAdminSupabaseUser(user = {}) {
+  return getSupabaseUserRoles(user).includes('admin');
+}
+
 async function requireAuthenticatedRequest(req, res, pathname) {
   if (!AUTH_REQUIRED || isPublicApiRoute(pathname)) return true;
   try {
     const user = await validateSupabaseToken(getBearerToken(req));
     if (user && user.id) {
       req.cmsUser = user;
+      req.cmsUserRoles = getSupabaseUserRoles(user);
+      req.cmsIsAdmin = isAdminSupabaseUser(user);
       return true;
     }
   } catch (err) {
@@ -2281,6 +2304,10 @@ async function handleRequest(req, res) {
   }
 
   if (pathname === '/api/publish' && req.method === 'POST') {
+    if (AUTH_REQUIRED && !req.cmsIsAdmin) {
+      sendJsonError(res, 403, 'Admin role required to publish');
+      return;
+    }
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
