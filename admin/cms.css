@@ -1939,3 +1939,7 @@ html.compact-admin-hero .hero-compact-summary__supporting {
   color: #dc2626;
   font-size: 13px;
 }
+
+[data-link]:not([data-link=""]) {
+  cursor: pointer;
+}
