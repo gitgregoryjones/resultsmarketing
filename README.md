@@ -38,6 +38,7 @@ Set these environment variables in Netlify:
 | `GITHUB_COMMITTER_EMAIL` | Optional commit author email for publish commits. |
 | `PUBLISH_LOCAL_DIR` | Optional local/serverless render directory before upload. Defaults to `published`. |
 | `PUBLISH_DEBUG` | Optional `true`/`false` flag. When true, publish responses include a step-by-step trace in addition to server logs. |
+| `GITHUB_UPLOAD_CONCURRENCY` | Optional number of changed files to upload to GitHub concurrently. Defaults to `6`. |
 
 Create/invite users in Supabase Auth to manage who can sign in. Once `SUPABASE_URL` and `SUPABASE_ANON_KEY` are set, `/api/*` routes require a Supabase bearer token, and the CMS displays a Supabase email/password login before loading admin data.
 
@@ -45,7 +46,7 @@ Create/invite users in Supabase Auth to manage who can sign in. Once `SUPABASE_U
 
 
 ### Publish debugging
-Every publish request now gets a trace id like `pub-lxyz123-abc456`. The server logs each local render step, each GitHub API request, each uploaded file, and the GitHub commit SHA/URL returned by the Contents API. Set `PUBLISH_DEBUG=true` in `.env` (or in Netlify) to include the full trace in the `/api/publish` JSON response. For one-off browser debugging without changing `.env`, run this in the browser console before clicking Publish:
+Every publish request now gets a trace id like `pub-lxyz123-abc456`. The server logs each local render step, loads the current GitHub tree once, skips files whose Git blob SHA has not changed, uploads only changed files, creates one Git tree/commit, and records the GitHub commit SHA/URL. Set `PUBLISH_DEBUG=true` in `.env` (or in Netlify) to include the full trace in the `/api/publish` JSON response. For one-off browser debugging without changing `.env`, run this in the browser console before clicking Publish:
 
 ```js
 localStorage.setItem('publishDebug', 'true')

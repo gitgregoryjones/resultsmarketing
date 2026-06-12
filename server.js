@@ -1,4 +1,5 @@
 const http = require('node:http');
+const crypto = require('node:crypto');
 const fsSync = require('node:fs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -81,6 +82,7 @@ const GITHUB_PAGES_TOKEN = process.env.GITHUB_PAGES_TOKEN || process.env.GITHUB_
 const GITHUB_COMMITTER_NAME = process.env.GITHUB_COMMITTER_NAME || 'Results Marketing CMS';
 const GITHUB_COMMITTER_EMAIL = process.env.GITHUB_COMMITTER_EMAIL || 'cms@example.com';
 const PUBLISH_DEBUG = /^(1|true|yes|on)$/i.test(process.env.PUBLISH_DEBUG || '');
+const GITHUB_UPLOAD_CONCURRENCY = Math.max(1, Number.parseInt(process.env.GITHUB_UPLOAD_CONCURRENCY || '6', 10) || 6);
 const DATA_ROOT = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(ROOT, 'data');
 const COMPONENTS_DIR = path.join(DATA_ROOT, 'components');
 const STYLES_DIR = path.join(DATA_ROOT, 'styles');
@@ -292,6 +294,29 @@ function toBase64(buffer) {
   return Buffer.from(buffer).toString('base64');
 }
 
+
+function gitBlobSha(buffer) {
+  const content = Buffer.isBuffer(buffer) ? buffer : Buffer.from(buffer);
+  return crypto
+    .createHash('sha1')
+    .update(Buffer.concat([Buffer.from(`blob ${content.length}\0`), content]))
+    .digest('hex');
+}
+
+async function mapWithConcurrency(items, concurrency, mapper) {
+  const results = new Array(items.length);
+  let index = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (index < items.length) {
+      const currentIndex = index;
+      index += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 async function walkFiles(dir, base = dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const files = [];
@@ -359,17 +384,46 @@ async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = [], tra
     trace?.warn('github.publish.skipped', {
       reason: 'GITHUB_PAGES_REPO and GITHUB_PAGES_TOKEN are not configured',
     });
-    return { enabled: false, uploaded: [], commits: [] };
+    return { enabled: false, uploaded: [], skipped: [], commits: [] };
   }
   if (!repo) throw new Error('GITHUB_PAGES_REPO must be set to owner/repo');
   if (!GITHUB_PAGES_TOKEN) throw new Error('GITHUB_PAGES_TOKEN or GITHUB_TOKEN must be set');
 
   trace?.info('github.publish.start', {
+    strategy: 'git-tree-diff',
     repo,
     branch: GITHUB_PAGES_BRANCH,
     path: GITHUB_PAGES_PATH || '/',
     sourceDir,
     pages: publishedFiles.length,
+    blobConcurrency: GITHUB_UPLOAD_CONCURRENCY,
+  });
+
+  const ref = await githubRequest(`/repos/${repo}/git/ref/heads/${encodeURIComponent(GITHUB_PAGES_BRANCH)}`, {
+    method: 'GET',
+  }, trace);
+  const baseCommitSha = ref && ref.object ? ref.object.sha : '';
+  if (!baseCommitSha) throw new Error(`Unable to resolve GitHub branch ${GITHUB_PAGES_BRANCH}`);
+  trace?.info('github.branch.resolved', { branch: GITHUB_PAGES_BRANCH, commitSha: baseCommitSha });
+
+  const baseCommit = await githubRequest(`/repos/${repo}/git/commits/${baseCommitSha}`, {
+    method: 'GET',
+  }, trace);
+  const baseTreeSha = baseCommit && baseCommit.tree ? baseCommit.tree.sha : '';
+  if (!baseTreeSha) throw new Error(`Unable to resolve GitHub tree for ${baseCommitSha}`);
+  trace?.info('github.tree.base_resolved', { treeSha: baseTreeSha });
+
+  const existingTree = await githubRequest(`/repos/${repo}/git/trees/${baseTreeSha}?recursive=1`, {
+    method: 'GET',
+  }, trace);
+  const existingShaByPath = new Map(
+    (existingTree.tree || [])
+      .filter((entry) => entry.type === 'blob' && entry.path)
+      .map((entry) => [entry.path, entry.sha])
+  );
+  trace?.info('github.tree.existing_loaded', {
+    entries: existingShaByPath.size,
+    truncated: Boolean(existingTree.truncated),
   });
 
   const sourceFiles = await walkFiles(sourceDir);
@@ -378,71 +432,131 @@ async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = [], tra
     files: sourceFiles,
   });
 
-  const uploaded = [];
-  const commits = [];
+  const changedFiles = [];
+  const skipped = [];
   for (const relativeFile of sourceFiles) {
     const sourcePath = path.join(sourceDir, relativeFile);
     const targetPath = [GITHUB_PAGES_PATH, relativeFile].filter(Boolean).join('/');
-    const encodedPath = targetPath.split('/').map(encodeURIComponent).join('/');
+    const buffer = await fs.readFile(sourcePath);
+    const localSha = gitBlobSha(buffer);
+    const existingSha = existingShaByPath.get(targetPath) || '';
     const stat = await fs.stat(sourcePath);
-    let sha;
-    let action = 'create';
-    trace?.info('github.file.prepare', { relativeFile, targetPath, bytes: stat.size });
-    try {
-      const existing = await githubRequest(`/repos/${repo}/contents/${encodedPath}?ref=${encodeURIComponent(GITHUB_PAGES_BRANCH)}`, {
-        method: 'GET',
-        expectedStatuses: [404],
-      }, trace);
-      if (existing && existing.__status === 404) {
-        trace?.info('github.file.no_existing_file', { targetPath });
-      } else {
-        sha = existing && existing.sha;
-        action = 'update';
-        trace?.info('github.file.existing_found', {
-          targetPath,
-          sha: sha ? sha.slice(0, 12) : '',
-        });
-      }
-    } catch (err) {
-      throw err;
+    if (existingSha === localSha) {
+      skipped.push({ path: targetPath, bytes: stat.size, sha: localSha });
+      continue;
     }
-
-    const content = toBase64(await fs.readFile(sourcePath));
-    const result = await githubRequest(`/repos/${repo}/contents/${encodedPath}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        message: `Publish CMS site: ${relativeFile}`,
-        content,
-        branch: GITHUB_PAGES_BRANCH,
-        sha,
-        committer: {
-          name: GITHUB_COMMITTER_NAME,
-          email: GITHUB_COMMITTER_EMAIL,
-        },
-      }),
-    }, trace);
-
-    const commit = result && result.commit ? result.commit : {};
-    const upload = {
-      path: targetPath,
-      action,
+    changedFiles.push({
+      relativeFile,
+      sourcePath,
+      targetPath,
       bytes: stat.size,
-      commitSha: commit.sha || '',
-      commitUrl: commit.html_url || '',
-      contentSha: result && result.content ? result.content.sha : '',
-    };
-    uploaded.push(upload);
-    if (commit.sha) {
-      commits.push({ sha: commit.sha, url: commit.html_url || '', path: targetPath });
-    }
-    trace?.info('github.file.committed', upload);
+      localSha,
+      existingSha,
+      buffer,
+      action: existingSha ? 'update' : 'create',
+    });
   }
 
+  trace?.info('github.diff.calculated', {
+    total: sourceFiles.length,
+    changed: changedFiles.length,
+    skipped: skipped.length,
+    changedFiles: changedFiles.map((file) => ({ path: file.targetPath, action: file.action, bytes: file.bytes })),
+  });
+
+  if (!changedFiles.length) {
+    trace?.info('github.publish.no_changes', { repo, branch: GITHUB_PAGES_BRANCH, skipped: skipped.length });
+    return {
+      enabled: true,
+      repo,
+      branch: GITHUB_PAGES_BRANCH,
+      path: GITHUB_PAGES_PATH,
+      uploaded: [],
+      skipped,
+      commits: [],
+      baseCommitSha,
+      unchanged: true,
+      pages: publishedFiles,
+    };
+  }
+
+  const uploaded = await mapWithConcurrency(changedFiles, GITHUB_UPLOAD_CONCURRENCY, async (file) => {
+    trace?.info('github.blob.create.start', {
+      path: file.targetPath,
+      action: file.action,
+      bytes: file.bytes,
+      localSha: file.localSha,
+      previousSha: file.existingSha || '',
+    });
+    const blob = await githubRequest(`/repos/${repo}/git/blobs`, {
+      method: 'POST',
+      body: JSON.stringify({
+        content: toBase64(file.buffer),
+        encoding: 'base64',
+      }),
+    }, trace);
+    const upload = {
+      path: file.targetPath,
+      action: file.action,
+      bytes: file.bytes,
+      previousSha: file.existingSha || '',
+      contentSha: blob.sha || file.localSha,
+    };
+    trace?.info('github.blob.create.done', upload);
+    return upload;
+  });
+
+  const newTree = await githubRequest(`/repos/${repo}/git/trees`, {
+    method: 'POST',
+    body: JSON.stringify({
+      base_tree: baseTreeSha,
+      tree: uploaded.map((file) => ({
+        path: file.path,
+        mode: '100644',
+        type: 'blob',
+        sha: file.contentSha,
+      })),
+    }),
+  }, trace);
+  trace?.info('github.tree.created', {
+    treeSha: newTree.sha,
+    entries: uploaded.length,
+  });
+
+  const commit = await githubRequest(`/repos/${repo}/git/commits`, {
+    method: 'POST',
+    body: JSON.stringify({
+      message: `Publish CMS site (${uploaded.length} changed file${uploaded.length === 1 ? '' : 's'})`,
+      tree: newTree.sha,
+      parents: [baseCommitSha],
+      committer: {
+        name: GITHUB_COMMITTER_NAME,
+        email: GITHUB_COMMITTER_EMAIL,
+      },
+    }),
+  }, trace);
+  const commitSha = commit.sha || '';
+  const commitUrl = commit.html_url || (commitSha ? `https://github.com/${repo}/commit/${commitSha}` : '');
+  trace?.info('github.commit.created', {
+    commitSha,
+    commitUrl,
+    changedFiles: uploaded.length,
+  });
+
+  await githubRequest(`/repos/${repo}/git/refs/heads/${encodeURIComponent(GITHUB_PAGES_BRANCH)}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ sha: commitSha }),
+  }, trace);
+
+  const commits = commitSha ? [{ sha: commitSha, url: commitUrl, paths: uploaded.map((file) => file.path) }] : [];
+  const uploadedWithCommit = uploaded.map((file) => ({ ...file, commitSha, commitUrl }));
   trace?.info('github.publish.done', {
     repo,
     branch: GITHUB_PAGES_BRANCH,
     uploaded: uploaded.length,
-    commits: commits.length,
+    skipped: skipped.length,
+    commitSha,
+    commitUrl,
   });
 
   return {
@@ -450,8 +564,13 @@ async function publishDirectoryToGitHubPages(sourceDir, publishedFiles = [], tra
     repo,
     branch: GITHUB_PAGES_BRANCH,
     path: GITHUB_PAGES_PATH,
-    uploaded,
+    uploaded: uploadedWithCommit,
+    skipped,
     commits,
+    baseCommitSha,
+    commitSha,
+    commitUrl,
+    unchanged: false,
     pages: publishedFiles,
   };
 }
