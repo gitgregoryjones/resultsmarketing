@@ -7,7 +7,38 @@ const url = require('node:url');
 const { parse } = require('node-html-parser');
 const { fetchServiceJson } = require('./services');
 
-const SOURCE_ROOT = __dirname;
+const DEFAULT_FILE = 'index.html';
+const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+function findExistingProjectRoot(candidates) {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const resolved = path.resolve(candidate);
+    if (fsSync.existsSync(path.join(resolved, 'admin', DEFAULT_FILE))) {
+      return resolved;
+    }
+  }
+  return path.resolve(candidates.find(Boolean) || __dirname);
+}
+
+function defaultRuntimeRoot() {
+  const configuredRoot = process.env.RUNTIME_DATA_DIR;
+  if (configuredRoot) return path.resolve(configuredRoot);
+  if (IS_NETLIFY_FUNCTION) {
+    return path.join(process.env.TMPDIR || '/tmp', 'resultsmarketing-cms-runtime');
+  }
+  return SOURCE_ROOT;
+}
+
+const SOURCE_ROOT = findExistingProjectRoot([
+  process.env.SOURCE_ROOT,
+  __dirname,
+  process.cwd(),
+  path.resolve(__dirname, '..'),
+  path.resolve(__dirname, '..', '..'),
+  path.resolve(process.cwd(), '..'),
+  path.resolve(process.cwd(), '..', '..'),
+]);
 
 function stripInlineEnvComment(value = '') {
   let quote = '';
@@ -61,13 +92,8 @@ function loadDotEnvFile(envPath = path.join(SOURCE_ROOT, '.env')) {
 loadDotEnvFile(process.env.DOTENV_CONFIG_PATH ? path.resolve(process.env.DOTENV_CONFIG_PATH) : undefined);
 
 const PORT = process.env.PORT || 3000;
-const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
-const ROOT = process.env.RUNTIME_DATA_DIR
-  ? path.resolve(process.env.RUNTIME_DATA_DIR)
-  :
-  SOURCE_ROOT;
+const ROOT = defaultRuntimeRoot();
 const ADMIN_DIR = path.join(ROOT, 'admin');
-const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 
