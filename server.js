@@ -2043,7 +2043,12 @@ function contentTypeFor(filePath) {
 
 
 async function serveStatic(res, filePath) {
-  const safePath = path.normalize(filePath).replace(/^\/+/, '');
+  let safePath = path.normalize(filePath).replace(/^\/+/, '');
+
+  if (safePath.startsWith('admin/')) {
+    safePath = safePath.replace(/^admin\//, '');
+  }
+
   const searchBases = [ADMIN_DIR, ROOT];
 
   for (const base of searchBases) {
@@ -2054,7 +2059,7 @@ async function serveStatic(res, filePath) {
       res.end(data);
       return;
     } catch (err) {
-      // continue to next base
+      // continue
     }
   }
 
