@@ -61,6 +61,10 @@
     return currentUserCanAdmin;
   }
 
+  function canUseDragDropBuilder() {
+    return currentUserIsAdmin();
+  }
+
   window.fetch = async (resource, options = {}) => {
     const requestUrl = typeof resource === 'string' ? resource : resource && resource.url;
     const shouldAttachToken = authConfig.enabled && requestUrl && !requestUrl.includes('/api/auth/config');
@@ -1136,6 +1140,25 @@
       themePickerPanel.hidden = !isAdmin;
       themePickerPanel.setAttribute('aria-hidden', String(!isAdmin));
     }
+    sidebar.querySelectorAll('[data-tab="wireframe"], [data-panel="wireframe"]').forEach((el) => {
+      el.hidden = !isAdmin;
+      el.setAttribute('aria-hidden', String(!isAdmin));
+    });
+    sidebar.querySelectorAll('[data-wireframe-tool]').forEach((tool) => {
+      tool.setAttribute('draggable', String(isAdmin));
+      tool.setAttribute('aria-disabled', String(!isAdmin));
+    });
+    if (reorderToggle) {
+      reorderToggle.disabled = !isAdmin;
+      if (!isAdmin) {
+        reorderToggle.checked = false;
+        reorderMode = false;
+      }
+    }
+    if (!isAdmin && isWireframeEnabled()) {
+      activateTab('content');
+    }
+    setLayoutDragState(isLayoutModeEnabled());
   }
 
   const textColorInput = sidebar.querySelector('#cms-text-color');
@@ -1263,6 +1286,9 @@
   }
 
   function setWireframeState(enabled) {
+    if (enabled && !canUseDragDropBuilder()) {
+      enabled = false;
+    }
     if (enabled && !editMode) {
       setEditMode(true);
     }
@@ -1982,6 +2008,11 @@
   }
 
   function handleWireframeToolDragStart(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
+      return;
+    }
     const tool = event.currentTarget;
     const type = tool.dataset.wireframeTool;
     if (!type) return;
@@ -2001,15 +2032,16 @@
   }
 
   function setLayoutDragState(enabled) {
+    const allowed = enabled && canUseDragDropBuilder();
     document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
       if (!isValidDragElement(el)) return;
-      if (enabled) {
+      if (allowed) {
         el.setAttribute('draggable', 'true');
       } else {
         el.removeAttribute('draggable');
       }
     });
-    if (!enabled) {
+    if (!allowed) {
       clearDropTarget();
       if (draggedElement) {
         draggedElement.classList.remove('cms-dragging');
@@ -2029,6 +2061,10 @@
   }
 
   function handleDragStart(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      return;
+    }
     if (!isLayoutModeEnabled()) return;
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target)) return;
@@ -2043,6 +2079,11 @@
   }
 
   function handleDragOver(event) {
+    if (!canUseDragDropBuilder()) {
+      clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       if (!isWireframeEnabled()) return;
@@ -2111,6 +2152,12 @@
   }
 
   function handleDrop(event) {
+    if (!canUseDragDropBuilder()) {
+      activeWireframeTool = null;
+      clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       if (!isWireframeEnabled()) return;
@@ -3427,6 +3474,9 @@
   }
 
   function activateTab(tabName) {
+    if (tabName === 'wireframe' && !canUseDragDropBuilder()) {
+      tabName = 'content';
+    }
     tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
     panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName));
     setWireframeState(tabName === 'wireframe');
