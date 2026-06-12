@@ -64,9 +64,8 @@ const PORT = process.env.PORT || 3000;
 const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
 const ROOT = process.env.RUNTIME_DATA_DIR
   ? path.resolve(process.env.RUNTIME_DATA_DIR)
-  : IS_NETLIFY_FUNCTION
-    ? path.join('/tmp', 'resultsmarketing-cms')
-    : SOURCE_ROOT;
+  :
+  SOURCE_ROOT;
 const ADMIN_DIR = path.join(ROOT, 'admin');
 const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
