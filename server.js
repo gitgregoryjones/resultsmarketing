@@ -1472,6 +1472,12 @@ async function publishSite(options = {}) {
   const trace = options.trace;
   trace?.info('local.publish.start', { targetDir: PUBLISH_TARGET, adminDir: ADMIN_DIR, themeAccent: options.themeAccent || '' });
   const publishThemeAccent = typeof options.themeAccent === 'string' ? options.themeAccent.trim() : '';
+
+  trace?.info('local.publish.clean_target.start', { targetDir: PUBLISH_TARGET });
+  await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
+  await ensureDir(PUBLISH_TARGET);
+  trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
+
   const files = await listHtmlFiles();
   trace?.info('local.publish.files_listed', { count: files.length, files });
   let siteName = '';
@@ -1485,10 +1491,6 @@ async function publishSite(options = {}) {
     }
   }
 
-  trace?.info('local.publish.clean_target.start', { targetDir: PUBLISH_TARGET });
-  await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
-  await ensureDir(PUBLISH_TARGET);
-  trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
   const themeCss = buildThemeCss(publishThemeAccent || '#bd1f1a');
 
   const publishedFiles = [];
