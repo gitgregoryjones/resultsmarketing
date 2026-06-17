@@ -11,3 +11,4 @@
 .bg-red-500\/10 { background-color: var(--theme-accent-soft) !important; }
 .border-red-500, .border-red-700, .focus\:border-red-500:focus { border-color: var(--theme-accent) !important; }
 .border-red-500\/30 { border-color: var(--theme-accent-border-soft) !important; }
+[data-link]:not([data-link=""]) { cursor: pointer; }

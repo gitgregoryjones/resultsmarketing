@@ -1217,7 +1217,8 @@ body.cms-editing #cms-toggle::after {
   margin: 6px 0 10px;
 }
 
-#cms-publish {
+#cms-publish,
+#cms-download-published {
   width: 100%;
   padding: 10px 12px;
   border-radius: 16px;
@@ -1228,13 +1229,15 @@ body.cms-editing #cms-toggle::after {
   transition: all 120ms ease;
 }
 
-#cms-publish:hover {
+#cms-publish:hover,
+#cms-download-published:hover {
   border-color: var(--cms-purple);
   color: var(--cms-purple);
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
 }
 
-#cms-publish:disabled {
+#cms-publish:disabled,
+#cms-download-published:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   box-shadow: none;
@@ -1902,9 +1905,41 @@ html.compact-admin-hero .hero-compact-summary__supporting {
   opacity: 0.7;
 }
 
+.cms-auth__links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: 14px;
+}
+
+.cms-auth__card .cms-auth__link {
+  width: auto;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--cms-red, #dc2626);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.cms-auth__card .cms-auth__link:hover {
+  color: #991b1b;
+}
+
+.cms-auth__field[hidden],
+.cms-auth__link[hidden] {
+  display: none !important;
+}
+
 .cms-auth__message {
   min-height: 18px;
   margin: 12px 0 0;
   color: #dc2626;
   font-size: 13px;
+}
+
+[data-link]:not([data-link=""]) {
+  cursor: pointer;
 }

@@ -6,7 +6,12 @@
   const AUTH_USER_KEY = 'resultsmarketing.supabase.userEmail';
   const nativeFetch = window.fetch.bind(window);
   let authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
+  let authConfigLoaded = false;
   let authReady = Promise.resolve(true);
+  let currentAuthUser = null;
+  let currentUserCanAdmin = false;
+  let cmsUiReady = false;
+  let pendingRolePermissionApply = false;
 
   function getStoredAccessToken() {
     try {
@@ -32,6 +37,46 @@
     }
   }
 
+  function setCurrentAuthUser(user, permissions = {}) {
+    currentAuthUser = user || null;
+    currentUserCanAdmin = authConfig.enabled ? Boolean(permissions.isAdmin) : authConfigLoaded;
+    applyRolePermissions();
+  }
+
+  async function refreshCurrentUserPermissions(user = currentAuthUser) {
+    if (!authConfig.enabled) {
+      setCurrentAuthUser(user, { isAdmin: true });
+      return true;
+    }
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json().catch(() => ({}));
+      setCurrentAuthUser(user || (data.email ? { email: data.email } : null), { isAdmin: data.isAdmin });
+      return Boolean(data.isAdmin);
+    } catch (err) {
+      setCurrentAuthUser(user, { isAdmin: false });
+      return false;
+    }
+  }
+
+  function currentUserIsAdmin() {
+    if (!authConfigLoaded) return false;
+    if (!authConfig.enabled) return true;
+    return currentUserCanAdmin;
+  }
+
+  function canUseDragDropBuilder() {
+    return currentUserIsAdmin();
+  }
+
+  function setThemePickerVisibility(panel = document.getElementById('themeColorPickerPanel')) {
+    if (!panel) return;
+    const isAdmin = currentUserIsAdmin();
+    panel.hidden = !isAdmin;
+    panel.setAttribute('aria-hidden', String(!isAdmin));
+    panel.style.display = isAdmin ? 'flex' : 'none';
+  }
+
   window.fetch = async (resource, options = {}) => {
     const requestUrl = typeof resource === 'string' ? resource : resource && resource.url;
     const shouldAttachToken = authConfig.enabled && requestUrl && !requestUrl.includes('/api/auth/config');
@@ -45,24 +90,128 @@
     return nativeFetch(resource, { ...options, headers });
   };
 
-  function buildAuthPanel(message = '') {
+  function authRedirectUrl() {
+    const redirect = new URL(window.location.href);
+    redirect.hash = '';
+    return redirect.toString();
+  }
+
+  function supabaseAuthUrl(pathname) {
+    return `${authConfig.supabaseUrl}/auth/v1/${pathname}`;
+  }
+
+  function supabaseRedirectUrl(pathname) {
+    return `${supabaseAuthUrl(pathname)}?redirect_to=${encodeURIComponent(authRedirectUrl())}`;
+  }
+
+  function getRecoverySessionFromUrl() {
+    const hash = window.location.hash ? window.location.hash.slice(1) : '';
+    if (!hash) return null;
+    const params = new URLSearchParams(hash);
+    const accessToken = params.get('access_token') || '';
+    if (!accessToken || params.get('type') !== 'recovery') return null;
+    return {
+      access_token: accessToken,
+      refresh_token: params.get('refresh_token') || '',
+      token_type: params.get('token_type') || 'bearer',
+    };
+  }
+
+  function cleanAuthHash() {
+    if (!window.location.hash) return;
+    const cleanUrl = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState(null, document.title, cleanUrl);
+  }
+
+  function buildAuthPanel(message = '', mode = 'signin') {
     const panel = document.createElement('div');
     panel.className = 'cms-auth';
     panel.innerHTML = `
       <form class="cms-auth__card" id="cms-auth-form">
         <p class="cms-auth__eyebrow">Admin access</p>
-        <h1>Sign in to Results Marketing CMS</h1>
-        <p class="cms-auth__copy">Use a Supabase user account that has access to this project.</p>
-        <label>Email<input id="cms-auth-email" type="email" autocomplete="email" required></label>
-        <label>Password<input id="cms-auth-password" type="password" autocomplete="current-password" required></label>
+        <h1 id="cms-auth-title">Sign in to Results Marketing CMS</h1>
+        <p class="cms-auth__copy" id="cms-auth-copy">Use your account to edit this project.</p>
+        <label class="cms-auth__field" data-auth-field="email">Email<input id="cms-auth-email" type="email" autocomplete="email"></label>
+        <label class="cms-auth__field" data-auth-field="password">Password<input id="cms-auth-password" type="password" autocomplete="current-password"></label>
+        <label class="cms-auth__field" data-auth-field="confirm">Confirm password<input id="cms-auth-confirm" type="password" autocomplete="new-password"></label>
         <button type="submit" id="cms-auth-submit">Sign in</button>
-        <p class="cms-auth__message" id="cms-auth-message">${message}</p>
+        <div class="cms-auth__links">
+          <button type="button" class="cms-auth__link" data-auth-mode="signin">Sign in</button>
+          <button type="button" class="cms-auth__link" data-auth-mode="forgot">Forgot password?</button>
+        </div>
+        <p class="cms-auth__message" id="cms-auth-message"></p>
       </form>`;
+    const messageEl = panel.querySelector('#cms-auth-message');
+    if (messageEl) messageEl.textContent = message;
+    setAuthPanelMode(panel, mode);
     return panel;
   }
 
+  function setAuthPanelMode(panel, mode) {
+    const activeMode = mode === 'register' || mode === 'forgot' || mode === 'reset' ? mode : 'signin';
+    const title = panel.querySelector('#cms-auth-title');
+    const copy = panel.querySelector('#cms-auth-copy');
+    const submit = panel.querySelector('#cms-auth-submit');
+    const emailField = panel.querySelector('[data-auth-field="email"]');
+    const passwordField = panel.querySelector('[data-auth-field="password"]');
+    const confirmField = panel.querySelector('[data-auth-field="confirm"]');
+    const emailInput = panel.querySelector('#cms-auth-email');
+    const passwordInput = panel.querySelector('#cms-auth-password');
+    const confirmInput = panel.querySelector('#cms-auth-confirm');
+    panel.dataset.authMode = activeMode;
+    if (title) {
+      title.textContent = activeMode === 'register'
+        ? 'Create your Results Marketing CMS account'
+        : activeMode === 'forgot'
+          ? 'Reset your password'
+          : activeMode === 'reset'
+            ? 'Choose a new password'
+            : 'Sign in to Results Marketing CMS';
+    }
+    if (copy) {
+      copy.textContent = activeMode === 'register'
+        ? 'Register with your email and password. If email confirmation is enabled, you will receive a confirmation link.'
+        : activeMode === 'forgot'
+          ? 'Enter your email and we will send a password reset link.'
+          : activeMode === 'reset'
+            ? 'Enter a new password for your account.'
+            : 'Use your account to edit this project.';
+    }
+    if (submit) {
+      submit.textContent = activeMode === 'register'
+        ? 'Create account'
+        : activeMode === 'forgot'
+          ? 'Send reset link'
+          : activeMode === 'reset'
+            ? 'Update password'
+            : 'Sign in';
+    }
+    if (emailField) emailField.hidden = activeMode === 'reset';
+    if (passwordField) passwordField.hidden = activeMode === 'forgot';
+    if (confirmField) confirmField.hidden = activeMode !== 'register' && activeMode !== 'reset';
+    if (emailInput) emailInput.required = activeMode !== 'reset';
+    if (passwordInput) {
+      passwordInput.required = activeMode !== 'forgot';
+      passwordInput.autocomplete = activeMode === 'signin' ? 'current-password' : 'new-password';
+      passwordInput.placeholder = activeMode === 'signin' ? '' : 'At least 6 characters';
+    }
+    if (confirmInput) confirmInput.required = activeMode === 'register' || activeMode === 'reset';
+    panel.querySelectorAll('[data-auth-mode]').forEach((button) => {
+      button.hidden = button.dataset.authMode === activeMode || activeMode === 'reset';
+    });
+  }
+
+  function validateNewPassword(password, confirm) {
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters.');
+    }
+    if (password !== confirm) {
+      throw new Error('Passwords do not match.');
+    }
+  }
+
   async function signInWithSupabase(email, password) {
-    const response = await nativeFetch(`${authConfig.supabaseUrl}/auth/v1/token?grant_type=password`, {
+    const response = await nativeFetch(supabaseAuthUrl('token?grant_type=password'), {
       method: 'POST',
       headers: {
         apikey: authConfig.supabaseAnonKey,
@@ -75,33 +224,126 @@
       throw new Error(data.error_description || data.msg || data.error || 'Unable to sign in');
     }
     setStoredSession(data);
+    await refreshCurrentUserPermissions(data.user || null);
     return data;
   }
 
-  async function showAuthPanel(message = '') {
+  async function registerWithSupabase(email, password) {
+    const response = await nativeFetch(supabaseRedirectUrl('signup'), {
+      method: 'POST',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to create account');
+    }
+    if (data.access_token) {
+      setStoredSession(data);
+      await refreshCurrentUserPermissions(data.user || null);
+      return { signedIn: true };
+    }
+    return { signedIn: false };
+  }
+
+  async function sendPasswordReset(email) {
+    const response = await nativeFetch(supabaseRedirectUrl('recover'), {
+      method: 'POST',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to send reset link');
+    }
+  }
+
+  async function updateSupabasePassword(session, password) {
+    const response = await nativeFetch(supabaseAuthUrl('user'), {
+      method: 'PUT',
+      headers: {
+        apikey: authConfig.supabaseAnonKey,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error_description || data.msg || data.error || 'Unable to update password');
+    }
+    setStoredSession({ ...session, user: data });
+    await refreshCurrentUserPermissions(data || null);
+  }
+
+  async function showAuthPanel(message = '', initialMode = 'signin', recoverySession = null) {
     return new Promise((resolve) => {
       document.body.classList.add('cms-auth-locked');
       const existing = document.querySelector('.cms-auth');
       if (existing) existing.remove();
-      const panel = buildAuthPanel(message);
+      const panel = buildAuthPanel(message, initialMode);
       document.body.appendChild(panel);
       const form = panel.querySelector('#cms-auth-form');
       const submit = panel.querySelector('#cms-auth-submit');
       const messageEl = panel.querySelector('#cms-auth-message');
+      const emailInput = panel.querySelector('#cms-auth-email');
+      const passwordInput = panel.querySelector('#cms-auth-password');
+      const confirmInput = panel.querySelector('#cms-auth-confirm');
+
+      panel.querySelectorAll('[data-auth-mode]').forEach((button) => {
+        button.addEventListener('click', () => {
+          setAuthPanelMode(panel, button.dataset.authMode);
+          if (messageEl) messageEl.textContent = '';
+        });
+      });
+
       form.addEventListener('submit', async (event) => {
         event.preventDefault();
         submit.disabled = true;
-        messageEl.textContent = 'Signing in...';
+        const mode = panel.dataset.authMode || 'signin';
+        messageEl.textContent = mode === 'register'
+          ? 'Creating account...'
+          : mode === 'forgot'
+            ? 'Sending reset link...'
+            : mode === 'reset'
+              ? 'Updating password...'
+              : 'Signing in...';
         try {
-          await signInWithSupabase(
-            panel.querySelector('#cms-auth-email').value.trim(),
-            panel.querySelector('#cms-auth-password').value
-          );
+          if (mode === 'register') {
+            validateNewPassword(passwordInput.value, confirmInput.value);
+            const result = await registerWithSupabase(emailInput.value.trim(), passwordInput.value);
+            if (!result.signedIn) {
+              messageEl.textContent = 'Account created. Check your email for a confirmation link, then sign in.';
+              setAuthPanelMode(panel, 'signin');
+              passwordInput.value = '';
+              confirmInput.value = '';
+              submit.disabled = false;
+              return;
+            }
+          } else if (mode === 'forgot') {
+            await sendPasswordReset(emailInput.value.trim());
+            messageEl.textContent = 'Check your email for a password reset link.';
+            setAuthPanelMode(panel, 'signin');
+            submit.disabled = false;
+            return;
+          } else if (mode === 'reset') {
+            validateNewPassword(passwordInput.value, confirmInput.value);
+            await updateSupabasePassword(recoverySession, passwordInput.value);
+            cleanAuthHash();
+          } else {
+            await signInWithSupabase(emailInput.value.trim(), passwordInput.value);
+          }
           panel.remove();
           document.body.classList.remove('cms-auth-locked');
           resolve(true);
         } catch (err) {
-          messageEl.textContent = err.message || 'Unable to sign in';
+          messageEl.textContent = err.message || 'Unable to continue';
           submit.disabled = false;
         }
       });
@@ -117,8 +359,13 @@
         Authorization: `Bearer ${token}`,
       },
     });
-    if (response.ok) return true;
+    if (response.ok) {
+      const user = await response.json().catch(() => null);
+      await refreshCurrentUserPermissions(user);
+      return true;
+    }
     setStoredSession(null);
+    setCurrentAuthUser(null, { isAdmin: false });
     return false;
   }
 
@@ -129,7 +376,15 @@
     } catch (err) {
       authConfig = { enabled: false, supabaseUrl: '', supabaseAnonKey: '' };
     }
-    if (!authConfig.enabled) return true;
+    authConfigLoaded = true;
+    if (!authConfig.enabled) {
+      setCurrentAuthUser(null, { isAdmin: true });
+      return true;
+    }
+    const recoverySession = getRecoverySessionFromUrl();
+    if (recoverySession) {
+      return showAuthPanel('Enter a new password to finish resetting your account.', 'reset', recoverySession);
+    }
     if (await verifyStoredSession()) return true;
     return showAuthPanel('');
   }
@@ -219,8 +474,12 @@
   ];
 
   const THEME_PICKER_STORAGE_KEY = 'adminThemeAccent';
-  const THEME_PICKER_DEFAULT_COLOR = '#ef4444';
+  const THEME_PICKER_DEFAULT_COLOR = '#bd1f1a';
+  const PREVIOUS_THEME_DEFAULT_COLORS = ['#ae041e'];
   const THEME_PICKER_LEGACY_COLORS = [
+    '#ae041e',
+    'rgb(174, 4, 30)',
+    'rgb(174,4,30)',
     '#dc2626',
     '#e53e3e',
     '#f4483a',
@@ -293,12 +552,15 @@
       panel = document.createElement('div');
       panel.id = 'themeColorPickerPanel';
       panel.className = 'cms-ui';
-      panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:flex;align-items:center;gap:8px;';
+      panel.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:10px 12px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Inter,sans-serif;display:none;align-items:center;gap:8px;';
+      panel.hidden = true;
+      panel.setAttribute('aria-hidden', 'true');
       panel.innerHTML = '<label for="themeColorPickerInput" style="font-size:12px;white-space:nowrap;">Theme color</label><input id="themeColorPickerInput" type="color" style="width:36px;height:28px;border:none;background:none;padding:0;cursor:pointer;"/><button id="themeColorReset" type="button" style="font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;cursor:pointer;">Reset</button>';
       document.body.appendChild(panel);
     } else {
       panel.classList.add('cms-ui');
     }
+    setThemePickerVisibility(panel);
 
     if (panel.dataset.themePickerMounted === 'true') return;
 
@@ -320,8 +582,17 @@
     panel.dataset.themePickerMounted = 'true';
   }
 
+  function themePickerInitialColor() {
+    const savedColor = localStorage.getItem(THEME_PICKER_STORAGE_KEY) || '';
+    if (PREVIOUS_THEME_DEFAULT_COLORS.includes(savedColor.trim().toLowerCase())) {
+      localStorage.removeItem(THEME_PICKER_STORAGE_KEY);
+      return THEME_PICKER_DEFAULT_COLOR;
+    }
+    return savedColor || THEME_PICKER_DEFAULT_COLOR;
+  }
+
   function initDynamicThemePicker() {
-    const savedColor = localStorage.getItem(THEME_PICKER_STORAGE_KEY) || THEME_PICKER_DEFAULT_COLOR;
+    const savedColor = themePickerInitialColor();
     applyDynamicTheme(savedColor);
     mountDynamicThemePicker(savedColor);
   }
@@ -343,6 +614,8 @@
   const floatingMenu = document.createElement('div');
   floatingMenu.id = 'cms-floating-menu';
   floatingMenu.className = 'cms-floating-menu cms-ui';
+  floatingMenu.hidden = true;
+  floatingMenu.setAttribute('aria-hidden', 'true');
   floatingMenu.innerHTML = `
     <button type="button" class="cms-floating-menu__minimize" aria-label="Minimize menu">–</button>
     <div class="cms-floating-menu__items">
@@ -366,6 +639,7 @@
         </svg>
         <span>Publish</span>
       </button>
+      <button type="button" class="cms-floating-menu__button" id="cms-download-button">Download</button>
     </div>
   `;
   document.body.appendChild(floatingMenu);
@@ -395,6 +669,9 @@
   publishShortcutButton.id = 'cms-publish-shortcut';
   publishShortcutButton.classList.add('cms-ui');
   publishShortcutButton.type = 'button';
+  publishShortcutButton.hidden = true;
+  publishShortcutButton.disabled = true;
+  publishShortcutButton.setAttribute('aria-hidden', 'true');
   publishShortcutButton.setAttribute('aria-label', 'Publish site');
   publishShortcutButton.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -708,6 +985,7 @@
         <div id="cms-settings-message"></div>
         <div class="cms-publish">
           <button type="button" id="cms-publish">Publish static site</button>
+          <button type="button" id="cms-download-published">Download published ZIP</button>
           <p class="cms-pill cms-pill--subtle">Publishes merged pages to the site root without editor assets</p>
         </div>
       </div>
@@ -780,6 +1058,7 @@
   const settingsMenuButton = floatingMenu.querySelector('#cms-settings-button');
   const xrayButton = floatingMenu.querySelector('#cms-xray-button');
   const publishMenuButton = floatingMenu.querySelector('#cms-publish-button');
+  const downloadMenuButton = floatingMenu.querySelector('#cms-download-button');
   const floatingMinimizeButton = floatingMenu.querySelector('.cms-floating-menu__minimize');
   const settingsDialogBody = settingsDialog.querySelector('.cms-settings-dialog__body');
   const settingsDialogClose = settingsDialog.querySelector('.cms-settings-dialog__close');
@@ -833,6 +1112,7 @@
   const quickBgSwatches = sidebar.querySelector('[data-quick-styles="background"]');
   const deleteButton = sidebar.querySelector('#cms-delete');
   const publishButton = sidebar.querySelector('#cms-publish');
+  const downloadButton = sidebar.querySelector('#cms-download-published');
   const siteNameInput = sidebar.querySelector('#cms-sitename');
   const siteNameSaveButton = sidebar.querySelector('#cms-save-sitename');
   const settingsMessageEl = sidebar.querySelector('#cms-settings-message');
@@ -846,6 +1126,98 @@
   const tabs = sidebar.querySelectorAll('.cms-tabs button');
   const panels = sidebar.querySelectorAll('.cms-panel');
   const quickPickerButtons = sidebar.querySelectorAll('[data-quick-picker]');
+  const advancedSection = sidebar.querySelector('.cms-advanced');
+  const publishSection = sidebar.querySelector('.cms-publish');
+  if (advancedSection) advancedSection.hidden = true;
+  if (publishSection) publishSection.hidden = true;
+
+  function applyRolePermissions() {
+    if (!cmsUiReady) {
+      pendingRolePermissionApply = true;
+      return;
+    }
+    pendingRolePermissionApply = false;
+    const isAdmin = currentUserIsAdmin();
+    document.documentElement.classList.toggle('cms-admin-user', isAdmin);
+    document.documentElement.classList.toggle('cms-restricted-user', !isAdmin);
+    document.documentElement.dataset.cmsAdmin = String(isAdmin);
+
+    const setAdminOnlyControl = (control) => {
+      if (!control) return;
+      control.hidden = !isAdmin;
+      control.disabled = !isAdmin;
+      control.setAttribute('aria-hidden', String(!isAdmin));
+    };
+
+    const pagesMenuItem = pagesToggleButton ? pagesToggleButton.closest('.cms-floating-menu__item') : null;
+    if (pagesMenuItem) {
+      pagesMenuItem.hidden = !isAdmin;
+      pagesMenuItem.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (!isAdmin && pagesDropdown) {
+      pagesDropdown.classList.remove('is-open');
+    }
+    setAdminOnlyControl(effectsButton);
+    setAdminOnlyControl(settingsMenuButton);
+    setAdminOnlyControl(xrayButton);
+
+    if (floatingMenu) {
+      floatingMenu.hidden = !isAdmin;
+      floatingMenu.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (publishShortcutButton) {
+      publishShortcutButton.hidden = !isAdmin;
+      publishShortcutButton.disabled = !isAdmin || editMode;
+      publishShortcutButton.setAttribute('aria-hidden', String(!isAdmin));
+    }
+    if (advancedSection) {
+      advancedSection.hidden = !isAdmin;
+    }
+    if (advancedContent && !isAdmin) {
+      advancedContent.classList.remove('is-open');
+    }
+    if (advancedToggle && !isAdmin) {
+      advancedToggle.classList.remove('is-open');
+      advancedToggle.setAttribute('aria-expanded', 'false');
+    }
+    if (publishSection) {
+      publishSection.hidden = !isAdmin;
+    }
+    if (publishButton) {
+      publishButton.disabled = !isAdmin;
+    }
+    setAdminOnlyControl(publishMenuButton);
+    if (downloadButton) {
+      downloadButton.disabled = !isAdmin;
+    }
+    setAdminOnlyControl(downloadMenuButton);
+    setThemePickerVisibility();
+    sidebar.querySelectorAll('[data-tab="wireframe"], [data-panel="wireframe"]').forEach((el) => {
+      el.hidden = !isAdmin;
+      el.setAttribute('aria-hidden', String(!isAdmin));
+    });
+    sidebar.querySelectorAll('[data-wireframe-tool]').forEach((tool) => {
+      tool.setAttribute('draggable', String(isAdmin));
+      tool.setAttribute('aria-disabled', String(!isAdmin));
+    });
+    if (reorderToggle) {
+      reorderToggle.disabled = !isAdmin;
+      if (!isAdmin) {
+        reorderToggle.checked = false;
+        reorderMode = false;
+      }
+    }
+    if (!isAdmin && isWireframeEnabled()) {
+      activateTab('content');
+    }
+    setLayoutDragState(isLayoutModeEnabled());
+  }
+
+  cmsUiReady = true;
+  if (pendingRolePermissionApply) {
+    applyRolePermissions();
+  }
+
   const textColorInput = sidebar.querySelector('#cms-text-color');
   const quickTextColorInput = sidebar.querySelector('#cms-quick-text-color');
   const quickBgColorInput = sidebar.querySelector('#cms-quick-bg-color');
@@ -971,6 +1343,9 @@
   }
 
   function setWireframeState(enabled) {
+    if (enabled && !canUseDragDropBuilder()) {
+      enabled = false;
+    }
     if (enabled && !editMode) {
       setEditMode(true);
     }
@@ -1209,7 +1584,11 @@
   }
 
   async function triggerPublishWithFeedback(button) {
-    if (!button || button.disabled) return;
+    if (!currentUserIsAdmin()) {
+      showToast('Admin email required to publish.', 'error');
+      return false;
+    }
+    if (!button || button.disabled) return false;
     button.classList.remove('is-error');
     button.classList.add('is-publishing');
     button.disabled = true;
@@ -1221,7 +1600,7 @@
         button.classList.remove('is-error');
       }, 3000);
     }
-    button.disabled = editMode && button === publishShortcutButton;
+    button.disabled = !currentUserIsAdmin() || (editMode && button === publishShortcutButton);
   }
 
   function removeOutlines() {
@@ -1686,6 +2065,11 @@
   }
 
   function handleWireframeToolDragStart(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
+      return;
+    }
     const tool = event.currentTarget;
     const type = tool.dataset.wireframeTool;
     if (!type) return;
@@ -1705,15 +2089,16 @@
   }
 
   function setLayoutDragState(enabled) {
+    const allowed = enabled && canUseDragDropBuilder();
     document.querySelectorAll('body *:not(.cms-ui):not(.cms-ui *)').forEach((el) => {
       if (!isValidDragElement(el)) return;
-      if (enabled) {
+      if (allowed) {
         el.setAttribute('draggable', 'true');
       } else {
         el.removeAttribute('draggable');
       }
     });
-    if (!enabled) {
+    if (!allowed) {
       clearDropTarget();
       if (draggedElement) {
         draggedElement.classList.remove('cms-dragging');
@@ -1733,6 +2118,13 @@
   }
 
   function handleDragStart(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
+      clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
     if (!isLayoutModeEnabled()) return;
     const target = getElementTarget(event.target);
     if (!isValidDragElement(target)) return;
@@ -1747,6 +2139,13 @@
   }
 
   function handleDragOver(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
+      clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       if (!isWireframeEnabled()) return;
@@ -1815,6 +2214,13 @@
   }
 
   function handleDrop(event) {
+    if (!canUseDragDropBuilder()) {
+      event.preventDefault();
+      activeWireframeTool = null;
+      clearDropTarget();
+      clearReorderIndicator();
+      return;
+    }
     const toolType = activeWireframeTool || event.dataTransfer.getData('application/x-wireframe-tool');
     if (toolType) {
       if (!isWireframeEnabled()) return;
@@ -2043,7 +2449,7 @@
       hideQuickColorMenu();
       document.body.classList.remove('cms-layout-mode');
     }
-    publishShortcutButton.disabled = editMode;
+    publishShortcutButton.disabled = editMode || !currentUserIsAdmin();
     deleteButton.disabled = !editMode || !selectedElement;
     updateCloneState();
     updateHiddenToggleState();
@@ -3131,6 +3537,9 @@
   }
 
   function activateTab(tabName) {
+    if (tabName === 'wireframe' && !canUseDragDropBuilder()) {
+      tabName = 'content';
+    }
     tabs.forEach((btn) => btn.classList.toggle('active', btn.dataset.tab === tabName));
     panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === tabName));
     setWireframeState(tabName === 'wireframe');
@@ -3410,7 +3819,70 @@
     }
   }
 
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function fileNameFromDisposition(disposition = '') {
+    const match = String(disposition || '').match(/filename=\"?([^\";]+)\"?/i);
+    return match ? match[1] : 'published-site.zip';
+  }
+
+  async function downloadPublishedSite(button = downloadButton) {
+    if (!currentUserIsAdmin()) {
+      settingsMessageEl.textContent = 'Admin email required to download published files.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast('Admin email required to download published files.', 'error');
+      return false;
+    }
+
+    const originalLabel = button ? button.textContent : '';
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Downloading...';
+    }
+    settingsMessageEl.textContent = 'Preparing published ZIP download...';
+    settingsMessageEl.style.color = '#111827';
+
+    try {
+      const res = await fetch('/api/download-published');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Download failed');
+      }
+      const blob = await res.blob();
+      downloadBlob(blob, fileNameFromDisposition(res.headers.get('content-disposition')));
+      settingsMessageEl.textContent = 'Published ZIP download started.';
+      settingsMessageEl.style.color = '#16a34a';
+      showToast('Published ZIP download started.', 'success');
+      return true;
+    } catch (err) {
+      settingsMessageEl.textContent = err.message || 'Unable to download published ZIP.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast(settingsMessageEl.textContent, 'error');
+      return false;
+    } finally {
+      if (button) {
+        button.disabled = !currentUserIsAdmin();
+        button.textContent = originalLabel;
+      }
+    }
+  }
+
   async function publishStaticSite() {
+    if (!currentUserIsAdmin()) {
+      settingsMessageEl.textContent = 'Admin email required to publish.';
+      settingsMessageEl.style.color = '#ef4444';
+      showToast('Admin email required to publish.', 'error');
+      return false;
+    }
     if (!siteName) {
       settingsMessageEl.textContent = 'Set a site name before publishing (lowercase, no spaces).';
       settingsMessageEl.style.color = '#ef4444';
@@ -3620,6 +4092,9 @@
     toggleHiddenSelection();
   });
   publishButton.addEventListener('click', publishStaticSite);
+  if (downloadButton) {
+    downloadButton.addEventListener('click', () => downloadPublishedSite(downloadButton));
+  }
   publishShortcutButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishShortcutButton);
   });
@@ -3956,6 +4431,9 @@
   publishMenuButton.addEventListener('click', async () => {
     await triggerPublishWithFeedback(publishMenuButton);
   });
+  if (downloadMenuButton) {
+    downloadMenuButton.addEventListener('click', () => downloadPublishedSite(downloadMenuButton));
+  }
   floatingMinimizeButton.addEventListener('click', () => {
     floatingMenu.classList.toggle('is-minimized');
   });
@@ -4045,6 +4523,7 @@
     setBackendMode(false);
     updateServiceFormVisibility();
     applyHiddenStateToAllElements();
+    applyRolePermissions();
     hydrate();
     if (document.querySelector('.cms-panel.active')?.dataset.panel !== 'wireframe') {
       setWireframeState(false);

@@ -7,7 +7,38 @@ const url = require('node:url');
 const { parse } = require('node-html-parser');
 const { fetchServiceJson } = require('./services');
 
-const SOURCE_ROOT = __dirname;
+const DEFAULT_FILE = 'index.html';
+const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+function findExistingProjectRoot(candidates) {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const resolved = path.resolve(candidate);
+    if (fsSync.existsSync(path.join(resolved, 'admin', DEFAULT_FILE))) {
+      return resolved;
+    }
+  }
+  return path.resolve(candidates.find(Boolean) || __dirname);
+}
+
+function defaultRuntimeRoot() {
+  const configuredRoot = process.env.RUNTIME_DATA_DIR;
+  if (configuredRoot) return path.resolve(configuredRoot);
+  if (IS_NETLIFY_FUNCTION) {
+    return path.join(process.env.TMPDIR || '/tmp', 'resultsmarketing-cms-runtime');
+  }
+  return SOURCE_ROOT;
+}
+
+const SOURCE_ROOT = findExistingProjectRoot([
+  process.env.SOURCE_ROOT,
+  __dirname,
+  process.cwd(),
+  path.resolve(__dirname, '..'),
+  path.resolve(__dirname, '..', '..'),
+  path.resolve(process.cwd(), '..'),
+  path.resolve(process.cwd(), '..', '..'),
+]);
 
 function stripInlineEnvComment(value = '') {
   let quote = '';
@@ -61,19 +92,15 @@ function loadDotEnvFile(envPath = path.join(SOURCE_ROOT, '.env')) {
 loadDotEnvFile(process.env.DOTENV_CONFIG_PATH ? path.resolve(process.env.DOTENV_CONFIG_PATH) : undefined);
 
 const PORT = process.env.PORT || 3000;
-const IS_NETLIFY_FUNCTION = process.env.NETLIFY === 'true' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
-const ROOT = process.env.RUNTIME_DATA_DIR
-  ? path.resolve(process.env.RUNTIME_DATA_DIR)
-  :
-  SOURCE_ROOT;
+const ROOT = defaultRuntimeRoot();
 const ADMIN_DIR = path.join(ROOT, 'admin');
-const DEFAULT_FILE = 'index.html';
 const IMAGES_DIR = path.join(ROOT, 'images');
 const BRANDS_DIR = path.join(ROOT, 'brands');
 
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const AUTH_REQUIRED = SUPABASE_URL && SUPABASE_ANON_KEY;
+const ADMIN_EMAILS = process.env.CMS_ADMIN_EMAILS || process.env.ADMIN_EMAILS || process.env.SUPABASE_ADMIN_EMAILS || '';
 const GITHUB_PAGES_REPO = process.env.GITHUB_PAGES_REPO || '';
 const GITHUB_PAGES_BRANCH = process.env.GITHUB_PAGES_BRANCH || 'gh-pages';
 const GITHUB_PAGES_PATH = (process.env.GITHUB_PAGES_PATH || '').replace(/^\/+|\/+$/g, '');
@@ -214,12 +241,32 @@ async function validateSupabaseToken(token) {
   return response.json();
 }
 
+function normalizeEmail(email = '') {
+  return String(email || '').trim().toLowerCase();
+}
+
+function parseAdminEmails(value = ADMIN_EMAILS) {
+  return new Set(
+    String(value || '')
+      .split(/[\s,;]+/)
+      .map(normalizeEmail)
+      .filter(Boolean)
+  );
+}
+
+function isAdminSupabaseUser(user = {}) {
+  const email = normalizeEmail(user.email);
+  if (!email) return false;
+  return parseAdminEmails().has(email);
+}
+
 async function requireAuthenticatedRequest(req, res, pathname) {
   if (!AUTH_REQUIRED || isPublicApiRoute(pathname)) return true;
   try {
     const user = await validateSupabaseToken(getBearerToken(req));
     if (user && user.id) {
       req.cmsUser = user;
+      req.cmsIsAdmin = isAdminSupabaseUser(user);
       return true;
     }
   } catch (err) {
@@ -328,6 +375,115 @@ async function walkFiles(dir, base = dir) {
     }
   }
   return files;
+}
+
+const CRC32_TABLE = Array.from({ length: 256 }, (_, index) => {
+  let value = index;
+  for (let bit = 0; bit < 8; bit += 1) {
+    value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+  }
+  return value >>> 0;
+});
+
+function crc32(buffer) {
+  let crc = 0xffffffff;
+  for (const byte of buffer) {
+    crc = CRC32_TABLE[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function dosDateTime(date = new Date()) {
+  const year = Math.max(1980, date.getFullYear());
+  return {
+    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+  };
+}
+
+function zipHeader(signature, size) {
+  const buffer = Buffer.alloc(size);
+  buffer.writeUInt32LE(signature, 0);
+  return buffer;
+}
+
+async function createZipFromDirectory(sourceDir) {
+  let files;
+  try {
+    files = await walkFiles(sourceDir);
+  } catch (err) {
+    if (err && err.code === 'ENOENT') {
+      const error = new Error('Published directory does not exist. Publish the site before downloading.');
+      error.code = 'PUBLISHED_DIR_MISSING';
+      throw error;
+    }
+    throw err;
+  }
+
+  if (!files.length) {
+    const error = new Error('Published directory is empty. Publish the site before downloading.');
+    error.code = 'PUBLISHED_DIR_EMPTY';
+    throw error;
+  }
+
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  for (const file of files.sort()) {
+    const absolute = path.join(sourceDir, file);
+    const data = await fs.readFile(absolute);
+    const name = Buffer.from(file, 'utf8');
+    const stat = await fs.stat(absolute);
+    const stamp = dosDateTime(stat.mtime);
+    const checksum = crc32(data);
+
+    const local = zipHeader(0x04034b50, 30);
+    local.writeUInt16LE(20, 4);
+    local.writeUInt16LE(0, 6);
+    local.writeUInt16LE(0, 8);
+    local.writeUInt16LE(stamp.time, 10);
+    local.writeUInt16LE(stamp.date, 12);
+    local.writeUInt32LE(checksum, 14);
+    local.writeUInt32LE(data.length, 18);
+    local.writeUInt32LE(data.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    local.writeUInt16LE(0, 28);
+    localParts.push(local, name, data);
+
+    const central = zipHeader(0x02014b50, 46);
+    central.writeUInt16LE(20, 4);
+    central.writeUInt16LE(20, 6);
+    central.writeUInt16LE(0, 8);
+    central.writeUInt16LE(0, 10);
+    central.writeUInt16LE(stamp.time, 12);
+    central.writeUInt16LE(stamp.date, 14);
+    central.writeUInt32LE(checksum, 16);
+    central.writeUInt32LE(data.length, 20);
+    central.writeUInt32LE(data.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    central.writeUInt16LE(0, 30);
+    central.writeUInt16LE(0, 32);
+    central.writeUInt16LE(0, 34);
+    central.writeUInt16LE(0, 36);
+    central.writeUInt32LE(0, 38);
+    central.writeUInt32LE(offset, 42);
+    centralParts.push(central, name);
+
+    offset += local.length + name.length + data.length;
+  }
+
+  const centralDirectory = Buffer.concat(centralParts);
+  const end = zipHeader(0x06054b50, 22);
+  end.writeUInt16LE(0, 4);
+  end.writeUInt16LE(0, 6);
+  end.writeUInt16LE(files.length, 8);
+  end.writeUInt16LE(files.length, 10);
+  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(offset, 16);
+  end.writeUInt16LE(0, 20);
+
+  return Buffer.concat([...localParts, centralDirectory, end]);
 }
 
 async function githubRequest(apiPath, options = {}, trace) {
@@ -613,7 +769,7 @@ function buildThemeVarsFromAccent(accent = '') {
 
 
 function buildThemeCss(accent = '') {
-  const theme = buildThemeVarsFromAccent(accent || '#ef4444');
+  const theme = buildThemeVarsFromAccent(accent || '#bd1f1a');
   return `:root {
   --theme-accent: ${theme.accent};
   --theme-accent-hover: ${theme.hover};
@@ -627,6 +783,7 @@ function buildThemeCss(accent = '') {
 .bg-red-500\\/10 { background-color: var(--theme-accent-soft) !important; }
 .border-red-500, .border-red-700, .focus\\:border-red-500:focus { border-color: var(--theme-accent) !important; }
 .border-red-500\\/30 { border-color: var(--theme-accent-border-soft) !important; }
+[data-link]:not([data-link=""]) { cursor: pointer; }
 `;
 }
 
@@ -1315,6 +1472,12 @@ async function publishSite(options = {}) {
   const trace = options.trace;
   trace?.info('local.publish.start', { targetDir: PUBLISH_TARGET, adminDir: ADMIN_DIR, themeAccent: options.themeAccent || '' });
   const publishThemeAccent = typeof options.themeAccent === 'string' ? options.themeAccent.trim() : '';
+
+  trace?.info('local.publish.clean_target.start', { targetDir: PUBLISH_TARGET });
+  await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
+  await ensureDir(PUBLISH_TARGET);
+  trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
+
   const files = await listHtmlFiles();
   trace?.info('local.publish.files_listed', { count: files.length, files });
   let siteName = '';
@@ -1328,11 +1491,7 @@ async function publishSite(options = {}) {
     }
   }
 
-  trace?.info('local.publish.clean_target.start', { targetDir: PUBLISH_TARGET });
-  await fs.rm(PUBLISH_TARGET, { recursive: true, force: true });
-  await ensureDir(PUBLISH_TARGET);
-  trace?.info('local.publish.clean_target.done', { targetDir: PUBLISH_TARGET });
-  const themeCss = buildThemeCss(publishThemeAccent || '#ef4444');
+  const themeCss = buildThemeCss(publishThemeAccent || '#bd1f1a');
 
   const publishedFiles = [];
 
@@ -2250,11 +2409,46 @@ async function handleRequest(req, res) {
     return;
   }
 
+  if (pathname === '/api/auth/me' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      email: req.cmsUser && req.cmsUser.email ? req.cmsUser.email : '',
+      isAdmin: Boolean(req.cmsIsAdmin),
+    }));
+    return;
+  }
+
   if (pathname === '/api/content') {
     return handleApiContent(req, res, parsedUrl.query.file || DEFAULT_FILE);
   }
 
+  if (pathname === '/api/download-published' && req.method === 'GET') {
+    if (AUTH_REQUIRED && !req.cmsIsAdmin) {
+      sendJsonError(res, 403, 'Admin email required to download published files');
+      return;
+    }
+    try {
+      const zip = await createZipFromDirectory(PUBLISH_TARGET);
+      const fileName = `published-site-${new Date().toISOString().slice(0, 10)}.zip`;
+      res.writeHead(200, {
+        'Content-Type': 'application/zip',
+        'Content-Disposition': `attachment; filename="${fileName}"`,
+        'Content-Length': zip.length,
+        'Cache-Control': 'no-store',
+      });
+      res.end(zip);
+    } catch (err) {
+      const status = err && (err.code === 'PUBLISHED_DIR_MISSING' || err.code === 'PUBLISHED_DIR_EMPTY') ? 404 : 500;
+      sendJsonError(res, status, err.message || 'Unable to download published files');
+    }
+    return;
+  }
+
   if (pathname === '/api/publish' && req.method === 'POST') {
+    if (AUTH_REQUIRED && !req.cmsIsAdmin) {
+      sendJsonError(res, 403, 'Admin email required to publish');
+      return;
+    }
     let body = '';
     req.on('data', (chunk) => {
       body += chunk;
