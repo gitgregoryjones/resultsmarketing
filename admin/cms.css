@@ -127,6 +127,12 @@
   margin-top: 10px;
 }
 
+.cms-floating-menu__page-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 12px 0 2px;
+}
+
 .cms-floating-menu__page-actions input {
   border-radius: 12px;
   border: 1px solid #e5e7eb;
